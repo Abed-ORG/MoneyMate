@@ -1,0 +1,1 @@
+The client folder holds the entire backend application, this is a placeholder readme. update as you go.
