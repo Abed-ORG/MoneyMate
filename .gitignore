@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+ 
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+server/venv/
+server/.venv/
+ 
+# Environment variables
+.env
+.env.local
+.env.*.local
+ 
+# Build output
+client/dist/
+ 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+ 
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ 
+# Logs
+*.log
+ 
+# Testing
+coverage/
+.pytest_cache/
+htmlcov/
+.coverage
+ 
+# Alembic
+*.db
+*.db-journal
+ 
+# Misc
+.cache/
