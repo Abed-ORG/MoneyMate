@@ -1,0 +1,117 @@
+.page {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kicker,
+.hero h2,
+.hero p,
+.summaryCard p,
+.chartHeader h3,
+.chartHeader p {
+  margin: 0;
+}
+
+.kicker {
+  color: var(--color-forest-green);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero h2 {
+  margin-top: 0.35rem;
+  color: var(--color-dark-green);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: 0;
+}
+
+.hero p {
+  max-width: 45rem;
+  margin-top: 0.55rem;
+  color: var(--color-muted-text);
+  line-height: 1.6;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+}
+
+.summaryCard span {
+  color: var(--color-muted-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.summaryCard strong {
+  color: var(--color-dark-green);
+  font-size: 1.8rem;
+}
+
+.summaryCard p {
+  color: var(--color-muted-text);
+  font-size: 0.9rem;
+}
+
+.chartCard {
+  padding: 1.1rem;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.chartHeader h3 {
+  color: var(--color-dark-green);
+  font-size: 1.15rem;
+}
+
+.chartHeader p {
+  margin-top: 0.25rem;
+  color: var(--color-muted-text);
+}
+
+.badge {
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #92400e;
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.4rem 0.7rem;
+}
+
+@media (max-width: 1100px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chartHeader {
+    flex-direction: column;
+  }
+}

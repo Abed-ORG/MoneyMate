@@ -21,20 +21,20 @@ venv.bak/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.*.local
 .env.*
 
 # VS Code
 .vscode/
 
-# Pytest
+# Testing / coverage
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Mypy
 .mypy_cache/
-
-# Coverage
-.coverage
-htmlcov/
 
 # Pyre
 .pyre/
@@ -57,6 +57,7 @@ node_modules/
 client/node_modules/
 client/dist/
 client/build/
+*.tsbuildinfo
 
 # Vercel / deployment
 .vercel/
@@ -83,5 +84,8 @@ local_settings.py
 
 # Alembic / migrations: keep migration scripts tracked, ignore compiled artifacts
 # (no special ignores needed — migration files are source code)
+
+# Misc
+.cache/
 
 # End of file
