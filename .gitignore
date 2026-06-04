@@ -19,6 +19,7 @@ server/.venv/
  
 # Build output
 client/dist/
+*.tsbuildinfo
  
 # IDE
 .vscode/

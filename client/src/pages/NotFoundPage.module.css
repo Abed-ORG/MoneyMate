@@ -1,0 +1,37 @@
+.notFound {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: var(--color-light-bg);
+  padding: 1rem;
+}
+
+.card {
+  width: min(100%, 28rem);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.code,
+.card h1,
+.card p {
+  margin: 0;
+}
+
+.code {
+  color: var(--color-forest-green);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.card h1 {
+  margin-top: 0.45rem;
+  color: var(--color-dark-green);
+  font-size: 1.7rem;
+  letter-spacing: 0;
+}
+
+.card p:not(.code) {
+  margin: 0.6rem auto 1.3rem;
+  color: var(--color-muted-text);
+}

@@ -1,0 +1,74 @@
+.authPage {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(6, 78, 59, 0.08), transparent 42%),
+    var(--color-light-bg);
+  padding: 1rem;
+}
+
+.panel {
+  width: min(100%, 27rem);
+  padding: 1.4rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.35rem;
+}
+
+.brandMark {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-deep-emerald);
+  color: var(--color-white);
+  font-weight: 900;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span,
+.intro,
+.switchText {
+  color: var(--color-muted-text);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-dark-green);
+  font-size: 1.7rem;
+  letter-spacing: 0;
+}
+
+.intro {
+  margin: 0.45rem 0 1.4rem;
+  line-height: 1.55;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form button {
+  width: 100%;
+}
+
+.switchText {
+  margin: 1.2rem 0 0;
+  text-align: center;
+}
+
+.switchText a {
+  color: var(--color-forest-green);
+  font-weight: 800;
+}
