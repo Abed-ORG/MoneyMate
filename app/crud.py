@@ -16,7 +16,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType]):
         return db.query(self.model).offset(skip).limit(limit).all()
 
     def create(self, db: Session, obj_in: CreateSchemaType) -> ModelType:
-        obj = self.model(**obj_in.__dict__)
+        data = (
+            obj_in if isinstance(obj_in, dict) else (obj_in.model_dump() if hasattr(obj_in, "model_dump") else obj_in.dict())
+        )
+        obj = self.model(**data)
         db.add(obj)
         db.commit()
         db.refresh(obj)
