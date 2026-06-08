@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 from app.db import engine
 
@@ -12,5 +12,5 @@ def db_status():
             # simple lightweight query
             conn.execute(text("SELECT 1"))
         return {"db": "ok"}
-    except Exception as e:
-        return {"db": "error", "detail": str(e)}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable")

@@ -28,4 +28,4 @@ def login(form_data: UserCreate, db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.email, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect credentials")
-    return create_tokens_for_user(user)
+    return create_tokens_for_user(db, user)

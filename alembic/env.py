@@ -13,7 +13,7 @@ config = context.config
 fileConfig(config.config_file_name)
 
 from app.db import Base
-import app.models  # ensure model modules are imported so metadata is populated
+from app.models import item, user, refresh_token
 
 target_metadata = Base.metadata
 

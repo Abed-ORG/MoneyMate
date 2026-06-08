@@ -4,7 +4,7 @@ from typing import List
 
 from app.schemas.item import Item, ItemCreate
 from app.services.item_service import get_item, get_items, create_item
-from app.db import SessionLocal, init_db
+from app.db import SessionLocal
 
 router = APIRouter()
 
@@ -15,11 +15,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-@router.on_event("startup")
-def on_startup():
-    init_db()
 
 
 @router.post("/", response_model=Item)

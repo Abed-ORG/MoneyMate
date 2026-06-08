@@ -22,5 +22,7 @@ def revoke_refresh_token(db: Session, token: str):
 
 
 def is_refresh_token_valid(db: Session, token: str) -> bool:
-    db_token = db.query(RefreshToken).filter(RefreshToken.token == token, RefreshToken.revoked == False).first()
+    db_token = db.query(RefreshToken).filter(
+        RefreshToken.token == token, RefreshToken.revoked.is_(False)
+    ).first()
     return db_token is not None
