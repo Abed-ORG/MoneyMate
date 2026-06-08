@@ -22,6 +22,7 @@ def upgrade():
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('revoked', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()')),
+        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('token')
     )
