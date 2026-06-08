@@ -44,28 +44,61 @@ def create_seed_data():
         db.flush()
 
         # budgets
-        b1 = Budget(user_id=user.id, category_id=groceries.id, amount=400, period="monthly")
-        b2 = Budget(user_id=user.id, category_id=entertainment.id, amount=100, period="monthly")
+        b1 = Budget(
+            user_id=user.id, category_id=groceries.id,
+            amount=400, period="monthly"
+        )
+        b2 = Budget(
+            user_id=user.id, category_id=entertainment.id,
+            amount=100, period="monthly"
+        )
         db.add_all([b1, b2])
 
         # goals
-        g1 = Goal(user_id=user.id, name="Emergency Fund", target_amount=10000, current_amount=500)
-        g2 = Goal(user_id=user.id, name="Vacation", target_amount=2000, current_amount=150)
+        g1 = Goal(
+            user_id=user.id, name="Emergency Fund",
+            target_amount=10000, current_amount=500
+        )
+        g2 = Goal(
+            user_id=user.id, name="Vacation",
+            target_amount=2000, current_amount=150
+        )
         db.add_all([g1, g2])
 
         # transactions
-        t1 = Transaction(account_id=checking.id, category_id=groceries.id, amount=75.50, description="Supermarket")
-        t2 = Transaction(account_id=checking.id, category_id=rent.id, amount=1200, description="June rent")
-        t3 = Transaction(account_id=savings.id, category_id=None, amount=200, description="Transfer to savings", is_transfer=True)
+        t1 = Transaction(
+            account_id=checking.id, category_id=groceries.id,
+            amount=75.50, description="Supermarket"
+        )
+        t2 = Transaction(
+            account_id=checking.id, category_id=rent.id,
+            amount=1200, description="June rent"
+        )
+        t3 = Transaction(
+            account_id=savings.id, category_id=None, amount=200,
+            description="Transfer to savings", is_transfer=True
+        )
         db.add_all([t1, t2, t3])
 
         # chat history
-        msg1 = ChatHistory(user_id=user.id, role="user", message="How can I save more this month?")
-        msg2 = ChatHistory(user_id=user.id, role="assistant", message="Try reducing entertainment spend and set an automatic transfer to savings.")
+        msg1 = ChatHistory(
+            user_id=user.id, role="user",
+            message="How can I save more this month?"
+        )
+        msg2 = ChatHistory(
+            user_id=user.id, role="assistant",
+            message=(
+                "Try reducing entertainment spend and set an "
+                "automatic transfer to savings."
+            )
+        )
         db.add_all([msg1, msg2])
 
         db.commit()
-        print("Seed data created: demo user, accounts, categories, budgets, goals, transactions, chat history")
+        print(
+            "Seed data created: demo user, accounts, categories, "
+            "budgets, goals, transactions, chat history"
+        )
     except Exception as e:
         db.rollback()
         print("Failed to create seed data:", e)
