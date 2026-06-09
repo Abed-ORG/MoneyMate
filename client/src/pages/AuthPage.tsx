@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { setMockAuthSession } from "../utils/auth";
 import styles from "./AuthPages.module.css";
 
@@ -176,6 +176,13 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   return (
     <main className={styles.authPage}>
       <div className={`${styles.authFrame} ${isLogin ? styles.loginMode : styles.registerMode}`}>
+        <Link className={styles.backLink} to="/" aria-label="Back to MoneyMate home">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          <span>Back home</span>
+        </Link>
+
         <section
           aria-hidden={!isLogin}
           className={`${styles.formPanel} ${styles.loginPanel}`}
