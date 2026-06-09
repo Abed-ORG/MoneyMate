@@ -169,13 +169,7 @@
 }
 
 .primaryCta {
-  min-width: 18rem;
-  gap: 1.5rem;
-}
-
-.primaryCta span {
-  font-size: 1.5rem;
-  font-weight: 500;
+  min-width: 14rem;
 }
 
 .secondaryCta {
@@ -334,10 +328,17 @@
 }
 
 .featureSection {
-  padding: 8rem 0;
+  scroll-margin-top: 1rem;
+  padding: 7rem 0 8rem;
 }
 
-.featureSection h2,
+.featureHeading {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.featureHeading h2,
 .aboutSection h2 {
   max-width: 48rem;
   margin: 0;
@@ -346,30 +347,111 @@
   line-height: 1.05;
 }
 
+.featureHeading h2 span {
+  color: var(--neon-soft);
+  text-shadow: 0 0 2rem rgba(81, 243, 91, 0.24);
+}
+
+.headingGlow {
+  width: min(18rem, 55vw);
+  height: 1px;
+  margin-top: 1.15rem;
+  background: linear-gradient(90deg, transparent, var(--neon-soft), transparent);
+  box-shadow: 0 0 1rem rgba(81, 243, 91, 0.72);
+}
+
+.featureHeading p {
+  max-width: 46rem;
+  margin: 1.5rem 0 0;
+  color: rgba(239, 249, 242, 0.76);
+  font-size: clamp(1rem, 1.7vw, 1.2rem);
+  line-height: 1.65;
+}
+
 .featureGrid {
   display: grid;
-  margin-top: 3.5rem;
+  margin-top: 3.6rem;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.2rem;
+  gap: 1.45rem;
 }
 
 .featureGrid article {
-  min-height: 17rem;
-  border: 1px solid rgba(87, 238, 99, 0.18);
-  border-radius: 1.2rem;
-  background: linear-gradient(145deg, rgba(11, 51, 37, 0.72), rgba(0, 19, 14, 0.82));
-  padding: 1.8rem;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  position: relative;
+  display: grid;
+  min-height: 13.5rem;
+  overflow: hidden;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  border: 1px solid rgba(111, 239, 75, 0.27);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(53, 157, 59, 0.12), transparent 12rem),
+    linear-gradient(145deg, rgba(3, 35, 26, 0.9), rgba(0, 17, 13, 0.92));
+  padding: 2rem;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 1rem 2.5rem rgba(0, 0, 0, 0.14);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
-.featureGrid article > span {
-  color: var(--neon-soft);
-  font-family: "Courier New", monospace;
+.featureGrid article:hover {
+  border-color: rgba(111, 239, 75, 0.55);
+  box-shadow:
+    0 0 1.3rem rgba(81, 243, 91, 0.12),
+    0 1rem 2.5rem rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+}
+
+.cardGlow {
+  position: absolute;
+  top: -1px;
+  left: 22%;
+  width: 38%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-soft), transparent);
+  box-shadow: 0 0 0.8rem rgba(81, 243, 91, 0.88);
+}
+
+.featureIcon {
+  display: grid;
+  width: 5.7rem;
+  height: 5.7rem;
+  place-items: center;
+  border: 1px solid rgba(111, 239, 75, 0.46);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(112, 255, 91, 0.24), transparent 62%),
+    rgba(17, 76, 35, 0.5);
+  box-shadow:
+    inset 0 0 1.5rem rgba(81, 243, 91, 0.08),
+    0 0 1.4rem rgba(81, 243, 91, 0.08);
+}
+
+.featureIcon svg {
+  width: 3.2rem;
+  height: 3.2rem;
+  fill: none;
+  stroke: var(--neon-soft);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.featureCopy {
+  align-self: center;
 }
 
 .featureGrid h3 {
-  margin: 4.2rem 0 0.8rem;
-  font-size: 1.4rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+}
+
+.featureGrid p {
+  margin: 0;
 }
 
 .featureGrid p,
@@ -377,6 +459,40 @@
 .footer p {
   color: rgba(235, 246, 238, 0.62);
   line-height: 1.65;
+}
+
+.featureArrow {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.2rem;
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  place-items: center;
+  border: 1px solid var(--neon-soft);
+  border-radius: 50%;
+  color: var(--neon-soft);
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.featureArrow:hover {
+  background: var(--neon-soft);
+  color: #00140d;
+  box-shadow: 0 0 1.2rem rgba(81, 243, 91, 0.55);
+  transform: translateX(2px);
+}
+
+.featureArrow svg {
+  width: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .aboutSection {
@@ -501,11 +617,7 @@
   }
 
   .featureGrid article {
-    min-height: 13rem;
-  }
-
-  .featureGrid h3 {
-    margin-top: 2.5rem;
+    min-height: 12rem;
   }
 
   .aboutSection {
@@ -541,6 +653,22 @@
 
   .heroVisual {
     min-height: 24rem;
+  }
+
+  .featureGrid article {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    padding: 1.5rem 1.5rem 4rem;
+  }
+
+  .featureIcon {
+    width: 4.8rem;
+    height: 4.8rem;
+  }
+
+  .featureIcon svg {
+    width: 2.7rem;
+    height: 2.7rem;
   }
 
   .footer {
