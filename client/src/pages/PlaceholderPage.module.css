@@ -1,0 +1,27 @@
+.page {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.25rem;
+}
+
+.card h2,
+.card p {
+  margin: 0;
+}
+
+.card h2 {
+  color: var(--color-dark-green);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.card p {
+  max-width: 48rem;
+  color: var(--color-muted-text);
+  line-height: 1.65;
+}
