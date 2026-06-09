@@ -25,6 +25,11 @@ venv.bak/
 .env.*.local
 .env.*
 
+# Build output
+client/dist/
+client/.vite/
+*.tsbuildinfo
+
 # VS Code
 .vscode/
 
@@ -57,7 +62,6 @@ node_modules/
 client/node_modules/
 client/dist/
 client/build/
-*.tsbuildinfo
 
 # Vercel / deployment
 .vercel/
