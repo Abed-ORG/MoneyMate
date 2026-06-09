@@ -10,14 +10,21 @@
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  box-shadow:
+    0 0 0.85rem rgba(33, 235, 104, 0.34),
+    0 0 1.8rem rgba(33, 235, 104, 0.12);
   transition:
     background 160ms ease,
     border-color 160ms ease,
+    box-shadow 160ms ease,
     color 160ms ease,
     transform 160ms ease;
 }
 
 .button:hover:not(:disabled) {
+  box-shadow:
+    0 0 1.15rem rgba(33, 235, 104, 0.62),
+    0 0 2.5rem rgba(33, 235, 104, 0.25);
   transform: translateY(-1px);
 }
 
@@ -32,7 +39,8 @@
 }
 
 .primary {
-  background: var(--color-deep-emerald);
+  border-color: #2af06e;
+  background: linear-gradient(180deg, #07523a, var(--color-deep-emerald));
   color: var(--color-white);
 }
 
