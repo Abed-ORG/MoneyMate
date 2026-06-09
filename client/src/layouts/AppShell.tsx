@@ -1,15 +1,27 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components";
-import { clearAuthToken } from "../utils/auth";
+import { clearAuthToken, getMockUser } from "../utils/auth";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import styles from "./AppShell.module.css";
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
 
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const pageTitle = getPageTitle(location.pathname);
+  const user = getMockUser();
+  const displayName = user?.name || "Demo user";
+  const initials = getInitials(displayName) || "DU";
 
   const handleLogout = () => {
     clearAuthToken();
@@ -64,17 +76,14 @@ export function AppShell() {
               <span />
               <span />
             </button>
-            <div>
-              <p className={styles.eyebrow}>Frontend Foundation</p>
-              <h1>{pageTitle}</h1>
-            </div>
+            <h1>{pageTitle}</h1>
           </div>
           <div className={styles.userArea}>
             <div className={styles.user}>
-              <span className={styles.avatar}>CS</span>
+              <span className={styles.avatar}>{initials}</span>
               <div>
-                <strong>Celine Salameh</strong>
-                <span>Demo user</span>
+                <strong>{displayName}</strong>
+                <span>{user?.email || "Demo session"}</span>
               </div>
             </div>
             <Button variant="secondary" onClick={handleLogout}>
