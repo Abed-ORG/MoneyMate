@@ -1,45 +1,61 @@
-const AUTH_TOKEN_KEY = "moneymate_mock_token";
-const AUTH_USER_KEY = "moneymate_mock_user";
+const AUTH_TOKEN_KEY = "moneymate_access_token";
+const REFRESH_TOKEN_KEY = "moneymate_refresh_token";
+const AUTH_NOTICE_KEY = "moneymate_auth_notice";
 
-export type MockUser = {
-  name: string;
-  email: string;
+export type AuthTokens = {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 };
+
+function getTokenExpiration(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) {
+      return null;
+    }
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = JSON.parse(atob(padded)) as { exp?: unknown };
+    return typeof decoded.exp === "number" ? decoded.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
 
 export function getAuthToken() {
   return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
-export function isAuthenticated() {
-  return Boolean(getAuthToken());
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-export function getMockUser(): MockUser | null {
-  const storedUser = localStorage.getItem(AUTH_USER_KEY);
-
-  if (!storedUser) {
-    return null;
+export function hasValidAuthToken() {
+  const token = getAuthToken();
+  if (!token) {
+    return false;
   }
-
-  try {
-    const user = JSON.parse(storedUser) as Partial<MockUser>;
-
-    if (typeof user.name === "string" && typeof user.email === "string") {
-      return { name: user.name, email: user.email };
-    }
-  } catch {
-    localStorage.removeItem(AUTH_USER_KEY);
-  }
-
-  return null;
+  const expiresAt = getTokenExpiration(token);
+  return expiresAt !== null && expiresAt > Date.now() + 5_000;
 }
 
-export function setMockAuthSession(user: MockUser) {
-  localStorage.setItem(AUTH_TOKEN_KEY, "mock-token");
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+export function setAuthSession(tokens: AuthTokens) {
+  localStorage.setItem(AUTH_TOKEN_KEY, tokens.access_token);
+  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  sessionStorage.removeItem(AUTH_NOTICE_KEY);
 }
 
-export function clearAuthToken() {
+export function clearAuthSession(notice?: string) {
   localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_USER_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  if (notice) {
+    sessionStorage.setItem(AUTH_NOTICE_KEY, notice);
+  }
+}
+
+export function consumeAuthNotice() {
+  const notice = sessionStorage.getItem(AUTH_NOTICE_KEY);
+  sessionStorage.removeItem(AUTH_NOTICE_KEY);
+  return notice;
 }

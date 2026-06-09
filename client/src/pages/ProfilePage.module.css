@@ -1,0 +1,165 @@
+.page {
+  display: grid;
+  max-width: 68rem;
+  gap: 1.25rem;
+  margin: 0 auto;
+}
+
+.onboardingPage {
+  min-height: 100vh;
+  background: var(--color-light-bg);
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.onboardingPage .page {
+  max-width: 56rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header h1,
+.header h2,
+.header p,
+.section h2,
+.section p {
+  margin: 0;
+}
+
+.header h1,
+.header h2,
+.section h2 {
+  color: var(--color-dark-green);
+  letter-spacing: -0.02em;
+}
+
+.header h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+.header h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.header p,
+.section > p {
+  max-width: 44rem;
+  margin-top: 0.45rem;
+  color: var(--color-muted-text);
+  line-height: 1.6;
+}
+
+.brandLink {
+  color: var(--color-deep-emerald);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.section {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.fieldGroup {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.fieldLabel {
+  color: var(--color-dark-green);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.category {
+  display: flex;
+  min-height: 2.8rem;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid var(--color-soft-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-dark-green);
+  cursor: pointer;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.category:has(input:checked) {
+  border-color: rgba(22, 101, 52, 0.45);
+  background: rgba(22, 101, 52, 0.08);
+}
+
+.category input {
+  accent-color: var(--color-forest-green);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.toastWrap {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+}
+
+.passwordForm {
+  display: grid;
+  max-width: 36rem;
+  gap: 1rem;
+}
+
+.errorText {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+@media (max-width: 680px) {
+  .header,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .formGrid,
+  .categories {
+    grid-template-columns: 1fr;
+  }
+
+  .fullWidth {
+    grid-column: auto;
+  }
+}

@@ -282,6 +282,39 @@
   font-weight: 700;
 }
 
+.formNotice {
+  margin: -0.5rem 0 0;
+  border: 1px solid rgba(22, 101, 52, 0.2);
+  border-radius: 0.65rem;
+  background: rgba(22, 101, 52, 0.08);
+  color: #14532d;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.resendButton {
+  justify-self: center;
+  border: 0;
+  background: transparent;
+  color: var(--auth-forest);
+  cursor: pointer;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.resendButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.submitButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .cardPanel {
   position: absolute;
   inset: 0 auto 0 0;

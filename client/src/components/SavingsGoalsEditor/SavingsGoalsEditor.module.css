@@ -1,0 +1,29 @@
+.editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.goal {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.remove {
+  min-height: 2.85rem;
+}
+
+.add {
+  justify-self: start;
+}
+
+@media (max-width: 620px) {
+  .goal {
+    grid-template-columns: 1fr;
+  }
+
+  .remove {
+    justify-self: start;
+  }
+}

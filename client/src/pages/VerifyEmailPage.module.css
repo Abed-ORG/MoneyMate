@@ -1,0 +1,54 @@
+.page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(22, 101, 52, 0.18), transparent 25rem),
+    var(--color-light-bg);
+  padding: 1rem;
+}
+
+.card {
+  display: grid;
+  width: min(100%, 34rem);
+  place-items: center;
+  gap: 1rem;
+  padding: clamp(2rem, 6vw, 4rem);
+  text-align: center;
+}
+
+.card img {
+  width: 5rem;
+  filter: brightness(0.72) saturate(0.75);
+}
+
+.card h1,
+.card p {
+  margin: 0;
+}
+
+.card h1 {
+  color: var(--color-dark-green);
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+}
+
+.card p {
+  color: var(--color-muted-text);
+  line-height: 1.6;
+}
+
+.success,
+.error {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.success {
+  color: var(--color-forest-green) !important;
+}
+
+.error {
+  color: var(--color-error) !important;
+}

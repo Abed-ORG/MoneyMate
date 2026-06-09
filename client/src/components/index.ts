@@ -5,4 +5,9 @@ export { Input } from "./Input/Input";
 export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";
 export { Modal } from "./Modal/Modal";
 export { Select } from "./Select/Select";
+export {
+  createEmptySavingsGoal,
+  SavingsGoalsEditor,
+  type SavingsGoalDraft,
+} from "./SavingsGoalsEditor/SavingsGoalsEditor";
 export { Toast } from "./Toast/Toast";

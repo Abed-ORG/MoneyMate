@@ -6,7 +6,9 @@ import {
   useState,
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { setMockAuthSession } from "../utils/auth";
+import { useAuth } from "../contexts/AuthContext";
+import { api, type ApiError, getApiErrorMessage } from "../services/api";
+import { consumeAuthNotice } from "../utils/auth";
 import styles from "./AuthPages.module.css";
 
 type AuthMode = "login" | "register";
@@ -19,6 +21,8 @@ type RedirectState = {
   from?: {
     pathname?: string;
   };
+  verificationSent?: boolean;
+  email?: string;
 };
 
 type PasswordFieldProps = {
@@ -84,17 +88,6 @@ function PasswordField({
   );
 }
 
-function getDisplayNameFromEmail(email: string) {
-  const localPart = email.split("@")[0];
-  const displayName = localPart
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((part) => `${part[0]?.toUpperCase()}${part.slice(1)}`)
-    .join(" ");
-
-  return displayName || "Demo user";
-}
-
 export function AuthPage({ initialMode }: AuthPageProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [firstName, setFirstName] = useState("");
@@ -102,14 +95,36 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   const [loginPasswordVisible, setLoginPasswordVisible] = useState(false);
   const [registerPasswordVisible, setRegisterPasswordVisible] = useState(false);
   const [verifyPasswordVisible, setVerifyPasswordVisible] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [showResend, setShowResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [submittingMode, setSubmittingMode] = useState<AuthMode | null>(null);
   const navigationTimer = useRef<number>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoading, login, register } = useAuth();
+  const redirectState = location.state as RedirectState | null;
 
   useEffect(() => {
     setMode(initialMode);
   }, [initialMode]);
+
+  useEffect(() => {
+    if (redirectState?.email) {
+      setLoginEmail(redirectState.email);
+    }
+    if (redirectState?.verificationSent) {
+      setAuthNotice(
+        "Account created. Check your email and open the verification link before logging in.",
+      );
+      return;
+    }
+    if (!isLoading) {
+      setAuthNotice(consumeAuthNotice() ?? "");
+    }
+  }, [isLoading, redirectState?.email, redirectState?.verificationSent]);
 
   useEffect(
     () => () => {
@@ -128,23 +143,41 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     }
 
     setMode(nextMode);
+    setFormError("");
+    setAuthNotice("");
+    setShowResend(false);
     navigationTimer.current = window.setTimeout(() => {
       navigate(nextMode === "login" ? "/login" : "/register");
     }, 520);
   };
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
     const redirectTo =
-      (location.state as RedirectState | null)?.from?.pathname ?? "/dashboard";
+      redirectState?.from?.pathname ?? "/dashboard";
 
-    setMockAuthSession({ name: getDisplayNameFromEmail(email), email });
-    navigate(redirectTo, { replace: true });
+    setFormError("");
+    setAuthNotice("");
+    setSubmittingMode("login");
+    try {
+      const profile = await login({ email, password });
+      const destination =
+        !profile.onboarding_completed && !profile.onboarding_skipped
+          ? "/onboarding"
+          : redirectTo;
+      navigate(destination, { replace: true });
+    } catch (error) {
+      setFormError(getApiErrorMessage(error));
+      setShowResend((error as ApiError)?.status === 403);
+    } finally {
+      setSubmittingMode(null);
+    }
   };
 
-  const handleRegister = (event: FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "").trim();
@@ -152,16 +185,53 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     const verifyPassword = String(formData.get("verifyPassword") ?? "");
 
     if (password !== verifyPassword) {
-      setPasswordError("Passwords do not match.");
+      setFormError("Passwords do not match.");
       return;
     }
 
-    setPasswordError("");
-    setMockAuthSession({
-      name: `${firstName} ${lastName}`.trim(),
-      email,
-    });
-    navigate("/dashboard", { replace: true });
+    if (password.length < 8) {
+      setFormError("Password must contain at least 8 characters.");
+      return;
+    }
+
+    setFormError("");
+    setSubmittingMode("register");
+    try {
+      await register({
+        full_name: `${firstName} ${lastName}`.trim(),
+        email,
+        password,
+      });
+      navigate("/login", {
+        replace: true,
+        state: { verificationSent: true, email },
+      });
+    } catch (error) {
+      setFormError(getApiErrorMessage(error));
+    } finally {
+      setSubmittingMode(null);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!loginEmail.trim()) {
+      setFormError("Enter your email address first.");
+      return;
+    }
+    setIsResending(true);
+    setFormError("");
+    try {
+      const response = await api.post<{ message: string }>(
+        "/auth/resend-verification",
+        { email: loginEmail.trim() },
+      );
+      setAuthNotice(response.message);
+      setShowResend(false);
+    } catch (error) {
+      setFormError(getApiErrorMessage(error));
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const handleNameChange =
@@ -190,6 +260,10 @@ export function AuthPage({ initialMode }: AuthPageProps) {
           <form className={styles.authForm} onSubmit={handleLogin}>
             <h1>Log in to your MoneyMate account</h1>
 
+            {authNotice && isLogin ? (
+              <p className={styles.formNotice}>{authNotice}</p>
+            ) : null}
+
             <label className={styles.field} htmlFor="login-email">
               <span>Email</span>
               <input
@@ -200,6 +274,8 @@ export function AuthPage({ initialMode }: AuthPageProps) {
                 placeholder="Enter your email address"
                 required
                 type="email"
+                onChange={(event) => setLoginEmail(event.target.value)}
+                value={loginEmail}
               />
             </label>
 
@@ -214,8 +290,25 @@ export function AuthPage({ initialMode }: AuthPageProps) {
               visible={loginPasswordVisible}
             />
 
-            <button className={styles.submitButton} disabled={!isLogin} type="submit">
-              Log In
+            {formError && isLogin ? <p className={styles.formError}>{formError}</p> : null}
+
+            {showResend && isLogin ? (
+              <button
+                className={styles.resendButton}
+                disabled={isResending}
+                onClick={handleResendVerification}
+                type="button"
+              >
+                {isResending ? "Sending..." : "Resend verification email"}
+              </button>
+            ) : null}
+
+            <button
+              className={styles.submitButton}
+              disabled={!isLogin || submittingMode === "login"}
+              type="submit"
+            >
+              {submittingMode === "login" ? "Logging in..." : "Log In"}
             </button>
 
             <p className={styles.switchText}>
@@ -298,10 +391,14 @@ export function AuthPage({ initialMode }: AuthPageProps) {
               visible={verifyPasswordVisible}
             />
 
-            {passwordError ? <p className={styles.formError}>{passwordError}</p> : null}
+            {formError && !isLogin ? <p className={styles.formError}>{formError}</p> : null}
 
-            <button className={styles.submitButton} disabled={isLogin} type="submit">
-              Create Account
+            <button
+              className={styles.submitButton}
+              disabled={isLogin || submittingMode === "register"}
+              type="submit"
+            >
+              {submittingMode === "register" ? "Creating account..." : "Create Account"}
             </button>
 
             <p className={styles.switchText}>
