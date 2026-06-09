@@ -1,51 +1,56 @@
 # Dependencies
 node_modules/
- 
+
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
-*.egg-info/
-dist/
-build/
+*.so
 *.egg
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
 server/venv/
 server/.venv/
- 
+
 # Environment variables
 .env
 .env.local
 .env.*.local
- 
-# Build output
+
+# Frontend build output
 client/dist/
 client/.vite/
 *.tsbuildinfo
- 
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
- 
+
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
- 
+
 # Logs
 *.log
- 
-# Testing
+
+# Testing and tooling
 coverage/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 htmlcov/
 .coverage
- 
-# Alembic
+.cache/
+
+# Local databases
 *.db
 *.db-journal
- 
-# Misc
-.cache/
