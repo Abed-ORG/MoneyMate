@@ -1,7 +1,7 @@
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Card, FormField, Input } from "../components";
-import { setMockAuthToken } from "../utils/auth";
+import { setMockAuthSession } from "../utils/auth";
 import styles from "./AuthPages.module.css";
 
 type RedirectState = {
@@ -9,6 +9,17 @@ type RedirectState = {
     pathname?: string;
   };
 };
+
+function getDisplayNameFromEmail(email: string) {
+  const localPart = email.split("@")[0];
+  const name = localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => `${part[0]?.toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+
+  return name || "Demo user";
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -18,7 +29,11 @@ export function LoginPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMockAuthToken();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const name = getDisplayNameFromEmail(email);
+
+    setMockAuthSession({ name, email });
     navigate(redirectTo, { replace: true });
   };
 
@@ -38,10 +53,24 @@ export function LoginPage() {
         </p>
         <form className={styles.form} onSubmit={handleSubmit}>
           <FormField htmlFor="email" label="Email">
-            <Input id="email" name="email" placeholder="celine@example.com" type="email" />
+            <Input
+              autoComplete="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+              type="email"
+            />
           </FormField>
           <FormField htmlFor="password" label="Password">
-            <Input id="password" name="password" placeholder="Demo password" type="password" />
+            <Input
+              autoComplete="current-password"
+              id="password"
+              name="password"
+              placeholder="Demo password"
+              required
+              type="password"
+            />
           </FormField>
           <Button type="submit">Log in</Button>
         </form>

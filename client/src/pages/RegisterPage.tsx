@@ -1,7 +1,7 @@
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, FormField, Input } from "../components";
-import { setMockAuthToken } from "../utils/auth";
+import { setMockAuthSession } from "../utils/auth";
 import styles from "./AuthPages.module.css";
 
 export function RegisterPage() {
@@ -9,7 +9,11 @@ export function RegisterPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMockAuthToken();
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+
+    setMockAuthSession({ name, email });
     navigate("/dashboard", { replace: true });
   };
 
@@ -29,13 +33,33 @@ export function RegisterPage() {
         </p>
         <form className={styles.form} onSubmit={handleSubmit}>
           <FormField htmlFor="name" label="Full name">
-            <Input id="name" name="name" placeholder="Celine Salameh" />
+            <Input
+              autoComplete="name"
+              id="name"
+              name="name"
+              placeholder="Your name"
+              required
+            />
           </FormField>
           <FormField htmlFor="email" label="Email">
-            <Input id="email" name="email" placeholder="celine@example.com" type="email" />
+            <Input
+              autoComplete="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+              type="email"
+            />
           </FormField>
           <FormField htmlFor="password" label="Password" helperText="Use any demo password.">
-            <Input id="password" name="password" placeholder="Create a password" type="password" />
+            <Input
+              autoComplete="new-password"
+              id="password"
+              name="password"
+              placeholder="Create a password"
+              required
+              type="password"
+            />
           </FormField>
           <Button type="submit">Register</Button>
         </form>
