@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, func
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Text,
+    func,
+)
 from sqlalchemy.orm import relationship
 from app.db import Base
-import datetime
 
 
 class ChatHistory(Base):

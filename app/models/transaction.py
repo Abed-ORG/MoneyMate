@@ -1,7 +1,15 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, Boolean, func
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    Numeric,
+    DateTime,
+    Boolean,
+    func,
+)
 from sqlalchemy.orm import relationship
 from app.db import Base
-import datetime
 
 
 class Transaction(Base):

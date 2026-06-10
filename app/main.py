@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import os
 
 from app.routers import items
 from app.auth import routes as auth_routes
@@ -8,7 +9,6 @@ from app.routers import status as status_router
 app = FastAPI(title="FastAPI Scaffold")
 
 # CORS
-import os
 
 origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
 if origins.strip() == "*":

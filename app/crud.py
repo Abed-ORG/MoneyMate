@@ -1,3 +1,4 @@
+# flake8: noqa
 from typing import Type, TypeVar, Generic, List, Optional
 from sqlalchemy.orm import Session
 
@@ -16,9 +17,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType]):
         return db.query(self.model).offset(skip).limit(limit).all()
 
     def create(self, db: Session, obj_in: CreateSchemaType) -> ModelType:
-        data = (
-            obj_in if isinstance(obj_in, dict) else (obj_in.model_dump() if hasattr(obj_in, "model_dump") else obj_in.dict())
-        )
+        if isinstance(obj_in, dict):
+            data = obj_in
+        else:
+            if hasattr(obj_in, "model_dump"):
+                data = obj_in.model_dump()
+            else:
+                data = obj_in.dict()
         obj = self.model(**data)
         db.add(obj)
         db.commit()

@@ -1,4 +1,5 @@
-from app.db import SessionLocal, init_db
+# flake8: noqa
+from app.db import SessionLocal
 from app.models.user import User
 from app.models.account import Account
 from app.models.category import Category

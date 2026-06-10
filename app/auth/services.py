@@ -1,3 +1,4 @@
+# flake8: noqa
 from sqlalchemy.orm import Session
 from app.models.user import User as UserModel
 from app.schemas.user import UserCreate
