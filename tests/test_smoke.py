@@ -1,6 +1,3 @@
-from pathlib import Path
-import sys
-
 from fastapi.testclient import TestClient
 
 from fastapi import FastAPI
