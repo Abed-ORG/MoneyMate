@@ -8,7 +8,8 @@ from app.models.goal import Goal
 from app.models.chat_history import ChatHistory
 
 def create_seed_data():
-    init_db()
+    # Ensure migrations are applied before seeding. Do not call `init_db()`
+    # which uses `Base.metadata.create_all()`; use `alembic upgrade head` instead.
     db = SessionLocal()
     try:
         # sample user (idempotent)

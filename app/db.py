@@ -20,4 +20,7 @@ Base = declarative_base()
 
 def init_db():
     """Create database tables."""
-    Base.metadata.create_all(bind=engine)
+    # Alembic manages schema migrations; avoid create_all to prevent schema drift.
+    # If you need to create tables for quick local testing, run:
+    # Base.metadata.create_all(bind=engine)
+    return

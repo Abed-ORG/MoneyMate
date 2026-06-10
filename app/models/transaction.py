@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime, Boolean, func
 from sqlalchemy.orm import relationship
 from app.db import Base
 import datetime
@@ -12,8 +12,10 @@ class Transaction(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     amount = Column(Numeric(14, 2), nullable=False)
     description = Column(String, nullable=True)
-    occurred_at = Column(DateTime, default=datetime.datetime.utcnow)
+    occurred_at = Column(DateTime, server_default=func.now())
     is_transfer = Column(Boolean, default=False)
+    # direction/type: 'income' or 'expense' (nullable for legacy entries)
+    type = Column(String, nullable=True)
 
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")

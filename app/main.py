@@ -8,9 +8,17 @@ from app.routers import status as status_router
 app = FastAPI(title="FastAPI Scaffold")
 
 # CORS
+import os
+
+origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
+if origins.strip() == "*":
+    allow_origins = ["*"]
+else:
+    allow_origins = [o.strip() for o in origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
