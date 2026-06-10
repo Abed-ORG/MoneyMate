@@ -32,24 +32,33 @@ function getResponseMessage(data: unknown) {
   if (!data || typeof data !== "object") {
     return null;
   }
-  if ("detail" in data) {
-    if (typeof data.detail === "string") {
-      return data.detail;
-    }
-    if (Array.isArray(data.detail)) {
-      const messages = data.detail
-        .map((item) =>
-          item && typeof item === "object" && "msg" in item
-            ? String(item.msg)
-            : null,
-        )
-        .filter(Boolean);
-      return messages.length ? messages.join(" ") : null;
-    }
+
+  const record = data as Record<string, unknown>;
+  const detail = record["detail"];
+
+  if (typeof detail === "string") {
+    return detail;
   }
-  if ("message" in data && typeof data.message === "string") {
-    return data.message;
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+        const msg = (item as Record<string, unknown>)["msg"];
+        return msg != null ? String(msg) : null;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    return messages.length ? messages.join(" ") : null;
   }
+
+  const message = record["message"];
+  if (typeof message === "string") {
+    return message;
+  }
+
   return null;
 }
 
