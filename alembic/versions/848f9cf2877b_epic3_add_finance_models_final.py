@@ -76,14 +76,11 @@ def upgrade():
     )
 
     # remove old tables if present
-    with op.batch_alter_table('refresh_tokens', schema=None) as batch_op:
-        batch_op.drop_table('refresh_tokens') if False else None
+    # remove old tables if present (use IF EXISTS to avoid errors)
+    op.execute("DROP TABLE IF EXISTS refresh_tokens")
 
     # drop 'items' table if exists
-    try:
-        op.drop_table('items')
-    except Exception:
-        pass
+    op.execute("DROP TABLE IF EXISTS items")
 
 def downgrade():
     # drop new tables
