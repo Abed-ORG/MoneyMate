@@ -13,7 +13,7 @@ config = context.config
 fileConfig(config.config_file_name)
 
 from app.db import Base
-from app.models import item, user, refresh_token
+from app.models import user, account, transaction, category, budget, goal, chat_history
 
 target_metadata = Base.metadata
 
