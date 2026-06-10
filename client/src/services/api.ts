@@ -10,7 +10,7 @@ export type ApiError = {
   details?: unknown;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 function normalizeError(status: number, fallback: string, details?: unknown): ApiError {
   if (status >= 500) {
