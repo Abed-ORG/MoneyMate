@@ -270,7 +270,11 @@ export function SettingsPage() {
       });
       return;
     }
-    if (!monthlyIncome || Number(monthlyIncome) < 0) {
+    if (
+      monthlyIncome.trim() === "" ||
+      !Number.isFinite(Number(monthlyIncome)) ||
+      Number(monthlyIncome) < 0
+    ) {
       setActiveSection("financial");
       setNotice({
         title: "Profile not saved",
