@@ -69,8 +69,9 @@ def upgrade():
         sa.Column('category_id', sa.Integer(), sa.ForeignKey('categories.id'), nullable=True),
         sa.Column('amount', sa.Numeric(14, 2), nullable=False),
         sa.Column('description', sa.String(), nullable=True),
-        sa.Column('occurred_at', sa.DateTime(), nullable=True),
+        sa.Column('occurred_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('is_transfer', sa.Boolean(), server_default=sa.sql.expression.false()),
+        sa.Column('type', sa.String(), nullable=True),
     )
 
     # Note: do not drop existing tables here; refresh_tokens and items are
