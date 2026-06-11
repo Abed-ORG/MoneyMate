@@ -31,7 +31,11 @@ def create_seed_data():
             db.delete(existing)
             db.flush()
 
-        user = User(email="demo@example.com", hashed_password="notsecure", full_name="Demo User")
+        user = User(
+            email="demo@example.com",
+            hashed_password=get_password_hash("demo-password"),
+            full_name="Demo User",
+        )
         db.add(user)
         db.flush()
 
