@@ -1,17 +1,12 @@
-from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-
-# Use a minimal local app for the smoke test and call the handler
-# directly to avoid TestClient/httpx dependencies in CI.
-app = FastAPI()
-
-
-@app.get("/")
-def _root():
-    return {"message": "Hello, FastAPI!"}
+from app.main import app
 
 
 def test_root():
-    resp = _root()
-    assert isinstance(resp, dict)
-    assert resp.get("message") == "Hello, FastAPI!"
+    client = TestClient(app)
+    resp = client.get("/")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert isinstance(body, dict)
+    assert "message" in body

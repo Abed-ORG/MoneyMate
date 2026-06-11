@@ -4,17 +4,12 @@ from typing import List
 
 from app.schemas.item import Item, ItemCreate
 from app.services.item_service import get_item, get_items, create_item
-from app.db import SessionLocal
+from app.dependencies import get_db
 
 router = APIRouter()
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# use shared `get_db` from `app.dependencies`
 
 
 @router.post("/", response_model=Item)

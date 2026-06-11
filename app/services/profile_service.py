@@ -57,9 +57,10 @@ def complete_onboarding(
     payload: FinancialProfilePayload,
 ) -> FinancialProfile:
     profile = get_or_create_financial_profile(db, user_id)
-    for field, value in payload.model_dump().items():
-        if field == "savings_goals":
-            value = serialize_goals(payload.savings_goals)
+    values = payload.model_dump()
+    if "savings_goals" in values and payload.savings_goals is not None:
+        values["savings_goals"] = serialize_goals(payload.savings_goals)
+    for field, value in values.items():
         setattr(profile, field, value)
     profile.onboarding_completed = True
     profile.onboarding_skipped = False
