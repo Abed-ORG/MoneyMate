@@ -1,13 +1,13 @@
 # flake8: noqa
 """
 Revision ID: 848f9cf2877b
-Revises: 4fe9afa2c65c
+Revises: e8c1b4f2
 Create Date: 2026-06-05 13:12:15.188929
 """
 
 # revision identifiers, used by Alembic.
 revision = '848f9cf2877b'
-down_revision = 'b3831b707eda'
+down_revision = 'e8c1b4f2'
 branch_labels = None
 depends_on = None
 
