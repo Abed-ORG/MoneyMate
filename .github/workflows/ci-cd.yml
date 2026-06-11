@@ -35,6 +35,9 @@ jobs:
           black --check . || true
 
       - name: Run tests
+        env:
+          PYTHONPATH: .
+          SECRET_KEY: ci-test-secret-key
         run: |
           pytest -q
 
