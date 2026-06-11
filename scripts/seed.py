@@ -27,6 +27,7 @@ def create_seed_data():
             db.query(Goal).filter(Goal.user_id == existing.id).delete(synchronize_session=False)
             db.query(Category).filter(Category.user_id == existing.id).delete(synchronize_session=False)
             db.query(ChatHistory).filter(ChatHistory.user_id == existing.id).delete(synchronize_session=False)
+            db.query(RefreshToken).filter(RefreshToken.user_id == existing.id).delete(synchronize_session=False)
             db.delete(existing)
             db.flush()
 
