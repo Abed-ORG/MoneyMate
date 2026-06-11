@@ -6,16 +6,26 @@
   padding-bottom: 1rem;
 }
 
+.profileOverview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
 .profileCardWrap {
   display: grid;
-  place-items: center;
+  min-width: 0;
+  place-items: stretch;
 }
 
 .profileCard {
   position: relative;
   display: grid;
-  width: min(100%, 32rem);
+  width: 100%;
+  max-width: 32rem;
   aspect-ratio: 1.58 / 1;
+  justify-self: start;
   overflow: hidden;
   grid-template-rows: auto 1fr auto;
   border: 1px solid rgba(111, 239, 75, 0.42);
@@ -273,7 +283,6 @@
   max-width: 100%;
   align-items: center;
   justify-self: end;
-  gap: 1rem;
   border: 1px solid rgba(111, 239, 75, 0.2);
   border-radius: var(--mm-radius-md);
   background: rgba(1, 22, 17, 0.9);
@@ -284,25 +293,23 @@
   backdrop-filter: blur(16px);
 }
 
-.stickySave span {
-  max-width: 14rem;
-  color: var(--mm-text-muted);
-  font-size: 0.74rem;
-  line-height: 1.35;
-  text-align: right;
-}
-
 .settingsLayout {
-  display: grid;
   min-width: 0;
-  grid-template-columns: 17rem minmax(0, 1fr);
-  align-items: start;
-  gap: 1.25rem;
 }
 
 .sectionNav {
   display: grid;
+  min-height: 100%;
+  align-content: stretch;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
   gap: 0.45rem;
+  border: 1px solid rgba(111, 239, 75, 0.18);
+  border-radius: 1.45rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(81, 243, 91, 0.07), transparent 13rem),
+    linear-gradient(145deg, rgba(3, 35, 26, 0.82), rgba(0, 17, 13, 0.9));
+  padding: 0.75rem;
+  box-shadow: var(--mm-shadow-card);
 }
 
 .sectionNavItem {
@@ -550,12 +557,17 @@
 }
 
 @media (max-width: 920px) {
-  .settingsLayout {
+  .profileOverview {
     grid-template-columns: 1fr;
+  }
+
+  .profileCard {
+    justify-self: center;
   }
 
   .sectionNav {
     grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
+    grid-template-rows: 1fr;
     overflow-x: auto;
     padding-bottom: 0.35rem;
     scrollbar-color: rgba(81, 243, 91, 0.35) transparent;
@@ -587,7 +599,7 @@
     left: 1rem;
     width: calc(100% - 2rem);
     justify-self: stretch;
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 
   .formGrid,
@@ -644,10 +656,6 @@
 
   .stickySave {
     gap: 0.5rem;
-  }
-
-  .stickySave span {
-    display: none;
   }
 
   .stickySave button {

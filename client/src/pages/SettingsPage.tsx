@@ -403,93 +403,76 @@ export function SettingsPage() {
         </div>
       ) : null}
 
-      <section className={styles.profileCardWrap} aria-label="Profile card">
-        <div className={styles.profileCard}>
-          <div className={styles.cardTop}>
-            <div className={styles.cardBrand}>
-              <img src="/moneymate-logo.png" alt="" />
-              <strong>
-                Money<span>Mate</span>
-              </strong>
-            </div>
-            <svg className={styles.contactless} aria-label="Contactless" viewBox="0 0 46 46">
-              <path d="M14 16c5 4 5 10 0 14M20 11c9 7 9 17 0 24M27 7c13 10 13 22 0 32" />
-            </svg>
-          </div>
-
-          <div className={styles.cardMiddle}>
-            <div className={styles.chip} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className={styles.cardAvatarWrap}>
-              <div className={styles.cardAvatar}>
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt={`${displayName} profile preview`} />
-                ) : (
-                  <span>{initials}</span>
-                )}
+      <div className={styles.profileOverview}>
+        <section className={styles.profileCardWrap} aria-label="Profile card">
+          <div className={styles.profileCard}>
+            <div className={styles.cardTop}>
+              <div className={styles.cardBrand}>
+                <img src="/moneymate-logo.png" alt="" />
+                <strong>
+                  Money<span>Mate</span>
+                </strong>
               </div>
-              <button
-                aria-label="Choose profile picture"
-                className={styles.avatarEdit}
-                onClick={() => fileInputRef.current?.click()}
-                type="button"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M7 7.5 8.5 5h7L17 7.5h2A2 2 0 0 1 21 9.5v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2Z" />
-                  <circle cx="12" cy="13" r="3.5" />
-                </svg>
-              </button>
-              <input
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                className={styles.avatarInput}
-                id="profile-avatar"
-                onChange={handleAvatarChange}
-                ref={fileInputRef}
-                type="file"
-              />
+              <svg className={styles.contactless} aria-label="Contactless" viewBox="0 0 46 46">
+                <path d="M14 16c5 4 5 10 0 14M20 11c9 7 9 17 0 24M27 7c13 10 13 22 0 32" />
+              </svg>
+            </div>
+
+            <div className={styles.cardMiddle}>
+              <div className={styles.chip} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className={styles.cardAvatarWrap}>
+                <div className={styles.cardAvatar}>
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt={`${displayName} profile preview`} />
+                  ) : (
+                    <span>{initials}</span>
+                  )}
+                </div>
+                <button
+                  aria-label="Choose profile picture"
+                  className={styles.avatarEdit}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 7.5 8.5 5h7L17 7.5h2A2 2 0 0 1 21 9.5v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2Z" />
+                    <circle cx="12" cy="13" r="3.5" />
+                  </svg>
+                </button>
+                <input
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  className={styles.avatarInput}
+                  id="profile-avatar"
+                  onChange={handleAvatarChange}
+                  ref={fileInputRef}
+                  type="file"
+                />
+              </div>
+            </div>
+
+            <div className={styles.cardDetails}>
+              <div className={styles.cardIdentity}>
+                <span>Cardholder</span>
+                <strong>{displayName}</strong>
+                <small>{displayEmail}</small>
+              </div>
+              <div className={styles.cardMetric}>
+                <span>Monthly income</span>
+                <strong>{incomeLabel}</strong>
+              </div>
+              <div className={styles.cardMetric}>
+                <span>Currency</span>
+                <strong>{currency}</strong>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className={styles.cardDetails}>
-            <div className={styles.cardIdentity}>
-              <span>Cardholder</span>
-              <strong>{displayName}</strong>
-              <small>{displayEmail}</small>
-            </div>
-            <div className={styles.cardMetric}>
-              <span>Monthly income</span>
-              <strong>{incomeLabel}</strong>
-            </div>
-            <div className={styles.cardMetric}>
-              <span>Currency</span>
-              <strong>{currency}</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <form
-        className={styles.hiddenProfileForm}
-        id="profile-settings-form"
-        onSubmit={handleProfileSave}
-      />
-
-      <div className={styles.stickySave}>
-        <span>Save account, photo, and financial preferences</span>
-        <Button
-          disabled={isSaving}
-          form="profile-settings-form"
-          type="submit"
-        >
-          {isSaving ? "Saving..." : "Save changes"}
-        </Button>
-      </div>
-
-      <div className={styles.settingsLayout}>
         <nav className={styles.sectionNav} aria-label="Settings sections">
           {settingsSections.map((section) => (
             <button
@@ -509,7 +492,25 @@ export function SettingsPage() {
             </button>
           ))}
         </nav>
+      </div>
 
+      <form
+        className={styles.hiddenProfileForm}
+        id="profile-settings-form"
+        onSubmit={handleProfileSave}
+      />
+
+      <div className={styles.stickySave}>
+        <Button
+          disabled={isSaving}
+          form="profile-settings-form"
+          type="submit"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </Button>
+      </div>
+
+      <div className={styles.settingsLayout}>
         <div className={styles.sectionContent}>
           {activeSection !== "security" ? (
             <div className={styles.profileForm}>
