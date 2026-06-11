@@ -31,6 +31,7 @@ def revoke_refresh_token(db: Session, token: str):
     return db_token
 
 
+<<<<<<< HEAD
 def get_user_for_refresh_token(db: Session, token: str):
     db_token = (
         db.query(RefreshToken)
@@ -48,3 +49,13 @@ def get_user_for_refresh_token(db: Session, token: str):
         return None
 
     return db.query(User).filter(User.id == db_token.user_id).first()
+def is_refresh_token_valid(db: Session, token: str) -> bool:
+    db_token = (
+        db.query(RefreshToken)
+        .filter(
+            RefreshToken.token == token,
+            RefreshToken.revoked.is_(False),
+        )
+        .first()
+    )
+    return db_token is not None
