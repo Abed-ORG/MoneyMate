@@ -20,8 +20,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    # Lazy import to break circular import:
-    #   dependencies.py -> auth/utils.py -> auth/__init__.py -> auth/routes.py -> dependencies.py
+    # Lazy import to break circular import
     from app.auth.utils import decode_access_token
 
     credentials_error = HTTPException(
