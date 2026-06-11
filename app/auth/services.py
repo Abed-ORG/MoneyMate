@@ -1,4 +1,5 @@
 # flake8: noqa
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.services_refresh import create_refresh_token

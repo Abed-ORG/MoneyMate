@@ -7,7 +7,7 @@ Create Date: 2026-06-05 13:12:15.188929
 
 # revision identifiers, used by Alembic.
 revision = '848f9cf2877b'
-down_revision = '4fe9afa2c65c'
+down_revision = 'b3831b707eda'
 branch_labels = None
 depends_on = None
 
@@ -76,12 +76,9 @@ def upgrade():
         sa.Column('is_transfer', sa.Boolean(), server_default=sa.sql.expression.false()),
     )
 
-    # remove old tables if present
-    # remove old tables if present (use IF EXISTS to avoid errors)
-    op.execute("DROP TABLE IF EXISTS refresh_tokens")
-
-    # drop 'items' table if exists
-    op.execute("DROP TABLE IF EXISTS items")
+    # Note: do not drop existing tables here; refresh_tokens and items are
+    # created by later migrations or may be present. Removing DROP TABLE
+    # ensures migrations run in the correct order without destructive ops.
 
 def downgrade():
     # drop new tables
