@@ -23,7 +23,7 @@ def upgrade():
         sa.Column('type', sa.String(), nullable=False),
         sa.Column('balance', sa.Numeric(14, 2), server_default='0'),
         sa.Column('currency', sa.String(), server_default='USD'),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
 
     op.create_table(
