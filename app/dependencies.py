@@ -2,7 +2,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.auth.utils import decode_access_token
 from app.db import SessionLocal
 from app.models.user import User
 
@@ -21,6 +20,10 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
+    # Lazy import to break circular import:
+    #   dependencies.py -> auth/utils.py -> auth/__init__.py -> auth/routes.py -> dependencies.py
+    from app.auth.utils import decode_access_token
+
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Your session is invalid or has expired. Please log in again.",

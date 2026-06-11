@@ -1,5 +1,6 @@
 # flake8: noqa
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.auth.services import (
@@ -14,7 +15,7 @@ from app.auth.services_refresh import (
     get_user_for_refresh_token,
     revoke_refresh_token,
 )
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import (
     LoginRequest,
@@ -34,6 +35,19 @@ from app.services.email_service import (
 )
 
 router = APIRouter()
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _get_current_user_dep(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+):
+    """Lazy import of get_current_user to break circular import:
+    dependencies.py -> auth/utils.py -> auth/__init__.py -> auth/routes.py -> dependencies.py
+    """
+    from app.dependencies import get_current_user as _get_current_user
+
+    return _get_current_user(credentials, db)
 
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
@@ -132,5 +146,7 @@ def logout(payload: LogoutRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=User)
-def read_current_user(current_user: UserModel = Depends(get_current_user)):
+def read_current_user(
+    current_user: UserModel = Depends(_get_current_user_dep),
+):
     return current_user
