@@ -106,7 +106,7 @@ def create_seed_data():
     except Exception as e:
         db.rollback()
         print("Failed to create seed data:", e)
-    finally:
+        raise
         db.close()
 
 
