@@ -36,11 +36,9 @@ def upgrade():
 
     op.create_table(
         'chat_history',
-        sa.Column('id', sa.Integer(), primary_key=True),
-        sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False),
         sa.Column('role', sa.String(), nullable=False),
         sa.Column('message', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
 
     op.create_table(
