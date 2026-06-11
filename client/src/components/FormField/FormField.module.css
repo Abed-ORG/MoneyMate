@@ -4,7 +4,7 @@
 }
 
 .label {
-  color: var(--color-dark-green);
+  color: var(--mm-text-soft);
   font-size: 0.92rem;
   font-weight: 700;
 }
@@ -16,7 +16,7 @@
 }
 
 .helper {
-  color: var(--color-muted-text);
+  color: var(--mm-text-muted);
 }
 
 .error {

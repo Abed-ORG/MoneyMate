@@ -32,9 +32,11 @@ export function AppShell() {
     <div className={styles.shell}>
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.brand}>
-          <span className={styles.brandMark}>M</span>
+          <img className={styles.brandMark} src="/moneymate-logo.png" alt="" />
           <div>
-            <strong>MoneyMate</strong>
+            <strong>
+              Money<span>Mate</span>
+            </strong>
             <span>Smart budgeting</span>
           </div>
         </div>
@@ -48,10 +50,15 @@ export function AppShell() {
               onClick={() => setIsSidebarOpen(false)}
               to={item.path}
             >
-              {item.label}
+              <span className={styles.navIndicator} aria-hidden="true" />
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
+        <div className={styles.sidebarNote}>
+          <span>Money in focus</span>
+          <p>Build stronger habits, one clear decision at a time.</p>
+        </div>
       </aside>
 
       {isSidebarOpen ? (

@@ -1,12 +1,33 @@
 .page {
   display: grid;
+  min-height: min(34rem, calc(100vh - 10rem));
+  place-items: center;
   gap: 1rem;
 }
 
 .card {
+  position: relative;
   display: grid;
+  width: min(100%, 48rem);
+  min-height: 16rem;
+  overflow: hidden;
+  align-content: center;
   gap: 0.55rem;
-  padding: 1.25rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.card::before {
+  position: absolute;
+  top: -5rem;
+  right: -4rem;
+  width: 14rem;
+  height: 14rem;
+  border: 1px solid rgba(81, 243, 91, 0.12);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2.5rem rgba(81, 243, 91, 0.018),
+    0 0 0 5rem rgba(81, 243, 91, 0.012);
+  content: "";
 }
 
 .card h2,
@@ -15,13 +36,13 @@
 }
 
 .card h2 {
-  color: var(--color-dark-green);
-  font-size: 1.35rem;
-  letter-spacing: 0;
+  color: var(--mm-text);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  letter-spacing: -0.045em;
 }
 
 .card p {
   max-width: 48rem;
-  color: var(--color-muted-text);
+  color: var(--mm-text-soft);
   line-height: 1.65;
 }

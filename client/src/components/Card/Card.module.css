@@ -1,6 +1,8 @@
 .card {
-  border: 1px solid var(--color-soft-border);
-  border-radius: 8px;
-  background: var(--color-white);
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(53, 157, 59, 0.1), transparent 14rem),
+    linear-gradient(145deg, rgba(3, 35, 26, 0.92), rgba(0, 17, 13, 0.94));
+  box-shadow: var(--mm-shadow-card);
 }
