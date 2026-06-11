@@ -253,11 +253,13 @@ export function SettingsPage() {
 
   const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const incompleteGoal = savingsGoals.find(
-      (goal) =>
-        (goal.name.trim() && Number(goal.targetAmount) <= 0) ||
-        (!goal.name.trim() && Number(goal.targetAmount) > 0),
-    );
+    const incompleteGoal = savingsGoals.find((goal) => {
+      const hasName = Boolean(goal.name.trim());
+      const hasAmount = Boolean(goal.targetAmount.trim());
+      const amount = Number(goal.targetAmount);
+      const validAmount = Number.isFinite(amount) && amount > 0;
+      return (hasName || hasAmount) && (!hasName || !validAmount);
+    });
 
     if (!fullName.trim() || !email.trim()) {
       setActiveSection("personal");
