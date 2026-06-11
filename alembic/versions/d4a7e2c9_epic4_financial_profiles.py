@@ -16,7 +16,10 @@ depends_on = None
 
 
 def upgrade():
-    op.execute("UPDATE users SET full_name = 'MoneyMate User' WHERE full_name IS NULL")
+    op.execute(
+        "UPDATE users SET full_name = 'MoneyMate User' "
+        "WHERE full_name IS NULL"
+    )
     with op.batch_alter_table("users") as batch_op:
         batch_op.alter_column(
             "full_name",
@@ -25,10 +28,27 @@ def upgrade():
         )
     op.create_table(
         "financial_profiles",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("monthly_income", sa.Numeric(precision=14, scale=2), nullable=True),
-        sa.Column("currency", sa.String(length=3), nullable=False, server_default="USD"),
+        sa.Column(
+            "id",
+            sa.Integer(),
+            nullable=False,
+        ),
+        sa.Column(
+            "user_id",
+            sa.Integer(),
+            nullable=False,
+        ),
+        sa.Column(
+            "monthly_income",
+            sa.Numeric(precision=14, scale=2),
+            nullable=True,
+        ),
+        sa.Column(
+            "currency",
+            sa.String(length=3),
+            nullable=False,
+            server_default="USD",
+        ),
         sa.Column(
             "spending_categories",
             sa.JSON(),
@@ -53,7 +73,9 @@ def upgrade():
             nullable=False,
             server_default=sa.text("false"),
         ),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id"),
     )
@@ -76,7 +98,9 @@ def downgrade():
         op.f("ix_financial_profiles_user_id"),
         table_name="financial_profiles",
     )
-    op.drop_index(op.f("ix_financial_profiles_id"), table_name="financial_profiles")
+    op.drop_index(
+        op.f("ix_financial_profiles_id"), table_name="financial_profiles"
+    )
     op.drop_table("financial_profiles")
     with op.batch_alter_table("users") as batch_op:
         batch_op.alter_column(

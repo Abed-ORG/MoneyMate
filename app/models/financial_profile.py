@@ -1,4 +1,12 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, JSON, Numeric, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    JSON,
+    Numeric,
+    String,
+)
 from sqlalchemy.orm import relationship
 
 from app.db import Base

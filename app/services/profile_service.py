@@ -1,12 +1,21 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth.services import DuplicateEmailError, normalize_email
-from app.auth.utils import get_password_hash, verify_password
+from app.auth.services import (
+    DuplicateEmailError,
+    normalize_email,
+)
+from app.auth.utils import (
+    get_password_hash,
+    verify_password,
+)
 from app.models.financial_profile import FinancialProfile
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.schemas.financial_profile import FinancialProfilePayload, FinancialProfileUpdate
+from app.schemas.financial_profile import (
+    FinancialProfilePayload,
+    FinancialProfileUpdate,
+)
 from app.schemas.user import PasswordChange, UserUpdate
 
 
@@ -16,12 +25,17 @@ class InvalidCurrentPasswordError(Exception):
 
 def serialize_goals(goals):
     return [
-        {"name": goal.name, "target_amount": float(goal.target_amount)}
+        {
+            "name": goal.name,
+            "target_amount": float(goal.target_amount),
+        }
         for goal in goals
     ]
 
 
-def get_or_create_financial_profile(db: Session, user_id: int) -> FinancialProfile:
+def get_or_create_financial_profile(
+    db: Session, user_id: int
+) -> FinancialProfile:
     profile = (
         db.query(FinancialProfile)
         .filter(FinancialProfile.user_id == user_id)
@@ -96,7 +110,10 @@ def update_account(
         user.email_verified_at = None
         (
             db.query(RefreshToken)
-            .filter(RefreshToken.user_id == user.id, RefreshToken.revoked.is_(False))
+            .filter(
+                RefreshToken.user_id == user.id,
+                RefreshToken.revoked.is_(False),
+            )
             .update({"revoked": True}, synchronize_session=False)
         )
     try:
@@ -115,12 +132,17 @@ def change_password(db: Session, user: User, payload: PasswordChange) -> None:
     if not verify_password(payload.current_password, user.hashed_password):
         raise InvalidCurrentPasswordError
     if verify_password(payload.new_password, user.hashed_password):
-        raise ValueError("Your new password must be different from your current password.")
+        raise ValueError(
+            "Your new password must be different from your current password."
+        )
     user.hashed_password = get_password_hash(payload.new_password)
     db.add(user)
     (
         db.query(RefreshToken)
-        .filter(RefreshToken.user_id == user.id, RefreshToken.revoked.is_(False))
+        .filter(
+            RefreshToken.user_id == user.id,
+            RefreshToken.revoked.is_(False),
+        )
         .update({"revoked": True}, synchronize_session=False)
     )
     db.commit()

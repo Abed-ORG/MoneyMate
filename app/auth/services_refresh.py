@@ -31,7 +31,6 @@ def revoke_refresh_token(db: Session, token: str):
     return db_token
 
 
-<<<<<<< HEAD
 def get_user_for_refresh_token(db: Session, token: str):
     db_token = (
         db.query(RefreshToken)
@@ -44,11 +43,16 @@ def get_user_for_refresh_token(db: Session, token: str):
     created_at = db_token.created_at
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=timezone.utc)
-    if created_at + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS) <= datetime.now(timezone.utc):
+    if (
+        created_at + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        <= datetime.now(timezone.utc)
+    ):
         revoke_refresh_token(db, token)
         return None
 
     return db.query(User).filter(User.id == db_token.user_id).first()
+
+
 def is_refresh_token_valid(db: Session, token: str) -> bool:
     db_token = (
         db.query(RefreshToken)

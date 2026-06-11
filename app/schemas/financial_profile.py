@@ -49,7 +49,9 @@ class FinancialProfileUpdate(BaseModel):
 
     @field_validator("spending_categories")
     @classmethod
-    def normalize_categories(cls, values: Optional[List[str]]) -> Optional[List[str]]:
+    def normalize_categories(
+        cls, values: Optional[List[str]]
+    ) -> Optional[List[str]]:
         if values is None:
             return values
         normalized = []
