@@ -1,10 +1,10 @@
 .input {
   width: 100%;
   min-height: 2.85rem;
-  border: 1px solid var(--color-soft-border);
-  border-radius: 8px;
-  background: var(--color-white);
-  color: var(--color-dark-green);
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(0, 17, 13, 0.78);
+  color: var(--mm-text);
   padding: 0.7rem 0.85rem;
   transition:
     border-color 160ms ease,
@@ -12,18 +12,21 @@
 }
 
 .input::placeholder {
-  color: #8b9890;
+  color: var(--mm-text-muted);
 }
 
 .input:focus {
-  border-color: var(--color-forest-green);
-  box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.12);
+  border-color: var(--mm-accent-soft);
+  background: rgba(2, 30, 22, 0.92);
+  box-shadow:
+    0 0 0 3px rgba(81, 243, 91, 0.1),
+    0 0 1rem rgba(81, 243, 91, 0.1);
   outline: none;
 }
 
 .input:disabled {
-  background: #eef4f1;
-  color: var(--color-muted-text);
+  background: rgba(8, 35, 27, 0.48);
+  color: var(--mm-text-muted);
   cursor: not-allowed;
 }
 

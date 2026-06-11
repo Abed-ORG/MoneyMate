@@ -22,21 +22,33 @@ export function SpendingChart() {
     <div className={styles.chartWrap}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={spendingData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-          <CartesianGrid stroke="#DDE7E2" strokeDasharray="4 4" vertical={false} />
+          <CartesianGrid
+            stroke="rgba(111, 239, 75, 0.14)"
+            strokeDasharray="4 4"
+            vertical={false}
+          />
           <XAxis
             axisLine={false}
             dataKey="category"
-            tick={{ fill: "#647067", fontSize: 12 }}
+            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
             tickLine={false}
           />
           <YAxis
             axisLine={false}
-            tick={{ fill: "#647067", fontSize: 12 }}
+            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
             tickFormatter={(value) => `$${value}`}
             tickLine={false}
           />
           <Tooltip
-            cursor={{ fill: "rgba(22, 101, 52, 0.08)" }}
+            contentStyle={{
+              background: "rgba(2, 29, 22, 0.96)",
+              border: "1px solid rgba(111, 239, 75, 0.34)",
+              borderRadius: "12px",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
+              color: "#f8fff9",
+            }}
+            cursor={{ fill: "rgba(81, 243, 91, 0.06)" }}
+            labelStyle={{ color: "#78ff68", fontWeight: 800 }}
             formatter={(value, name) => {
               const amount = typeof value === "number" ? value : Number(value ?? 0);
 
@@ -46,8 +58,8 @@ export function SpendingChart() {
               ];
             }}
           />
-          <Bar dataKey="budget" fill="#DDE7E2" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="spent" fill="#166534" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="budget" fill="rgba(120, 255, 104, 0.18)" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="spent" fill="#51f35b" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

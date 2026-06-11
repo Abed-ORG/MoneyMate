@@ -3,6 +3,10 @@
   height: 22rem;
 }
 
+.chartWrap :global(.recharts-default-tooltip) {
+  backdrop-filter: blur(14px);
+}
+
 @media (max-width: 640px) {
   .chartWrap {
     height: 18rem;

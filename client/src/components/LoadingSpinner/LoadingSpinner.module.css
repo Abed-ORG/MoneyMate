@@ -2,15 +2,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  color: var(--color-muted-text);
+  color: var(--mm-text-soft);
   font-weight: 700;
 }
 
 .spinner {
   width: 1.25rem;
   height: 1.25rem;
-  border: 3px solid rgba(6, 78, 59, 0.16);
-  border-top-color: var(--color-forest-green);
+  border: 3px solid rgba(81, 243, 91, 0.16);
+  border-top-color: var(--mm-accent-soft);
+  box-shadow: 0 0 0.8rem rgba(81, 243, 91, 0.16);
   border-radius: 999px;
   animation: spin 800ms linear infinite;
 }
