@@ -238,6 +238,9 @@ export function SettingsPage() {
 
     try {
       setAvatarPreview(await fileToDataUrl(file));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setNotice(null);
     } catch (error) {
       setNotice({
