@@ -22,6 +22,9 @@ from app.models import (
     budget,
     goal,
     chat_history,
+    financial_profile,
+    item,
+    refresh_token,
 )  # noqa: F401
 
 target_metadata = Base.metadata

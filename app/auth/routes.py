@@ -1,5 +1,5 @@
 # flake8: noqa
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.schemas.user import UserCreate, User
