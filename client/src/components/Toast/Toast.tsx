@@ -22,7 +22,12 @@ export function Toast({
         <p className={styles.message}>{message}</p>
       </div>
       {onClose ? (
-        <button className={styles.close} aria-label="Dismiss notification" onClick={onClose}>
+        <button
+          className={styles.close}
+          aria-label="Dismiss notification"
+          onClick={onClose}
+          type="button"
+        >
           x
         </button>
       ) : null}

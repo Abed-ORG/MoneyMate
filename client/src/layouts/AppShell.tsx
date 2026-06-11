@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components";
-import { clearAuthToken, getMockUser } from "../utils/auth";
+import { useAuth } from "../contexts/AuthContext";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import styles from "./AppShell.module.css";
 
@@ -18,13 +18,13 @@ export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const pageTitle = getPageTitle(location.pathname);
-  const user = getMockUser();
-  const displayName = user?.name || "Demo user";
-  const initials = getInitials(displayName) || "DU";
+  const displayName = user?.full_name || "MoneyMate user";
+  const initials = getInitials(displayName) || "MM";
 
-  const handleLogout = () => {
-    clearAuthToken();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login", { replace: true });
   };
 
@@ -83,7 +83,7 @@ export function AppShell() {
               <span className={styles.avatar}>{initials}</span>
               <div>
                 <strong>{displayName}</strong>
-                <span>{user?.email || "Demo session"}</span>
+                <span>{user?.email}</span>
               </div>
             </div>
             <Button variant="secondary" onClick={handleLogout}>
