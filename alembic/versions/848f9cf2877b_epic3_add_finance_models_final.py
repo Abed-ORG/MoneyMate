@@ -55,11 +55,10 @@ def upgrade():
     op.create_table(
         'budgets',
         sa.Column('id', sa.Integer(), primary_key=True),
-        sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id'), nullable=False),
         sa.Column('category_id', sa.Integer(), sa.ForeignKey('categories.id'), nullable=True),
         sa.Column('amount', sa.Numeric(14, 2), nullable=False),
         sa.Column('period', sa.String(), nullable=False),
-        sa.Column('start_date', sa.DateTime(), nullable=True),
+        sa.Column('start_date', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('end_date', sa.DateTime(), nullable=True),
     )
 
