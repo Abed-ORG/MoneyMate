@@ -10,6 +10,9 @@
   --color-warning: #f59e0b;
   --color-error: #dc2626;
   --shadow-card: 0 14px 36px rgba(2, 44, 34, 0.08);
+  --shadow-neon:
+    0 0 1rem rgba(33, 235, 104, 0.48),
+    0 0 2.4rem rgba(33, 235, 104, 0.18);
   color: var(--color-dark-green);
   background: var(--color-light-bg);
   font-family:

@@ -1,4 +1,4 @@
-import { clearAuthToken, getAuthToken } from "../utils/auth";
+import { clearAuthSession, getAuthToken } from "../utils/auth";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown> | null;
@@ -10,17 +10,9 @@ export type ApiError = {
   details?: unknown;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "";
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 function normalizeError(status: number, fallback: string, details?: unknown): ApiError {
-  if (status === 401) {
-    return {
-      status,
-      message: "Your session has expired. Please log in again.",
-      details,
-    };
-  }
-
   if (status >= 500) {
     return {
       status,
@@ -36,7 +28,45 @@ function normalizeError(status: number, fallback: string, details?: unknown): Ap
   };
 }
 
+function getResponseMessage(data: unknown) {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+  const detail = record["detail"];
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+        const msg = (item as Record<string, unknown>)["msg"];
+        return msg != null ? String(msg) : null;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    return messages.length ? messages.join(" ") : null;
+  }
+
+  const message = record["message"];
+  if (typeof message === "string") {
+    return message;
+  }
+
+  return null;
+}
+
 async function parseResponse(response: Response) {
+  if (response.status === 204) {
+    return null;
+  }
+
   const contentType = response.headers.get("content-type");
 
   if (contentType?.includes("application/json")) {
@@ -83,15 +113,19 @@ export async function apiRequest<T>(
   if (!response.ok) {
     const error = normalizeError(
       response.status,
-      typeof data === "object" && data && "message" in data
-        ? String(data.message)
-        : "Something went wrong while contacting MoneyMate.",
+      getResponseMessage(data) ?? "Something went wrong while contacting MoneyMate.",
       data,
     );
 
     if (response.status === 401) {
-      clearAuthToken();
-      window.location.assign("/login");
+      const message =
+        getResponseMessage(data) ?? "Your session has expired. Please log in again.";
+      clearAuthSession(message);
+      window.dispatchEvent(new CustomEvent("moneymate:unauthorized"));
+      const publicPaths = ["/", "/login", "/register", "/verify-email"];
+      if (!publicPaths.includes(window.location.pathname)) {
+        window.location.assign("/login");
+      }
     }
 
     throw error;
@@ -110,3 +144,15 @@ export const api = {
   delete: <T>(endpoint: string, options?: ApiRequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: "DELETE" }),
 };
+
+export function getApiErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
+}

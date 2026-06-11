@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from jose import jwt
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
 import os
 
 # Use Argon2 via passlib to avoid bcrypt binary issues on Windows
@@ -19,9 +19,52 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: int = 60 * 24):
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+EMAIL_VERIFICATION_EXPIRE_HOURS = int(
+    os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
+)
+
+
+def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MINUTES):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire})
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_delta)
+    to_encode.update({"exp": expire, "purpose": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def decode_token(token: str) -> dict | None:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+
+def decode_access_token(token: str) -> dict | None:
+    payload = decode_token(token)
+    if not payload or payload.get("purpose") != "access":
+        return None
+    return payload
+
+
+def create_email_verification_token(user_id: int, email: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(
+        hours=EMAIL_VERIFICATION_EXPIRE_HOURS
+    )
+    return jwt.encode(
+        {
+            "sub": str(user_id),
+            "email": email,
+            "purpose": "verify_email",
+            "exp": expire,
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+
+
+def decode_email_verification_token(token: str) -> dict | None:
+    payload = decode_token(token)
+    if not payload or payload.get("purpose") != "verify_email":
+        return None
+    return payload
