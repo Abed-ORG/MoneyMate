@@ -36,8 +36,9 @@
 .avatar {
   display: inline-grid;
   flex: 0 0 auto;
+  overflow: hidden;
   place-items: center;
-  border-radius: var(--mm-radius-sm);
+  border-radius: 50%;
   font-weight: 900;
 }
 
@@ -209,6 +210,12 @@
   background: rgba(81, 243, 91, 0.12);
   color: var(--mm-accent-soft);
   box-shadow: 0 0 1rem rgba(81, 243, 91, 0.12);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .menuButton {

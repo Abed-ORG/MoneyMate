@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
+import {
+  getProfileAvatar,
+  subscribeToProfileAvatar,
+} from "../utils/profileAvatar";
 import styles from "./AppShell.module.css";
 
 function getInitials(name: string) {
@@ -22,6 +26,16 @@ export function AppShell() {
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user?.full_name || "MoneyMate user";
   const initials = getInitials(displayName) || "MM";
+  const [profileAvatar, setProfileAvatar] = useState("");
+
+  useEffect(() => {
+    setProfileAvatar(getProfileAvatar(user?.id));
+    return subscribeToProfileAvatar((userId, dataUrl) => {
+      if (userId === user?.id) {
+        setProfileAvatar(dataUrl);
+      }
+    });
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await logout();
@@ -87,7 +101,13 @@ export function AppShell() {
           </div>
           <div className={styles.userArea}>
             <div className={styles.user}>
-              <span className={styles.avatar}>{initials}</span>
+              <span className={styles.avatar}>
+                {profileAvatar ? (
+                  <img src={profileAvatar} alt={`${displayName} profile`} />
+                ) : (
+                  initials
+                )}
+              </span>
               <div>
                 <strong>{displayName}</strong>
                 <span>{user?.email}</span>

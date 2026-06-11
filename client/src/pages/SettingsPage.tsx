@@ -19,6 +19,7 @@ import {
 } from "../components";
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { api, getApiErrorMessage } from "../services/api";
+import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import styles from "./SettingsPage.module.css";
 
 const categories = [
@@ -33,13 +34,66 @@ const categories = [
   "Travel",
 ];
 
+const supportedAvatarTypes = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+]);
+const maxAvatarSize = 2 * 1024 * 1024;
+
 type Notice = {
   title: string;
   message: string;
   variant: "success" | "error";
 };
 
+type SettingsSection =
+  | "personal"
+  | "financial"
+  | "categories"
+  | "goals"
+  | "security";
+
 type SectionIconName = "profile" | "wallet" | "categories" | "goal" | "security";
+
+const settingsSections: Array<{
+  id: SettingsSection;
+  label: string;
+  description: string;
+  icon: SectionIconName;
+}> = [
+  {
+    id: "personal",
+    label: "Personal information",
+    description: "Name, email, and profile photo",
+    icon: "profile",
+  },
+  {
+    id: "financial",
+    label: "Financial preferences",
+    description: "Income and preferred currency",
+    icon: "wallet",
+  },
+  {
+    id: "categories",
+    label: "Spending categories",
+    description: "Choose what MoneyMate tracks",
+    icon: "categories",
+  },
+  {
+    id: "goals",
+    label: "Savings goals",
+    description: "Plan for important milestones",
+    icon: "goal",
+  },
+  {
+    id: "security",
+    label: "Security",
+    description: "Update your account password",
+    icon: "security",
+  },
+];
 
 function SectionIcon({ name }: { name: SectionIconName }) {
   const paths: Record<SectionIconName, ReactNode> = {
@@ -94,8 +148,21 @@ function getInitials(name: string) {
     .join("");
 }
 
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      typeof reader.result === "string"
+        ? resolve(reader.result)
+        : reject(new Error("The selected image could not be read."));
+    reader.onerror = () => reject(new Error("The selected image could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function SettingsPage() {
   const { profile, refreshAccount, setProfile, user } = useAuth();
+  const [activeSection, setActiveSection] = useState<SettingsSection>("personal");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [monthlyIncome, setMonthlyIncome] = useState("");
@@ -104,14 +171,18 @@ export function SettingsPage() {
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoalDraft[]>([
     createEmptySavingsGoal(),
   ]);
+  const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const avatarUrlRef = useRef("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFullName(user?.full_name ?? "");
     setEmail(user?.email ?? "");
+    const persistedAvatar = getProfileAvatar(user?.id);
+    setSavedAvatar(persistedAvatar);
+    setAvatarPreview(persistedAvatar);
   }, [user]);
 
   useEffect(() => {
@@ -131,15 +202,6 @@ export function SettingsPage() {
     );
   }, [profile]);
 
-  useEffect(
-    () => () => {
-      if (avatarUrlRef.current) {
-        URL.revokeObjectURL(avatarUrlRef.current);
-      }
-    },
-    [],
-  );
-
   const toggleCategory = (category: string) => {
     setSelectedCategories((current) =>
       current.includes(category)
@@ -148,17 +210,45 @@ export function SettingsPage() {
     );
   };
 
-  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
-    if (avatarUrlRef.current) {
-      URL.revokeObjectURL(avatarUrlRef.current);
+
+    if (!supportedAvatarTypes.has(file.type)) {
+      setNotice({
+        title: "Photo not selected",
+        message: "Choose a PNG, JPG, JPEG, or WEBP image.",
+        variant: "error",
+      });
+      event.target.value = "";
+      return;
     }
-    const nextUrl = URL.createObjectURL(file);
-    avatarUrlRef.current = nextUrl;
-    setAvatarPreview(nextUrl);
+
+    if (file.size > maxAvatarSize) {
+      setNotice({
+        title: "Photo is too large",
+        message: "Choose an image smaller than 2 MB.",
+        variant: "error",
+      });
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setAvatarPreview(await fileToDataUrl(file));
+      setNotice(null);
+    } catch (error) {
+      setNotice({
+        title: "Photo not selected",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The selected image could not be read.",
+        variant: "error",
+      });
+    }
   };
 
   const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
@@ -169,7 +259,26 @@ export function SettingsPage() {
         (!goal.name.trim() && Number(goal.targetAmount) > 0),
     );
 
+    if (!fullName.trim() || !email.trim()) {
+      setActiveSection("personal");
+      setNotice({
+        title: "Profile not saved",
+        message: "Enter your full name and email address.",
+        variant: "error",
+      });
+      return;
+    }
+    if (!monthlyIncome || Number(monthlyIncome) < 0) {
+      setActiveSection("financial");
+      setNotice({
+        title: "Profile not saved",
+        message: "Enter a valid monthly income.",
+        variant: "error",
+      });
+      return;
+    }
     if (selectedCategories.length === 0) {
+      setActiveSection("categories");
       setNotice({
         title: "Profile not saved",
         message: "Choose at least one spending category.",
@@ -178,6 +287,7 @@ export function SettingsPage() {
       return;
     }
     if (incompleteGoal) {
+      setActiveSection("goals");
       setNotice({
         title: "Profile not saved",
         message: "Enter both a savings goal name and a valid target amount.",
@@ -203,11 +313,17 @@ export function SettingsPage() {
             target_amount: Number(goal.targetAmount),
           })),
       });
+
+      if (user?.id && avatarPreview !== savedAvatar) {
+        saveProfileAvatar(user.id, avatarPreview);
+        setSavedAvatar(avatarPreview);
+      }
+
       setProfile(updatedProfile);
       await refreshAccount();
       setNotice({
         title: "Profile saved",
-        message: "Your account and financial preferences are up to date.",
+        message: "Your account, photo, and financial preferences are up to date.",
         variant: "success",
       });
     } catch (error) {
@@ -270,6 +386,9 @@ export function SettingsPage() {
         maximumFractionDigits: 0,
       }).format(Number(monthlyIncome))
     : "Not set";
+  const activeSectionDetails = settingsSections.find(
+    (section) => section.id === activeSection,
+  );
 
   return (
     <div className={styles.page}>
@@ -284,227 +403,274 @@ export function SettingsPage() {
         </div>
       ) : null}
 
-      <header className={styles.header}>
-        <div>
-          <h2>Profile and preferences</h2>
-          <p>Manage your account, financial setup, and security.</p>
-        </div>
-      </header>
-
-      <form className={styles.profileForm} id="profile-settings-form" onSubmit={handleProfileSave}>
-        <Card className={styles.summaryCard}>
-          <div className={styles.avatarArea}>
-            <div className={styles.avatar}>
-              {avatarPreview ? (
-                <img src={avatarPreview} alt={`${displayName} profile preview`} />
-              ) : (
-                <span>{initials}</span>
-              )}
+      <section className={styles.profileCardWrap} aria-label="Profile card">
+        <div className={styles.profileCard}>
+          <div className={styles.cardTop}>
+            <div className={styles.cardBrand}>
+              <img src="/moneymate-logo.png" alt="" />
+              <strong>
+                Money<span>Mate</span>
+              </strong>
             </div>
-            <label className={styles.avatarButton} htmlFor="profile-avatar">
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M7 7.5 8.5 5h7L17 7.5h2A2 2 0 0 1 21 9.5v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2Z" />
-                <circle cx="12" cy="13" r="3.5" />
-              </svg>
-              <span>Upload photo</span>
-            </label>
-            <input
-              accept="image/*"
-              className={styles.avatarInput}
-              id="profile-avatar"
-              onChange={handleAvatarChange}
-              type="file"
-            />
+            <svg className={styles.contactless} aria-label="Contactless" viewBox="0 0 46 46">
+              <path d="M14 16c5 4 5 10 0 14M20 11c9 7 9 17 0 24M27 7c13 10 13 22 0 32" />
+            </svg>
           </div>
 
-          <div className={styles.summaryIdentity}>
-            <span className={styles.summaryLabel}>MoneyMate profile</span>
-            <h3>{displayName}</h3>
-            <p>{displayEmail}</p>
-          </div>
-
-          <dl className={styles.summaryDetails}>
-            <div>
-              <dt>Monthly income</dt>
-              <dd>{incomeLabel}</dd>
+          <div className={styles.cardMiddle}>
+            <div className={styles.chip} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
             </div>
-            <div>
-              <dt>Currency</dt>
-              <dd>{currency}</dd>
-            </div>
-          </dl>
-
-          <div className={styles.summaryAction}>
-            <Button disabled={isSaving} type="submit">
-              {isSaving ? "Saving..." : "Save changes"}
-            </Button>
-            <span>Photo preview stays on this device.</span>
-          </div>
-        </Card>
-
-        <div className={styles.sectionGrid}>
-          <Card className={styles.sectionCard}>
-            <div className={styles.sectionHeading}>
-              <SectionIcon name="profile" />
-              <div>
-                <h3>Personal information</h3>
-                <p>Update the details connected to your account.</p>
+            <div className={styles.cardAvatarWrap}>
+              <div className={styles.cardAvatar}>
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt={`${displayName} profile preview`} />
+                ) : (
+                  <span>{initials}</span>
+                )}
               </div>
+              <button
+                aria-label="Choose profile picture"
+                className={styles.avatarEdit}
+                onClick={() => fileInputRef.current?.click()}
+                type="button"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M7 7.5 8.5 5h7L17 7.5h2A2 2 0 0 1 21 9.5v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2Z" />
+                  <circle cx="12" cy="13" r="3.5" />
+                </svg>
+              </button>
+              <input
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className={styles.avatarInput}
+                id="profile-avatar"
+                onChange={handleAvatarChange}
+                ref={fileInputRef}
+                type="file"
+              />
             </div>
-            <div className={styles.formGrid}>
-              <FormField htmlFor="settings-name" label="Full name">
-                <Input
-                  id="settings-name"
-                  name="fullName"
-                  onChange={(event) => setFullName(event.target.value)}
-                  required
-                  value={fullName}
-                />
-              </FormField>
-              <FormField htmlFor="settings-email" label="Email">
-                <Input
-                  id="settings-email"
-                  name="email"
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  type="email"
-                  value={email}
-                />
-              </FormField>
-            </div>
-          </Card>
+          </div>
 
-          <Card className={styles.sectionCard}>
-            <div className={styles.sectionHeading}>
-              <SectionIcon name="wallet" />
-              <div>
-                <h3>Financial preferences</h3>
-                <p>Set the defaults MoneyMate uses for planning.</p>
+          <div className={styles.cardDetails}>
+            <div className={styles.cardIdentity}>
+              <span>Cardholder</span>
+              <strong>{displayName}</strong>
+              <small>{displayEmail}</small>
+            </div>
+            <div className={styles.cardMetric}>
+              <span>Monthly income</span>
+              <strong>{incomeLabel}</strong>
+            </div>
+            <div className={styles.cardMetric}>
+              <span>Currency</span>
+              <strong>{currency}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <form
+        className={styles.hiddenProfileForm}
+        id="profile-settings-form"
+        onSubmit={handleProfileSave}
+      />
+
+      <div className={styles.stickySave}>
+        <span>Save account, photo, and financial preferences</span>
+        <Button
+          disabled={isSaving}
+          form="profile-settings-form"
+          type="submit"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </Button>
+      </div>
+
+      <div className={styles.settingsLayout}>
+        <nav className={styles.sectionNav} aria-label="Settings sections">
+          {settingsSections.map((section) => (
+            <button
+              aria-current={activeSection === section.id ? "page" : undefined}
+              className={`${styles.sectionNavItem} ${
+                activeSection === section.id ? styles.sectionNavItemActive : ""
+              }`}
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              type="button"
+            >
+              <SectionIcon name={section.icon} />
+              <span>
+                <strong>{section.label}</strong>
+                <small>{section.description}</small>
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <div className={styles.sectionContent}>
+          {activeSection !== "security" ? (
+            <div className={styles.profileForm}>
+              <Card className={styles.sectionCard}>
+                <div className={styles.sectionHeading}>
+                  <SectionIcon name={activeSectionDetails?.icon ?? "profile"} />
+                  <div>
+                    <h2>{activeSectionDetails?.label}</h2>
+                    <p>{activeSectionDetails?.description}</p>
+                  </div>
+                </div>
+
+                {activeSection === "personal" ? (
+                  <div className={styles.formGrid}>
+                    <FormField htmlFor="settings-name" label="Full name">
+                      <Input
+                        id="settings-name"
+                        name="fullName"
+                        onChange={(event) => setFullName(event.target.value)}
+                        required
+                        value={fullName}
+                      />
+                    </FormField>
+                    <FormField htmlFor="settings-email" label="Email">
+                      <Input
+                        id="settings-email"
+                        name="email"
+                        onChange={(event) => setEmail(event.target.value)}
+                        required
+                        type="email"
+                        value={email}
+                      />
+                    </FormField>
+                    <div className={styles.photoNote}>
+                      <span>Profile photo</span>
+                      <p>
+                        Use the camera button on your MoneyMate card. PNG, JPG, and
+                        WEBP images up to 2 MB are supported.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeSection === "financial" ? (
+                  <div className={styles.formGrid}>
+                    <FormField htmlFor="settings-income" label="Monthly income">
+                      <Input
+                        id="settings-income"
+                        min="0"
+                        name="monthlyIncome"
+                        onChange={(event) => setMonthlyIncome(event.target.value)}
+                        required
+                        step="0.01"
+                        type="number"
+                        value={monthlyIncome}
+                      />
+                    </FormField>
+                    <FormField htmlFor="settings-currency" label="Preferred currency">
+                      <Select
+                        id="settings-currency"
+                        name="currency"
+                        onChange={(event) => setCurrency(event.target.value)}
+                        value={currency}
+                      >
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="LBP">LBP - Lebanese Pound</option>
+                        <option value="AED">AED - UAE Dirham</option>
+                      </Select>
+                    </FormField>
+                  </div>
+                ) : null}
+
+                {activeSection === "categories" ? (
+                  <fieldset className={styles.fieldGroup}>
+                    <legend className={styles.visuallyHidden}>
+                      Spending categories
+                    </legend>
+                    <div className={styles.categories}>
+                      {categories.map((category) => {
+                        const isSelected = selectedCategories.includes(category);
+                        return (
+                          <label className={styles.category} key={category}>
+                            <input
+                              checked={isSelected}
+                              onChange={() => toggleCategory(category)}
+                              type="checkbox"
+                            />
+                            <span className={styles.categoryCheck} aria-hidden="true">
+                              {isSelected ? (
+                                <svg viewBox="0 0 16 16">
+                                  <path d="m3 8.2 3 3L13 4.8" />
+                                </svg>
+                              ) : null}
+                            </span>
+                            <span>{category}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                ) : null}
+
+                {activeSection === "goals" ? (
+                  <SavingsGoalsEditor
+                    goals={savingsGoals}
+                    onChange={setSavingsGoals}
+                  />
+                ) : null}
+              </Card>
+            </div>
+          ) : (
+            <Card className={styles.sectionCard}>
+              <div className={styles.sectionHeading}>
+                <SectionIcon name="security" />
+                <div>
+                  <h2>Security</h2>
+                  <p>Your current password is required before setting a new one.</p>
+                </div>
               </div>
-            </div>
-            <div className={styles.formGrid}>
-              <FormField htmlFor="settings-income" label="Monthly income">
-                <Input
-                  id="settings-income"
-                  min="0"
-                  name="monthlyIncome"
-                  onChange={(event) => setMonthlyIncome(event.target.value)}
-                  required
-                  step="0.01"
-                  type="number"
-                  value={monthlyIncome}
-                />
-              </FormField>
-              <FormField htmlFor="settings-currency" label="Preferred currency">
-                <Select
-                  id="settings-currency"
-                  name="currency"
-                  onChange={(event) => setCurrency(event.target.value)}
-                  value={currency}
-                >
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="GBP">GBP - British Pound</option>
-                  <option value="LBP">LBP - Lebanese Pound</option>
-                  <option value="AED">AED - UAE Dirham</option>
-                </Select>
-              </FormField>
-            </div>
-          </Card>
+              <form className={styles.passwordForm} onSubmit={handlePasswordChange}>
+                <FormField htmlFor="current-password" label="Current password">
+                  <Input
+                    autoComplete="current-password"
+                    id="current-password"
+                    name="currentPassword"
+                    required
+                    type="password"
+                  />
+                </FormField>
+                <FormField htmlFor="new-password" label="New password">
+                  <Input
+                    autoComplete="new-password"
+                    id="new-password"
+                    minLength={8}
+                    name="newPassword"
+                    required
+                    type="password"
+                  />
+                </FormField>
+                <FormField htmlFor="confirm-password" label="Confirm new password">
+                  <Input
+                    autoComplete="new-password"
+                    id="confirm-password"
+                    minLength={8}
+                    name="confirmPassword"
+                    required
+                    type="password"
+                  />
+                </FormField>
+                <div className={styles.securityActions}>
+                  <Button disabled={isSaving} type="submit">
+                    {isSaving ? "Updating..." : "Change password"}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
         </div>
-
-        <Card className={styles.sectionCard}>
-          <div className={styles.sectionHeading}>
-            <SectionIcon name="categories" />
-            <div>
-              <h3>Spending categories</h3>
-              <p>Choose the areas you want to track most closely.</p>
-            </div>
-          </div>
-          <fieldset className={styles.fieldGroup}>
-            <legend className={styles.visuallyHidden}>Spending categories</legend>
-            <div className={styles.categories}>
-              {categories.map((category) => {
-                const isSelected = selectedCategories.includes(category);
-                return (
-                  <label className={styles.category} key={category}>
-                    <input
-                      checked={isSelected}
-                      onChange={() => toggleCategory(category)}
-                      type="checkbox"
-                    />
-                    <span className={styles.categoryCheck} aria-hidden="true">
-                      {isSelected ? (
-                        <svg viewBox="0 0 16 16">
-                          <path d="m3 8.2 3 3L13 4.8" />
-                        </svg>
-                      ) : null}
-                    </span>
-                    <span>{category}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-        </Card>
-
-        <Card className={styles.sectionCard}>
-          <div className={styles.sectionHeading}>
-            <SectionIcon name="goal" />
-            <div>
-              <h3>Savings goals</h3>
-              <p>Create clear targets for the milestones that matter.</p>
-            </div>
-          </div>
-          <SavingsGoalsEditor goals={savingsGoals} onChange={setSavingsGoals} />
-        </Card>
-      </form>
-
-      <Card className={`${styles.sectionCard} ${styles.securityCard}`}>
-        <div className={styles.sectionHeading}>
-          <SectionIcon name="security" />
-          <div>
-            <h3>Security</h3>
-            <p>Your current password is required before MoneyMate accepts a new one.</p>
-          </div>
-        </div>
-        <form className={styles.passwordForm} onSubmit={handlePasswordChange}>
-          <FormField htmlFor="current-password" label="Current password">
-            <Input
-              autoComplete="current-password"
-              id="current-password"
-              name="currentPassword"
-              required
-              type="password"
-            />
-          </FormField>
-          <FormField htmlFor="new-password" label="New password">
-            <Input
-              autoComplete="new-password"
-              id="new-password"
-              minLength={8}
-              name="newPassword"
-              required
-              type="password"
-            />
-          </FormField>
-          <FormField htmlFor="confirm-password" label="Confirm new password">
-            <Input
-              autoComplete="new-password"
-              id="confirm-password"
-              minLength={8}
-              name="confirmPassword"
-              required
-              type="password"
-            />
-          </FormField>
-          <div className={styles.actions}>
-            <Button disabled={isSaving} type="submit">
-              {isSaving ? "Updating..." : "Change password"}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      </div>
     </div>
   );
 }
