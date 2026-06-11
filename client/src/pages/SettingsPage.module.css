@@ -1,0 +1,438 @@
+.page {
+  display: grid;
+  width: min(100%, 76rem);
+  gap: 1.5rem;
+  margin: 0 auto;
+}
+
+.header h2,
+.header p,
+.summaryIdentity h3,
+.summaryIdentity p,
+.sectionHeading h3,
+.sectionHeading p {
+  margin: 0;
+}
+
+.header h2 {
+  color: var(--mm-text);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: -0.05em;
+}
+
+.header p {
+  margin-top: 0.45rem;
+  color: var(--mm-text-soft);
+  line-height: 1.6;
+}
+
+.profileForm {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.summaryCard {
+  position: sticky;
+  top: 6.4rem;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1fr) auto auto;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  border-color: rgba(111, 239, 75, 0.3);
+  background:
+    radial-gradient(circle at 4% 20%, rgba(81, 243, 91, 0.13), transparent 14rem),
+    linear-gradient(145deg, rgba(4, 43, 32, 0.97), rgba(0, 17, 13, 0.97));
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  box-shadow:
+    var(--mm-shadow-card),
+    0 0 1.8rem rgba(81, 243, 91, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.avatarArea {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(120, 255, 104, 0.22), transparent 65%),
+    rgba(3, 47, 34, 0.86);
+  color: var(--mm-accent-soft);
+  box-shadow:
+    inset 0 0 1.4rem rgba(81, 243, 91, 0.06),
+    0 0 1.2rem rgba(81, 243, 91, 0.16);
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--mm-accent-soft);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.avatarButton svg {
+  width: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.avatarButton:hover {
+  text-shadow: 0 0 0.8rem rgba(81, 243, 91, 0.55);
+}
+
+.avatarInput,
+.visuallyHidden,
+.category input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.summaryIdentity {
+  min-width: 0;
+}
+
+.summaryLabel {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--mm-accent-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.summaryIdentity h3 {
+  overflow: hidden;
+  color: var(--mm-text);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryIdentity p {
+  margin-top: 0.3rem;
+  overflow: hidden;
+  color: var(--mm-text-muted);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryDetails {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin: 0;
+}
+
+.summaryDetails div {
+  min-width: 6rem;
+}
+
+.summaryDetails dt {
+  color: var(--mm-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summaryDetails dd {
+  margin: 0.35rem 0 0;
+  color: var(--mm-text);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.summaryAction {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.summaryAction span {
+  max-width: 11rem;
+  color: var(--mm-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.sectionCard {
+  display: grid;
+  gap: 1.25rem;
+  border-color: rgba(111, 239, 75, 0.16);
+  padding: clamp(1.15rem, 2.5vw, 1.6rem);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.sectionHeading h3 {
+  color: var(--mm-text);
+  font-size: 1.1rem;
+  letter-spacing: -0.025em;
+}
+
+.sectionHeading p {
+  margin-top: 0.3rem;
+  color: var(--mm-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.sectionIcon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(111, 239, 75, 0.26);
+  border-radius: 0.8rem;
+  background: rgba(81, 243, 91, 0.07);
+  color: var(--mm-accent-soft);
+  box-shadow: inset 0 0 1rem rgba(81, 243, 91, 0.035);
+}
+
+.sectionIcon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.sectionGrid .formGrid {
+  grid-template-columns: 1fr;
+}
+
+.fieldGroup {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.category {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(111, 239, 75, 0.14);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(0, 17, 13, 0.52);
+  color: var(--mm-text-muted);
+  cursor: pointer;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.category:hover {
+  border-color: rgba(111, 239, 75, 0.3);
+  color: var(--mm-text-soft);
+  transform: translateY(-1px);
+}
+
+.category:has(input:checked) {
+  border-color: rgba(120, 255, 104, 0.62);
+  background: rgba(81, 243, 91, 0.11);
+  color: var(--mm-accent-soft);
+  box-shadow:
+    inset 0 0 1rem rgba(81, 243, 91, 0.035),
+    0 0 1rem rgba(81, 243, 91, 0.07);
+}
+
+.categoryCheck {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(111, 239, 75, 0.24);
+  border-radius: 0.4rem;
+  background: rgba(0, 17, 13, 0.58);
+}
+
+.category:has(input:checked) .categoryCheck {
+  border-color: var(--mm-accent-soft);
+  background: var(--mm-accent);
+  color: #00140d;
+  box-shadow: 0 0 0.7rem rgba(81, 243, 91, 0.35);
+}
+
+.categoryCheck svg {
+  width: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.securityCard {
+  border-color: rgba(111, 239, 75, 0.16);
+}
+
+.passwordForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 1rem;
+}
+
+.actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.toastWrap {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+}
+
+@media (max-width: 1080px) {
+  .summaryCard {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .summaryDetails {
+    display: none;
+  }
+
+  .passwordForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .summaryCard {
+    position: static;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .summaryAction {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  .summaryAction span {
+    max-width: none;
+    text-align: right;
+  }
+
+  .sectionGrid,
+  .formGrid,
+  .passwordForm {
+    grid-template-columns: 1fr;
+  }
+
+  .categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .summaryCard {
+    justify-items: center;
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .summaryIdentity h3,
+  .summaryIdentity p {
+    white-space: normal;
+  }
+
+  .summaryAction {
+    width: 100%;
+    grid-column: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .summaryAction span {
+    text-align: center;
+  }
+
+  .categories {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button,
+  .summaryAction button {
+    width: 100%;
+  }
+
+  .toastWrap {
+    right: 0.75rem;
+    left: 0.75rem;
+  }
+}

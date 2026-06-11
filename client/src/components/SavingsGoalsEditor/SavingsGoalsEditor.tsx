@@ -40,41 +40,46 @@ export function SavingsGoalsEditor({ goals, onChange }: SavingsGoalsEditorProps)
     <div className={styles.editor}>
       {goals.map((goal, index) => (
         <div className={styles.goal} key={goal.id}>
-          <FormField
-            htmlFor={`savings-goal-name-${goal.id}`}
-            label={`Savings goal ${index + 1}`}
-          >
-            <Input
-              id={`savings-goal-name-${goal.id}`}
-              onChange={(event) => updateGoal(goal.id, "name", event.target.value)}
-              placeholder="Emergency fund"
-              value={goal.name}
-            />
-          </FormField>
-          <FormField
-            htmlFor={`savings-goal-amount-${goal.id}`}
-            label="Target amount"
-          >
-            <Input
-              id={`savings-goal-amount-${goal.id}`}
-              min="0"
-              onChange={(event) =>
-                updateGoal(goal.id, "targetAmount", event.target.value)
-              }
-              step="0.01"
-              type="number"
-              value={goal.targetAmount}
-            />
-          </FormField>
-          <Button
-            aria-label={`Remove savings goal ${index + 1}`}
-            className={styles.remove}
-            onClick={() => removeGoal(goal.id)}
-            type="button"
-            variant="secondary"
-          >
-            Remove
-          </Button>
+          <div className={styles.goalHeader}>
+            <span>Goal {index + 1}</span>
+            <Button
+              aria-label={`Remove savings goal ${index + 1}`}
+              className={styles.remove}
+              onClick={() => removeGoal(goal.id)}
+              type="button"
+              variant="secondary"
+            >
+              Remove
+            </Button>
+          </div>
+          <div className={styles.goalFields}>
+            <FormField
+              htmlFor={`savings-goal-name-${goal.id}`}
+              label="Goal name"
+            >
+              <Input
+                id={`savings-goal-name-${goal.id}`}
+                onChange={(event) => updateGoal(goal.id, "name", event.target.value)}
+                placeholder="Emergency fund"
+                value={goal.name}
+              />
+            </FormField>
+            <FormField
+              htmlFor={`savings-goal-amount-${goal.id}`}
+              label="Target amount"
+            >
+              <Input
+                id={`savings-goal-amount-${goal.id}`}
+                min="0"
+                onChange={(event) =>
+                  updateGoal(goal.id, "targetAmount", event.target.value)
+                }
+                step="0.01"
+                type="number"
+                value={goal.targetAmount}
+              />
+            </FormField>
+          </div>
         </div>
       ))}
       <Button
@@ -83,7 +88,7 @@ export function SavingsGoalsEditor({ goals, onChange }: SavingsGoalsEditorProps)
         type="button"
         variant="secondary"
       >
-        Add another goal
+        + Add another goal
       </Button>
     </div>
   );
