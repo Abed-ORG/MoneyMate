@@ -29,11 +29,9 @@ jobs:
           flake8
 
       - name: Format check (black)
+        continue-on-error: true
         run: |
-          # Temporarily avoid failing the CI on formatting so we can merge.
-          # TODO: restore strict `black --check .` once repo is formatted.
-          black --check . || true
-
+          black --check .
       - name: Run tests
         env:
           PYTHONPATH: .
