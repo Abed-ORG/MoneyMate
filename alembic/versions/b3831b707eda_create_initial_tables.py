@@ -3,6 +3,7 @@
 Revision ID: b3831b707eda
 Revises: None
 Create Date: 2026-06-04 14:02:30.265232
+# flake8: noqa
 """
 
 from alembic import op

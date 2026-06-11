@@ -19,17 +19,30 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440")
+)
 EMAIL_VERIFICATION_EXPIRE_HOURS = int(
     os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
 )
 
 
-def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MINUTES):
+def create_access_token(
+    data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MINUTES
+):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire, "purpose": "access"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode.update(
+        {
+            "exp": expire,
+            "purpose": "access",
+        }
+    )
+    encoded_jwt = jwt.encode(
+        to_encode,
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
     return encoded_jwt
 
 

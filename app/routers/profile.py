@@ -69,7 +69,12 @@ def edit_account(
     db: Session = Depends(get_db),
 ):
     try:
-        return update_account(db, current_user, payload, send_verification_email)
+        return update_account(
+            db,
+            current_user,
+            payload,
+            send_verification_email,
+        )
     except DuplicateEmailError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -94,7 +99,12 @@ def edit_password(
     except InvalidCurrentPasswordError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Your current password is incorrect.",
+            detail=(
+                "Your current password is incorrect."
+            ),
         )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )

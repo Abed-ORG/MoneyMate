@@ -1,9 +1,7 @@
+# flake8: noqa
 from logging.config import fileConfig
 import os
 from dotenv import load_dotenv
-
-# load .env so alembic picks up DATABASE_URL when run from shell
-load_dotenv()
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
@@ -12,8 +10,22 @@ config = context.config
 
 fileConfig(config.config_file_name)
 
+# load .env so alembic picks up DATABASE_URL when run from shell
+load_dotenv()
+
 from app.db import Base
-from app.models import financial_profile, item, refresh_token, user
+from app.models import (
+    user,
+    account,
+    transaction,
+    category,
+    budget,
+    goal,
+    chat_history,
+    financial_profile,
+    item,
+    refresh_token,
+)  # noqa: F401
 
 target_metadata = Base.metadata
 

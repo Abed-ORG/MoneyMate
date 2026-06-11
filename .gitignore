@@ -1,56 +1,95 @@
-# Dependencies
-node_modules/
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
+
+# C extensions
 *.so
-*.egg
-*.egg-info/
+
+# Distribution / packaging
 build/
 dist/
+*.egg-info/
 
 # Virtual environments
 venv/
 .venv/
-server/venv/
-server/.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
-# Environment variables
+# dotenv environment variables file
 .env
 .env.local
 .env.*.local
+.env.*
 
-# Frontend build output
+# Build output
 client/dist/
 client/.vite/
 *.tsbuildinfo
 
-# IDE
+# VS Code
 .vscode/
-.idea/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Mypy
+.mypy_cache/
+
+# Pyre
+.pyre/
+
+# Editor temporary files
 *.swp
 *.swo
 *~
-
-# OS files
 .DS_Store
-Thumbs.db
-desktop.ini
 
 # Logs
 *.log
+logs/
 
-# Testing and tooling
-coverage/
-.pytest_cache/
-.mypy_cache/
+# Database
+*.sqlite3
+
+# Node / frontend
+node_modules/
+client/node_modules/
+client/dist/
+client/build/
+
+# Vercel / deployment
+.vercel/
+
+# IDEs
+.idea/
+
+# Docker
+docker-compose.override.yml
+env.list
+
+# Secret/key files
+*.key
+*.pem
+
+# Local settings
+local_settings.py
+
+# Jupyter
+.ipynb_checkpoints
+
+# Static analysis
 .ruff_cache/
-htmlcov/
-.coverage
+
+# Alembic / migrations: keep migration scripts tracked, ignore compiled artifacts
+# (no special ignores needed — migration files are source code)
+
+# Misc
 .cache/
 
-# Local databases
-*.db
-*.db-journal
+# End of file

@@ -27,14 +27,17 @@ def upgrade():
     )
     op.add_column(
         "users",
-        sa.Column("email_verified_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "email_verified_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
     )
-    op.execute(
-        sa.text(
-            "UPDATE users SET is_email_verified = true, "
-            "email_verified_at = CURRENT_TIMESTAMP"
-        )
+    sql = (
+        "UPDATE users SET is_email_verified = true, "
+        "email_verified_at = CURRENT_TIMESTAMP"
     )
+    op.execute(sa.text(sql))
 
 
 def downgrade():
