@@ -6,10 +6,14 @@ function getProfileAvatarKey(userId: number) {
 }
 
 export function getProfileAvatar(userId?: number | null) {
-  if (!userId) {
+  if (userId == null) {
     return "";
   }
-  return localStorage.getItem(getProfileAvatarKey(userId)) ?? "";
+  try {
+    return localStorage.getItem(getProfileAvatarKey(userId)) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export function saveProfileAvatar(userId: number, dataUrl: string) {
