@@ -20,6 +20,7 @@ function getInitials(name: string) {
 
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -43,7 +44,11 @@ export function AppShell() {
   };
 
   return (
-    <div className={styles.shell}>
+    <div
+      className={`${styles.shell} ${
+        isSidebarCollapsed ? styles.shellCollapsed : ""
+      }`}
+    >
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.brand}>
           <img className={styles.brandMark} src="/moneymate-logo.png" alt="" />
@@ -87,6 +92,17 @@ export function AppShell() {
       <div className={styles.contentWrap}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
+            <button
+              aria-label={isSidebarCollapsed ? "Show navigation" : "Hide navigation"}
+              aria-expanded={!isSidebarCollapsed}
+              className={styles.collapseButton}
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+              type="button"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
             <button
               aria-label="Open navigation"
               className={styles.menuButton}

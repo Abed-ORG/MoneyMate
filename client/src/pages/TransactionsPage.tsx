@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button, FormField, Input, Modal, Toast } from "../components";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
@@ -173,6 +173,16 @@ function CloudUploadIcon() {
   );
 }
 
+function FilterIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M7 14v6" />
+      <circle cx="14" cy="7" r="2" />
+      <circle cx="7" cy="17" r="2" />
+    </svg>
+  );
+}
+
 function ThemedSelect({
   value,
   options,
@@ -186,24 +196,75 @@ function ThemedSelect({
   ariaLabel: string;
   className?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const listboxId = useId();
+  const selectedOption = options.find((option) => option.value === value) ?? options[0];
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
   return (
-    <span className={`${styles.selectWrap} ${className}`}>
-      <select
+    <div className={`${styles.selectWrap} ${className}`} ref={rootRef}>
+      <button
         aria-label={ariaLabel}
-        className={styles.themedSelect}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        aria-controls={listboxId}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        className={styles.selectTrigger}
+        onClick={() => setIsOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setIsOpen(false);
+          }
+        }}
+        type="button"
       >
-        {options.map((option) => (
-          <option key={option.value || option.label} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <span className={styles.selectArrow} aria-hidden="true">
-        v
-      </span>
-    </span>
+        <span>{selectedOption?.label}</span>
+        <svg
+          aria-hidden="true"
+          className={`${styles.selectArrow} ${isOpen ? styles.selectArrowOpen : ""}`}
+          focusable="false"
+          viewBox="0 0 20 20"
+        >
+          <path d="m5 7.5 5 5 5-5" />
+        </svg>
+      </button>
+      {isOpen ? (
+        <div className={styles.selectMenu} id={listboxId} role="listbox">
+          {options.map((option) => (
+            <button
+              aria-selected={option.value === value}
+              className={`${styles.selectOption} ${
+                option.value === value ? styles.selectOptionActive : ""
+              }`}
+              key={option.value || option.label}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              role="option"
+              type="button"
+            >
+              <span>{option.label}</span>
+              {option.value === value ? (
+                <svg aria-hidden="true" className={styles.optionCheck} viewBox="0 0 20 20">
+                  <path d="m4.5 10.5 3.2 3.2 7.8-8" />
+                </svg>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -482,7 +543,7 @@ export function TransactionsPage() {
 
       <aside className={styles.filters}>
         <div className={styles.panelHeader}>
-          <span className={styles.iconBox}>F</span>
+          <span className={styles.iconBox}><FilterIcon /></span>
           <h2>Filters</h2>
         </div>
         <Input placeholder="Search transactions..." onChange={() => undefined} />
@@ -579,18 +640,7 @@ export function TransactionsPage() {
 
         <section className={styles.tablePanel}>
           <header className={styles.tableHeader}>
-            <div>
-              <h2>Transactions</h2>
-              {selected && isDetailsCollapsed ? (
-                <button
-                  className={styles.reopenDetails}
-                  type="button"
-                  onClick={() => setIsDetailsCollapsed(false)}
-                >
-                  Show details <span aria-hidden="true">-&gt;</span>
-                </button>
-              ) : null}
-            </div>
+            <h2>Transactions</h2>
             <span>
               Showing {transactions.length ? (filters.page - 1) * filters.pageSize + 1 : 0} to{" "}
               {Math.min(filters.page * filters.pageSize, total)} of {total}
@@ -656,26 +706,34 @@ export function TransactionsPage() {
           ) : null}
 
           <footer className={styles.pagination}>
-            <Button variant="secondary" disabled={filters.page <= 1} onClick={() => updateFilter({ page: filters.page - 1 })}>
-              Prev
-            </Button>
-            <span>
-              Page {filters.page} of {totalPages}
+            <span className={styles.paginationSummary}>
+              {total} transaction{total === 1 ? "" : "s"}
             </span>
-            <Button variant="secondary" disabled={filters.page >= totalPages} onClick={() => updateFilter({ page: filters.page + 1 })}>
-              Next
-            </Button>
-            <ThemedSelect
-              ariaLabel="Rows per page"
-              className={styles.pageSizeSelect}
-              value={String(filters.pageSize)}
-              options={[
-                { value: "5", label: "5 per page" },
-                { value: "10", label: "10 per page" },
-                { value: "25", label: "25 per page" },
-              ]}
-              onChange={(value) => updateFilter({ pageSize: Number(value) })}
-            />
+            <div className={styles.pageNavigation}>
+              <Button variant="secondary" disabled={filters.page <= 1} onClick={() => updateFilter({ page: filters.page - 1 })}>
+                Prev
+              </Button>
+              <span className={styles.pageIndicator}>
+                Page <strong>{filters.page}</strong> of {totalPages}
+              </span>
+              <Button variant="secondary" disabled={filters.page >= totalPages} onClick={() => updateFilter({ page: filters.page + 1 })}>
+                Next
+              </Button>
+            </div>
+            <div className={styles.rowsControl}>
+              <span>Rows per page</span>
+              <ThemedSelect
+                ariaLabel="Rows per page"
+                className={styles.pageSizeSelect}
+                value={String(filters.pageSize)}
+                options={[
+                  { value: "5", label: "5" },
+                  { value: "10", label: "10" },
+                  { value: "25", label: "25" },
+                ]}
+                onChange={(value) => updateFilter({ pageSize: Number(value) })}
+              />
+            </div>
           </footer>
         </section>
       </main>
@@ -683,39 +741,54 @@ export function TransactionsPage() {
       <aside className={`${styles.details} ${selected && !isDetailsCollapsed ? styles.detailsOpen : ""}`}>
         {selected && !isDetailsCollapsed ? (
           <>
-            <header className={styles.detailsHeader}>
-              <h2>Transaction Details</h2>
-              <button type="button" aria-label="Collapse transaction details" onClick={() => setIsDetailsCollapsed(true)}>
-                &rarr;
-              </button>
-            </header>
-            <dl className={styles.detailList}>
-              <div><dt>Date</dt><dd>{formatDate(selected.date, true)}</dd></div>
-              <div><dt>Vendor</dt><dd>{selected.vendor || "Unknown"}</dd></div>
-              <div><dt>Category</dt><dd><span className={styles.badge}>{selected.category}</span></dd></div>
-              <div><dt>Notes</dt><dd>{selected.notes || "-"}</dd></div>
-              <div><dt>Amount</dt><dd className={Number(selected.amount) < 0 ? styles.expense : styles.income}>{toMoney(selected.amount)}</dd></div>
-              <div><dt>Created Date</dt><dd>{formatDate(selected.created_at, true)}</dd></div>
-              <div><dt>Updated Date</dt><dd>{formatDate(selected.updated_at, true)}</dd></div>
-            </dl>
-            <section className={styles.aiPanel}>
-              <h3>AI Categorization</h3>
-              <strong>{selected.ai_categorization?.category ?? "Pending"}</strong>
-              <span>Confidence: {selected.ai_categorization?.confidence ?? 0}%</span>
+            <section className={styles.selectedSummary}>
+              <span className={styles.summaryVendorMark}>{selected.vendor.slice(0, 1) || "$"}</span>
+              <div>
+                <span className={styles.badge}>{selected.category}</span>
+                <h2>{selected.vendor || "Unknown"}</h2>
+                <strong className={Number(selected.amount) < 0 ? styles.expense : styles.income}>
+                  {toMoney(selected.amount)}
+                </strong>
+              </div>
             </section>
-            <section className={styles.history}>
-              <h3>Edit History</h3>
-              {selected.history.length ? selected.history.map((item) => (
-                <article key={item.id}>
-                  <time>{formatDate(item.timestamp, true)}</time>
-                  <p>{item.event}</p>
-                </article>
-              )) : <p>No edit history available</p>}
+
+            <section className={styles.detailCard}>
+              <header className={styles.detailsHeader}>
+                <h2>Transaction Details</h2>
+                <button type="button" aria-label="Close transaction details" onClick={() => setIsDetailsCollapsed(true)}>
+                  &times;
+                </button>
+              </header>
+              <dl className={styles.detailList}>
+                <div><dt>Date</dt><dd>{formatDate(selected.date, true)}</dd></div>
+                <div><dt>Vendor</dt><dd>{selected.vendor || "Unknown"}</dd></div>
+                <div><dt>Category</dt><dd><span className={styles.badge}>{selected.category}</span></dd></div>
+                <div><dt>Notes</dt><dd>{selected.notes || "-"}</dd></div>
+                <div><dt>Created</dt><dd>{formatDate(selected.created_at, true)}</dd></div>
+                <div><dt>Updated</dt><dd>{formatDate(selected.updated_at, true)}</dd></div>
+              </dl>
+              <section className={styles.aiPanel}>
+                <h3>AI Categorization</h3>
+                <strong>{selected.ai_categorization?.category ?? "Pending"}</strong>
+                <span>Confidence: {selected.ai_categorization?.confidence ?? 0}%</span>
+              </section>
             </section>
-            <div className={styles.detailActions}>
-              <Button variant="secondary" onClick={() => openEdit(selected)}>Edit Transaction</Button>
-              <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>Delete Transaction</Button>
-            </div>
+
+            <section className={styles.historyCard}>
+              <div className={styles.history}>
+                <h3>Edit History</h3>
+                {selected.history.length ? selected.history.map((item) => (
+                  <article key={item.id}>
+                    <time>{formatDate(item.timestamp, true)}</time>
+                    <p>{item.event}</p>
+                  </article>
+                )) : <p>No edit history available</p>}
+              </div>
+              <div className={styles.detailActions}>
+                <Button variant="secondary" onClick={() => openEdit(selected)}>Edit Transaction</Button>
+                <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>Delete Transaction</Button>
+              </div>
+            </section>
           </>
         ) : null}
       </aside>
@@ -733,7 +806,13 @@ export function TransactionsPage() {
           <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
         </div>
       </Modal>
-      <Modal isOpen={isImportOpen} title="Import Transactions" onClose={closeImportModal}>
+      <Modal
+        bodyClassName={styles.importModalBody}
+        className={styles.importModal}
+        isOpen={isImportOpen}
+        title="Import Transactions"
+        onClose={closeImportModal}
+      >
         <div className={styles.importFlow}>
           <button
             className={styles.dropZone}

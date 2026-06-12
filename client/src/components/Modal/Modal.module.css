@@ -7,10 +7,15 @@
   background: rgba(0, 8, 6, 0.78);
   backdrop-filter: blur(5px);
   padding: 1rem;
+  overflow: hidden;
 }
 
 .modal {
+  display: grid;
+  max-height: calc(100dvh - 2rem);
   width: min(100%, 34rem);
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
   border: 1px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-lg);
   background:
@@ -42,6 +47,10 @@
 }
 
 .body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.1rem;
   color: var(--mm-text-soft);
+  scrollbar-color: rgba(81, 243, 91, 0.52) rgba(0, 17, 13, 0.45);
 }

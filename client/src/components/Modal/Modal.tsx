@@ -7,9 +7,18 @@ type ModalProps = {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  className?: string;
+  bodyClassName?: string;
 };
 
-export function Modal({ isOpen, title, children, onClose }: ModalProps) {
+export function Modal({
+  isOpen,
+  title,
+  children,
+  onClose,
+  className = "",
+  bodyClassName = "",
+}: ModalProps) {
   if (!isOpen) {
     return null;
   }
@@ -18,7 +27,7 @@ export function Modal({ isOpen, title, children, onClose }: ModalProps) {
     <div className={styles.overlay} role="presentation" onMouseDown={onClose}>
       <section
         aria-modal="true"
-        className={styles.modal}
+        className={`${styles.modal} ${className}`}
         role="dialog"
         onMouseDown={(event) => event.stopPropagation()}
       >
@@ -28,7 +37,7 @@ export function Modal({ isOpen, title, children, onClose }: ModalProps) {
             x
           </Button>
         </header>
-        <div className={styles.body}>{children}</div>
+        <div className={`${styles.body} ${bodyClassName}`}>{children}</div>
       </section>
     </div>
   );

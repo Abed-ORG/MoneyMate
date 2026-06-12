@@ -7,6 +7,11 @@
     radial-gradient(circle at 30% 100%, rgba(17, 115, 72, 0.12), transparent 34rem),
     linear-gradient(135deg, var(--mm-bg) 0%, #001914 52%, #00100d 100%);
   color: var(--mm-text);
+  transition: grid-template-columns 220ms ease;
+}
+
+.shellCollapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
 }
 
 .sidebar {
@@ -23,6 +28,15 @@
     linear-gradient(180deg, rgba(2, 27, 21, 0.98), rgba(0, 13, 10, 0.98));
   padding: 1.5rem 1.2rem;
   box-shadow: 1rem 0 3rem rgba(0, 0, 0, 0.16);
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease;
+}
+
+.shellCollapsed .sidebar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-100%);
 }
 
 .brand {
@@ -218,8 +232,8 @@
   object-fit: cover;
 }
 
-.menuButton {
-  display: none;
+.menuButton,
+.collapseButton {
   width: 2.5rem;
   height: 2.5rem;
   flex: 0 0 auto;
@@ -233,11 +247,42 @@
   padding: 0.55rem;
 }
 
-.menuButton span {
+.menuButton {
+  display: none;
+}
+
+.collapseButton {
+  display: flex;
+}
+
+.menuButton span,
+.collapseButton span {
   display: block;
   height: 2px;
   border-radius: 999px;
   background: var(--mm-accent-soft);
+}
+
+.collapseButton span {
+  width: 100%;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    width 160ms ease;
+}
+
+.shellCollapsed .collapseButton span:first-child {
+  width: 65%;
+  transform: translateX(0.22rem) rotate(35deg);
+}
+
+.shellCollapsed .collapseButton span:nth-child(2) {
+  opacity: 0.55;
+}
+
+.shellCollapsed .collapseButton span:last-child {
+  width: 65%;
+  transform: translateX(0.22rem) rotate(-35deg);
 }
 
 .scrim {
@@ -252,7 +297,8 @@
 }
 
 @media (max-width: 840px) {
-  .shell {
+  .shell,
+  .shellCollapsed {
     grid-template-columns: 1fr;
   }
 
@@ -264,8 +310,21 @@
     transition: transform 180ms ease;
   }
 
+  .shellCollapsed .sidebar {
+    opacity: 1;
+    transform: translateX(-105%);
+  }
+
   .sidebarOpen {
     transform: translateX(0);
+  }
+
+  .shellCollapsed .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .collapseButton {
+    display: none;
   }
 
   .menuButton,
