@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, FormField, Input, Modal, Select, Toast } from "../components";
+import { Button, FormField, Input, Modal, Toast } from "../components";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
@@ -25,6 +25,11 @@ type FormState = {
 };
 
 type CsvRow = Record<string, string>;
+
+type SelectOption = {
+  value: string;
+  label: string;
+};
 
 const categories = [
   "Food & Dining",
@@ -144,6 +149,64 @@ function toPayload(form: FormState): TransactionPayload {
   };
 }
 
+function PencilIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M4 20h4.3L19.1 9.2a2.1 2.1 0 0 0 0-3L17.8 5a2.1 2.1 0 0 0-3 0L4 15.7V20Zm2-3.5 10.2-10.2 1.5 1.5L7.5 18H6v-1.5Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M8 21a2.5 2.5 0 0 1-2.5-2.5V8H4V6h4V4.8C8 3.8 8.8 3 9.8 3h4.4c1 0 1.8.8 1.8 1.8V6h4v2h-1.5v10.5A2.5 2.5 0 0 1 16 21H8Zm1.8-16v1h4.4V5H9.8ZM7.5 8v10.5c0 .3.2.5.5.5h8c.3 0 .5-.2.5-.5V8h-9Zm2.2 9h1.8v-7H9.7v7Zm2.8 0h1.8v-7h-1.8v7Z" />
+    </svg>
+  );
+}
+
+function CloudUploadIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M7 19.5a5 5 0 0 1-.7-9.9A6.5 6.5 0 0 1 18.5 8a5.8 5.8 0 0 1 .3 11.5h-4.3v-2h4.3a3.8 3.8 0 0 0 0-7.5h-1.5l-.2-1.2a4.5 4.5 0 0 0-8.8 1l-.1 1.6-1.6.1A3 3 0 0 0 7 17.5h2.5v2H7Zm4-1.5v-5.2l-1.8 1.8-1.4-1.4L12 9l4.2 4.2-1.4 1.4-1.8-1.8V18h-2Z" />
+    </svg>
+  );
+}
+
+function ThemedSelect({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+  className = "",
+}: {
+  value: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  return (
+    <span className={`${styles.selectWrap} ${className}`}>
+      <select
+        aria-label={ariaLabel}
+        className={styles.themedSelect}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value || option.label} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <span className={styles.selectArrow} aria-hidden="true">
+        v
+      </span>
+    </span>
+  );
+}
+
 export function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
@@ -152,6 +215,8 @@ export function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
+  const [datePreset, setDatePreset] = useState("custom");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -171,6 +236,20 @@ export function TransactionsPage() {
   );
 
   const totalPages = Math.max(1, Math.ceil(total / filters.pageSize));
+  const categoryOptions = useMemo(
+    () => [
+      { value: "", label: "All Categories" },
+      ...categories.map((category) => ({ value: category, label: category })),
+    ],
+    [],
+  );
+  const formCategoryOptions = useMemo(
+    () => [
+      { value: "", label: "Select category" },
+      ...categories.map((category) => ({ value: category, label: category })),
+    ],
+    [],
+  );
   const expenses = transactions
     .filter((transaction) => Number(transaction.amount) < 0)
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
@@ -204,7 +283,29 @@ export function TransactionsPage() {
     setFilters((current) => ({ ...current, ...values, page: values.page ?? 1 }));
   };
 
+  const resetImportState = () => {
+    setCsvHeaders([]);
+    setCsvRows([]);
+    setCsvContent("");
+    setCsvErrors([]);
+    setMapping({});
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const openImportModal = () => {
+    resetImportState();
+    setIsImportOpen(true);
+  };
+
+  const closeImportModal = () => {
+    resetImportState();
+    setIsImportOpen(false);
+  };
+
   const applyDatePreset = (preset: "7" | "30" | "custom") => {
+    setDatePreset(preset);
     if (preset === "custom") {
       return;
     }
@@ -306,6 +407,7 @@ export function TransactionsPage() {
         variant: response.failed ? "warning" : "success",
       });
       if (response.imported > 0) {
+        resetImportState();
         setIsImportOpen(false);
         await loadTransactions();
       }
@@ -340,18 +442,12 @@ export function TransactionsPage() {
         />
       </FormField>
       <FormField label="Category" error={formErrors.category}>
-        <Select
+        <ThemedSelect
+          ariaLabel="Transaction category"
           value={form.category}
-          error={formErrors.category}
-          onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-        >
-          <option value="">Select category</option>
-          {categories.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </Select>
+          options={formCategoryOptions}
+          onChange={(value) => setForm((current) => ({ ...current, category: value }))}
+        />
       </FormField>
       <FormField label="Vendor">
         <Input
@@ -377,8 +473,12 @@ export function TransactionsPage() {
   );
 
   return (
-    <section className={`${styles.page} ${selected ? styles.withDetails : ""}`}>
-      {toast ? <Toast {...toast} onClose={() => setToast(null)} /> : null}
+    <section className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""}`}>
+      {toast ? (
+        <div className={styles.toastDock}>
+          <Toast {...toast} onClose={() => setToast(null)} />
+        </div>
+      ) : null}
 
       <aside className={styles.filters}>
         <div className={styles.panelHeader}>
@@ -387,21 +487,24 @@ export function TransactionsPage() {
         </div>
         <Input placeholder="Search transactions..." onChange={() => undefined} />
         <FormField label="Category">
-          <Select value={filters.category ?? ""} onChange={(event) => updateFilter({ category: event.target.value || undefined })}>
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </Select>
+          <ThemedSelect
+            ariaLabel="Filter by category"
+            value={filters.category ?? ""}
+            options={categoryOptions}
+            onChange={(value) => updateFilter({ category: value || undefined })}
+          />
         </FormField>
         <FormField label="Date Range">
-          <Select onChange={(event) => applyDatePreset(event.target.value as "7" | "30" | "custom")}>
-            <option value="custom">Custom range</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-          </Select>
+          <ThemedSelect
+            ariaLabel="Date range preset"
+            value={datePreset}
+            options={[
+              { value: "custom", label: "Custom range" },
+              { value: "7", label: "Last 7 days" },
+              { value: "30", label: "Last 30 days" },
+            ]}
+            onChange={(value) => applyDatePreset(value as "7" | "30" | "custom")}
+          />
         </FormField>
         <div className={styles.splitFields}>
           <Input type="date" value={filters.dateFrom ?? ""} onChange={(event) => updateFilter({ dateFrom: event.target.value || undefined })} />
@@ -414,21 +517,23 @@ export function TransactionsPage() {
           </div>
         </FormField>
         <FormField label="Sort By">
-          <Select
+          <ThemedSelect
+            ariaLabel="Sort transactions"
             value={`${filters.sortBy}:${filters.sortDir}`}
-            onChange={(event) => {
-              const [sortBy, sortDir] = event.target.value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
+            options={[
+              { value: "date:desc", label: "Newest First" },
+              { value: "date:asc", label: "Oldest First" },
+              { value: "amount:desc", label: "Amount High to Low" },
+              { value: "amount:asc", label: "Amount Low to High" },
+              { value: "category:asc", label: "Category A to Z" },
+            ]}
+            onChange={(value) => {
+              const [sortBy, sortDir] = value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
               updateFilter({ sortBy, sortDir });
             }}
-          >
-            <option value="date:desc">Newest First</option>
-            <option value="date:asc">Oldest First</option>
-            <option value="amount:desc">Amount High to Low</option>
-            <option value="amount:asc">Amount Low to High</option>
-            <option value="category:asc">Category A to Z</option>
-          </Select>
+          />
         </FormField>
-        <Button variant="secondary" onClick={() => setFilters(defaultFilters)}>
+        <Button variant="secondary" onClick={() => { setDatePreset("custom"); setFilters(defaultFilters); }}>
           Clear Filters
         </Button>
 
@@ -445,11 +550,13 @@ export function TransactionsPage() {
 
       <main className={styles.content}>
         <div className={styles.topCards}>
-          <button className={styles.importCard} type="button" onClick={() => setIsImportOpen(true)}>
-            <span className={styles.largeIcon}>UP</span>
+          <button className={styles.importCard} type="button" onClick={openImportModal}>
+            <span className={styles.largeIcon}><CloudUploadIcon /></span>
             <span>
               <strong>Import Transactions</strong>
-              <small>Drag, map, preview, and import CSV bank statements.</small>
+              <small>Drag & drop your CSV file here</small>
+              <small>or <em>click to browse</em></small>
+              <small>Supports CSV files up to 10MB</small>
             </span>
           </button>
           <section className={styles.quickAdd}>
@@ -472,7 +579,18 @@ export function TransactionsPage() {
 
         <section className={styles.tablePanel}>
           <header className={styles.tableHeader}>
-            <h2>Transactions</h2>
+            <div>
+              <h2>Transactions</h2>
+              {selected && isDetailsCollapsed ? (
+                <button
+                  className={styles.reopenDetails}
+                  type="button"
+                  onClick={() => setIsDetailsCollapsed(false)}
+                >
+                  Show details <span aria-hidden="true">-&gt;</span>
+                </button>
+              ) : null}
+            </div>
             <span>
               Showing {transactions.length ? (filters.page - 1) * filters.pageSize + 1 : 0} to{" "}
               {Math.min(filters.page * filters.pageSize, total)} of {total}
@@ -503,7 +621,10 @@ export function TransactionsPage() {
                     <tr
                       key={transaction.id}
                       className={selectedId === transaction.id ? styles.selectedRow : ""}
-                      onClick={() => setSelectedId(transaction.id)}
+                      onClick={() => {
+                        setSelectedId(transaction.id);
+                        setIsDetailsCollapsed(false);
+                      }}
                     >
                       <td>{formatDate(transaction.date)}</td>
                       <td>
@@ -519,11 +640,11 @@ export function TransactionsPage() {
                       </td>
                       <td>
                         <div className={styles.rowActions}>
-                          <button type="button" aria-label="Edit transaction" onClick={(event) => { event.stopPropagation(); openEdit(transaction); }}>
-                            E
+                          <button className={styles.editIcon} type="button" aria-label="Edit transaction" onClick={(event) => { event.stopPropagation(); openEdit(transaction); }}>
+                            <PencilIcon />
                           </button>
                           <button type="button" aria-label="Delete transaction" className={styles.deleteIcon} onClick={(event) => { event.stopPropagation(); setSelectedId(transaction.id); setIsDeleteOpen(true); }}>
-                            D
+                            <TrashIcon />
                           </button>
                         </div>
                       </td>
@@ -544,22 +665,28 @@ export function TransactionsPage() {
             <Button variant="secondary" disabled={filters.page >= totalPages} onClick={() => updateFilter({ page: filters.page + 1 })}>
               Next
             </Button>
-            <Select value={filters.pageSize} onChange={(event) => updateFilter({ pageSize: Number(event.target.value) })}>
-              <option value={5}>5 per page</option>
-              <option value={10}>10 per page</option>
-              <option value={25}>25 per page</option>
-            </Select>
+            <ThemedSelect
+              ariaLabel="Rows per page"
+              className={styles.pageSizeSelect}
+              value={String(filters.pageSize)}
+              options={[
+                { value: "5", label: "5 per page" },
+                { value: "10", label: "10 per page" },
+                { value: "25", label: "25 per page" },
+              ]}
+              onChange={(value) => updateFilter({ pageSize: Number(value) })}
+            />
           </footer>
         </section>
       </main>
 
-      <aside className={`${styles.details} ${selected ? styles.detailsOpen : ""}`}>
-        {selected ? (
+      <aside className={`${styles.details} ${selected && !isDetailsCollapsed ? styles.detailsOpen : ""}`}>
+        {selected && !isDetailsCollapsed ? (
           <>
             <header className={styles.detailsHeader}>
               <h2>Transaction Details</h2>
-              <button type="button" aria-label="Back to list" onClick={() => setSelectedId(null)}>
-                x
+              <button type="button" aria-label="Collapse transaction details" onClick={() => setIsDetailsCollapsed(true)}>
+                &rarr;
               </button>
             </header>
             <dl className={styles.detailList}>
@@ -606,7 +733,7 @@ export function TransactionsPage() {
           <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
         </div>
       </Modal>
-      <Modal isOpen={isImportOpen} title="Import Transactions" onClose={() => setIsImportOpen(false)}>
+      <Modal isOpen={isImportOpen} title="Import Transactions" onClose={closeImportModal}>
         <div className={styles.importFlow}>
           <button
             className={styles.dropZone}
@@ -618,8 +745,10 @@ export function TransactionsPage() {
             }}
             onDragOver={(event) => event.preventDefault()}
           >
-            <strong>Drop your CSV file here</strong>
-            <span>or click to browse. Supports CSV files up to 10MB.</span>
+            <span className={styles.dropIcon}><CloudUploadIcon /></span>
+            <strong>Drag & drop your CSV file here</strong>
+            <span>or <em>click to browse</em></span>
+            <small>Supports CSV files up to 10MB</small>
           </button>
           <input ref={fileInputRef} hidden type="file" accept=".csv,text/csv" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
           {csvHeaders.length ? (
@@ -627,10 +756,15 @@ export function TransactionsPage() {
               <div className={styles.mappingGrid}>
                 {["date", "amount", "category", "vendor", "notes"].map((field) => (
                   <FormField key={field} label={field[0].toUpperCase() + field.slice(1)}>
-                    <Select value={mapping[field] ?? ""} onChange={(event) => setMapping((current) => ({ ...current, [field]: event.target.value }))}>
-                      <option value="">Do not map</option>
-                      {csvHeaders.map((header) => <option key={header} value={header}>{header}</option>)}
-                    </Select>
+                    <ThemedSelect
+                      ariaLabel={`Map ${field} column`}
+                      value={mapping[field] ?? ""}
+                      options={[
+                        { value: "", label: "Do not map" },
+                        ...csvHeaders.map((header) => ({ value: header, label: header })),
+                      ]}
+                      onChange={(value) => setMapping((current) => ({ ...current, [field]: value }))}
+                    />
                   </FormField>
                 ))}
               </div>
@@ -647,12 +781,20 @@ export function TransactionsPage() {
                   </tbody>
                 </table>
               </div>
-              <Button onClick={() => void importCsv()}>Import Transactions</Button>
+              <div className={styles.modalActions}>
+                <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
+                <Button onClick={() => void importCsv()}>Import Transactions</Button>
+              </div>
             </>
           ) : null}
           {csvErrors.length ? (
             <div className={styles.importErrors}>
               {csvErrors.map((item) => <p key={`${item.row}-${item.message}`}>Row {item.row}: {item.message}</p>)}
+            </div>
+          ) : null}
+          {!csvHeaders.length ? (
+            <div className={styles.modalActions}>
+              <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
             </div>
           ) : null}
         </div>

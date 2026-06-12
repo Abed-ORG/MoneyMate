@@ -1,14 +1,23 @@
 .page {
   position: relative;
   display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr) 0;
+  grid-template-columns: minmax(14.5rem, 16rem) minmax(0, 1fr) 0;
   gap: 1rem;
   align-items: start;
   transition: grid-template-columns 220ms ease;
 }
 
 .withDetails {
-  grid-template-columns: 17rem minmax(32rem, 1fr) minmax(20rem, 25rem);
+  grid-template-columns: minmax(14.5rem, 16rem) minmax(0, 1fr) minmax(18rem, 22rem);
+}
+
+.toastDock {
+  position: fixed;
+  top: 6.25rem;
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 90;
+  width: min(28rem, calc(100vw - 2rem));
+  pointer-events: auto;
 }
 
 .filters,
@@ -57,7 +66,8 @@
 .iconBox,
 .largeIcon,
 .plusIcon,
-.vendorMark {
+.vendorMark,
+.dropIcon {
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--mm-border-strong);
@@ -142,9 +152,29 @@
   font-size: 1.3rem;
 }
 
+.largeIcon svg,
+.dropIcon svg,
+.rowActions svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: currentColor;
+}
+
+.largeIcon svg {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
 .importCard strong,
 .importCard small {
   display: block;
+}
+
+.importCard em,
+.dropZone em {
+  color: var(--mm-accent-soft);
+  font-style: normal;
+  font-weight: 800;
 }
 
 .importCard strong {
@@ -173,6 +203,26 @@
   padding: 1rem 1.2rem;
 }
 
+.tableHeader > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.reopenDetails {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: rgba(81, 243, 91, 0.08);
+  color: var(--mm-accent-soft);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+}
+
 .state,
 .stateError {
   padding: 2rem;
@@ -194,7 +244,7 @@
 
 .table {
   width: 100%;
-  min-width: 48rem;
+  min-width: 42rem;
   border-collapse: collapse;
 }
 
@@ -265,11 +315,33 @@
   background: rgba(1, 24, 18, 0.75);
   color: var(--mm-accent-soft);
   cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.rowActions button:hover,
+.detailsHeader button:hover,
+.reopenDetails:hover {
+  border-color: var(--mm-accent-soft);
+  box-shadow: 0 0 1rem rgba(81, 243, 91, 0.16);
+  transform: translateY(-1px);
+}
+
+.rowActions .editIcon {
+  border-color: rgba(120, 255, 104, 0.48);
+  color: var(--mm-accent-soft);
 }
 
 .rowActions .deleteIcon {
   border-color: rgba(255, 107, 114, 0.42);
   color: var(--color-error);
+}
+
+.rowActions .deleteIcon:hover {
+  border-color: rgba(255, 107, 114, 0.8);
+  box-shadow: 0 0 1rem rgba(255, 107, 114, 0.18);
 }
 
 .pagination {
@@ -285,10 +357,6 @@
 .pagination button {
   min-height: 2.25rem;
   padding: 0.55rem 0.85rem;
-}
-
-.pagination select {
-  width: auto;
 }
 
 .details {
@@ -313,6 +381,10 @@
 .detailsHeader {
   border-bottom: 1px solid var(--mm-border);
   padding: 1rem;
+}
+
+.detailsHeader button {
+  font-size: 1rem;
 }
 
 .detailList {
@@ -399,15 +471,43 @@
 
 .dropZone {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
   width: 100%;
-  border: 1px dashed var(--mm-border-strong);
+  place-items: center;
+  border: 1px dashed rgba(120, 255, 104, 0.72);
   border-radius: var(--mm-radius-md);
   background: rgba(1, 24, 18, 0.72);
   color: var(--mm-text);
   cursor: pointer;
   padding: 1.5rem;
   text-align: center;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.dropZone:hover {
+  border-color: var(--mm-accent-soft);
+  background: rgba(81, 243, 91, 0.08);
+  box-shadow: 0 0 1.4rem rgba(81, 243, 91, 0.12);
+  transform: translateY(-1px);
+}
+
+.dropZone small {
+  color: var(--mm-text-muted);
+}
+
+.dropIcon {
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--mm-accent-soft);
+}
+
+.dropIcon svg {
+  width: 2rem;
+  height: 2rem;
 }
 
 .mappingGrid {
@@ -450,6 +550,69 @@
   color: #ffb4b8;
 }
 
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+}
+
+.themedSelect {
+  width: 100%;
+  min-height: 2.85rem;
+  appearance: none;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background:
+    linear-gradient(145deg, rgba(3, 35, 26, 0.96), rgba(0, 17, 13, 0.98));
+  color: var(--mm-text);
+  cursor: pointer;
+  padding: 0.7rem 2.35rem 0.7rem 0.85rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.themedSelect:hover {
+  border-color: var(--mm-border-strong);
+  background:
+    linear-gradient(145deg, rgba(5, 45, 34, 0.98), rgba(0, 20, 15, 0.98));
+}
+
+.themedSelect:focus {
+  border-color: var(--mm-accent-soft);
+  box-shadow:
+    0 0 0 3px rgba(81, 243, 91, 0.1),
+    0 0 1rem rgba(81, 243, 91, 0.1);
+  outline: none;
+}
+
+.themedSelect option {
+  background: #032019;
+  color: var(--mm-text);
+}
+
+.selectArrow {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  color: var(--mm-accent-soft);
+  font-size: 0.8rem;
+  font-weight: 900;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.page input[type="date"] {
+  color-scheme: dark;
+}
+
+.page input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(92%) sepia(10%) saturate(666%) hue-rotate(65deg) brightness(118%);
+  opacity: 0.95;
+}
+
 @media (max-width: 1240px) {
   .page,
   .withDetails {
@@ -487,6 +650,12 @@
 }
 
 @media (max-width: 560px) {
+  .toastDock {
+    top: 1rem;
+    right: 0.75rem;
+    width: calc(100vw - 1.5rem);
+  }
+
   .filters,
   .quickAdd,
   .importCard {
