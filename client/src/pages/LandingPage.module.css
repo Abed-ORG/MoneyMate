@@ -2,7 +2,7 @@
   --neon: #51f35b;
   --neon-soft: #78ff68;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: clip;
   background:
     radial-gradient(circle at 72% 44%, rgba(31, 197, 84, 0.14), transparent 27rem),
     radial-gradient(circle at 20% 100%, rgba(17, 115, 72, 0.16), transparent 34rem),
@@ -347,6 +347,11 @@
   line-height: 1.05;
 }
 
+.aboutSection h2 span {
+  color: var(--neon-soft);
+  text-shadow: 0 0 2rem rgba(81, 243, 91, 0.22);
+}
+
 .featureHeading h2 span {
   color: var(--neon-soft);
   text-shadow: 0 0 2rem rgba(81, 243, 91, 0.24);
@@ -497,15 +502,167 @@
 
 .aboutSection {
   display: grid;
-  align-items: end;
-  grid-template-columns: 1fr 0.7fr;
-  gap: 4rem;
-  padding: 5rem 0 8rem;
+  min-height: 52rem;
+  align-items: center;
+  grid-template-columns: minmax(14rem, 0.78fr) minmax(28rem, 1.35fr) minmax(15rem, 0.87fr);
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+  scroll-margin-top: 1rem;
+  padding: 7rem 0 8rem;
 }
 
-.aboutSection > p {
+.aboutSide {
+  position: relative;
+  z-index: 2;
+}
+
+.aboutSideLeft {
+  padding-bottom: 7rem;
+}
+
+.aboutSideLeft h2 {
+  font-size: clamp(2.55rem, 3.6vw, 4rem);
+}
+
+.aboutSideRight {
+  padding-top: 8rem;
+}
+
+.aboutSideRight h3 {
+  max-width: 24rem;
   margin: 0;
-  font-size: 1.15rem;
+  font-size: clamp(1.65rem, 2.35vw, 2.35rem);
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+}
+
+.aboutDescription {
+  max-width: 25rem;
+  margin: 1.8rem 0 0;
+  color: rgba(239, 249, 242, 0.72);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.aboutHighlights {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 2rem;
+}
+
+.aboutHighlights span {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: rgba(239, 249, 242, 0.84);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.aboutHighlights span::before {
+  display: block;
+  width: 0.48rem;
+  height: 0.48rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--neon-soft);
+  border-radius: 50%;
+  background: rgba(81, 243, 91, 0.28);
+  box-shadow: 0 0 0.8rem rgba(81, 243, 91, 0.65);
+  content: "";
+}
+
+.aboutCenter {
+  position: relative;
+  display: grid;
+  min-height: 43rem;
+  place-items: center;
+  perspective: 1200px;
+  isolation: isolate;
+}
+
+.aboutCenter::before {
+  position: absolute;
+  z-index: -3;
+  width: 88%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(63, 239, 91, 0.21), transparent 68%);
+  filter: blur(2rem);
+  content: "";
+}
+
+.aboutOrbital,
+.aboutOrbitalInner {
+  position: absolute;
+  z-index: -2;
+  border: 1px solid rgba(120, 255, 104, 0.13);
+  border-radius: 50%;
+  transform: rotateX(66deg) rotateZ(-14deg);
+}
+
+.aboutOrbital {
+  width: 112%;
+  aspect-ratio: 1.3;
+  box-shadow:
+    0 0 2rem rgba(81, 243, 91, 0.05),
+    inset 0 0 2rem rgba(81, 243, 91, 0.04);
+}
+
+.aboutOrbitalInner {
+  width: 76%;
+  aspect-ratio: 1.2;
+  border-color: rgba(120, 255, 104, 0.24);
+}
+
+.aboutFloor {
+  position: absolute;
+  bottom: 4.4rem;
+  left: 50%;
+  z-index: -1;
+  width: 82%;
+  height: 3.2rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(73, 255, 96, 0.31), rgba(8, 89, 47, 0.09) 48%, transparent 72%);
+  box-shadow:
+    0 0 2rem rgba(81, 243, 91, 0.2),
+    0 1.4rem 3rem rgba(0, 0, 0, 0.55);
+  filter: blur(0.35rem);
+  transform: translateX(-50%) rotateX(65deg);
+}
+
+.growthSculpture {
+  position: relative;
+  z-index: 1;
+  width: min(112%, 41rem);
+  transform: rotateX(4deg) rotateY(-10deg) rotateZ(-2deg);
+  transform-style: preserve-3d;
+  animation: sculptureFloat 6s ease-in-out infinite;
+}
+
+.growthSculpture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter:
+    drop-shadow(1.4rem 2.4rem 2rem rgba(0, 0, 0, 0.48))
+    drop-shadow(0 0 1.65rem rgba(68, 244, 89, 0.2));
+  transform: translateZ(2rem);
+}
+
+.growthSculpture::after {
+  position: absolute;
+  right: 9%;
+  bottom: 6%;
+  left: 8%;
+  z-index: -1;
+  height: 4rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 2rem rgba(0, 0, 0, 0.38),
+    0 0 2rem rgba(81, 243, 91, 0.12);
+  filter: blur(1.2rem);
+  transform: rotateX(70deg) translateZ(-2rem);
+  content: "";
 }
 
 .footer {
@@ -514,6 +671,7 @@
   justify-content: space-between;
   gap: 2rem;
   border-top: 1px solid rgba(81, 243, 91, 0.15);
+  scroll-margin-top: 1rem;
   padding: 2.4rem 0 3rem;
 }
 
@@ -541,13 +699,53 @@
   }
 }
 
+@keyframes sculptureFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotateX(4deg) rotateY(-10deg) rotateZ(-2deg);
+  }
+
+  50% {
+    transform: translateY(-0.7rem) rotateX(5deg) rotateY(-8deg) rotateZ(-1.4deg);
+  }
+}
+
 @media (max-width: 1050px) {
   .header {
     grid-template-columns: 1fr auto;
+    gap: 0.7rem 1rem;
+    padding: 0.8rem 0 0.9rem;
   }
 
   .navigation {
-    display: none;
+    display: flex;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-content: center;
+    gap: clamp(1.5rem, 8vw, 4rem);
+    font-size: 0.9rem;
+  }
+
+  .featureSection,
+  .aboutSection,
+  .footer {
+    scroll-margin-top: 1rem;
+  }
+
+  .aboutSection {
+    grid-template-columns: minmax(0, 0.78fr) minmax(26rem, 1.22fr);
+    gap: 1.5rem;
+  }
+
+  .aboutSideLeft,
+  .aboutSideRight {
+    grid-column: 1;
+    padding: 0;
+  }
+
+  .aboutCenter {
+    grid-row: 1 / 3;
+    grid-column: 2;
   }
 
   .hero {
@@ -569,7 +767,7 @@
   }
 
   .header {
-    min-height: 5.4rem;
+    min-height: auto;
   }
 
   .brand {
@@ -622,11 +820,52 @@
 
   .aboutSection {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1rem;
+    padding-top: 6rem;
+  }
+
+  .aboutSide,
+  .aboutSideRight {
+    grid-row: auto;
+    grid-column: auto;
+    padding: 0;
+    text-align: center;
+  }
+
+  .aboutSideRight h3 {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .aboutDescription {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .aboutHighlights {
+    width: fit-content;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: left;
+  }
+
+  .aboutCenter {
+    min-height: 35rem;
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .growthSculpture {
+    width: min(100%, 36rem);
   }
 }
 
 @media (max-width: 520px) {
+  .navigation {
+    gap: clamp(1rem, 9vw, 2rem);
+    font-size: 0.82rem;
+  }
+
   .header .brand > span {
     display: none;
   }
@@ -653,6 +892,18 @@
 
   .heroVisual {
     min-height: 24rem;
+  }
+
+  .aboutSection {
+    padding-top: 5rem;
+  }
+
+  .aboutCenter {
+    min-height: 27rem;
+  }
+
+  .growthSculpture {
+    width: 112%;
   }
 
   .featureGrid article {
