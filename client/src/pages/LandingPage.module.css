@@ -249,6 +249,7 @@
   display: grid;
   min-height: 38rem;
   place-items: center;
+  perspective: 1100px;
   isolation: isolate;
 }
 
@@ -261,14 +262,102 @@
   place-items: center;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(52, 208, 88, 0.16), transparent 67%);
+  transform-style: preserve-3d;
 }
 
-.logoHalo img {
+.logoSculpture {
+  position: relative;
   width: 100%;
+  aspect-ratio: 1;
+  transform: rotateX(7deg) rotateY(-13deg) rotateZ(-2deg);
+  transform-style: preserve-3d;
+  animation: logoSculptureFloat 5.5s ease-in-out infinite;
+}
+
+.logoLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logoDepthBack {
+  opacity: 0.62;
   filter:
-    drop-shadow(0 0 0.65rem rgba(110, 255, 100, 0.72))
-    drop-shadow(0 0 2.8rem rgba(43, 216, 88, 0.35));
-  animation: floatLogo 5s ease-in-out infinite;
+    brightness(0.2)
+    saturate(1.8)
+    drop-shadow(1.35rem 1.7rem 1.1rem rgba(0, 0, 0, 0.52));
+  transform: translate3d(1.1rem, 1.25rem, -2.4rem);
+}
+
+.logoDepthMiddle {
+  opacity: 0.72;
+  filter: brightness(0.28) saturate(1.7);
+  transform: translate3d(0.75rem, 0.82rem, -1.6rem);
+}
+
+.logoDepthFront {
+  opacity: 0.82;
+  filter: brightness(0.4) saturate(1.6);
+  transform: translate3d(0.38rem, 0.42rem, -0.8rem);
+}
+
+.logoFace {
+  filter:
+    contrast(1.08)
+    drop-shadow(-0.35rem -0.35rem 0.45rem rgba(174, 255, 161, 0.24))
+    drop-shadow(0 0 0.7rem rgba(110, 255, 100, 0.7))
+    drop-shadow(0 0 2.6rem rgba(43, 216, 88, 0.3));
+  transform: translateZ(0.2rem);
+}
+
+.logoShine {
+  position: absolute;
+  inset: 8%;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 50%;
+  mask-image: url("/moneymate-logo.png");
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  pointer-events: none;
+}
+
+.logoShine::after {
+  position: absolute;
+  top: -20%;
+  left: -55%;
+  width: 28%;
+  height: 145%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 255, 217, 0.5),
+    transparent
+  );
+  filter: blur(0.4rem);
+  transform: rotate(18deg);
+  animation: logoShineSweep 5.5s ease-in-out infinite;
+  content: "";
+}
+
+.logoShadow {
+  position: absolute;
+  bottom: 12%;
+  z-index: 2;
+  width: 48%;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(0, 0, 0, 0.68),
+    rgba(31, 209, 79, 0.16) 48%,
+    transparent 72%
+  );
+  filter: blur(0.65rem);
+  transform: rotateX(66deg);
 }
 
 .orbit {
@@ -688,14 +777,40 @@
   margin: 0;
 }
 
-@keyframes floatLogo {
+@keyframes logoSculptureFloat {
   0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform:
+      translateY(0)
+      rotateX(7deg)
+      rotateY(-13deg)
+      rotateZ(-2deg);
   }
 
   50% {
-    transform: translateY(-0.7rem) scale(1.015);
+    transform:
+      translateY(-0.55rem)
+      rotateX(5deg)
+      rotateY(-9deg)
+      rotateZ(-1deg);
+  }
+}
+
+@keyframes logoShineSweep {
+  0%,
+  28% {
+    left: -55%;
+    opacity: 0;
+  }
+
+  42% {
+    opacity: 0.75;
+  }
+
+  64%,
+  100% {
+    left: 125%;
+    opacity: 0;
   }
 }
 

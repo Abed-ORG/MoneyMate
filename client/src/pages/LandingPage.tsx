@@ -190,8 +190,31 @@ export function LandingPage() {
           <span className={`${styles.orbit} ${styles.orbitInner}`} />
           <span className={styles.dots} />
           <div className={styles.logoHalo}>
-            <img src="/moneymate-logo.png" alt="" />
+            <div className={styles.logoSculpture}>
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthBack}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthMiddle}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthFront}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoFace}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <span className={styles.logoShine} />
+            </div>
           </div>
+          <span className={styles.logoShadow} />
           <span className={styles.lightBeam} />
         </div>
       </section>
