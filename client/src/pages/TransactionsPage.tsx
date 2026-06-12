@@ -8,6 +8,10 @@ import {
   Toast,
   type SelectOption,
 } from "../components";
+import {
+  getCategoryIcon,
+  transactionCategories,
+} from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
@@ -33,19 +37,6 @@ type FormState = {
 };
 
 type CsvRow = Record<string, string>;
-
-const categories = [
-  "Food & Dining",
-  "Transport",
-  "Income",
-  "Housing",
-  "Groceries",
-  "Entertainment",
-  "Shopping",
-  "Healthcare",
-  "Utilities",
-  "Other",
-];
 
 const noteMaxLength = 160;
 
@@ -221,14 +212,14 @@ export function TransactionsPage() {
   const categoryOptions = useMemo(
     () => [
       { value: "", label: "All Categories" },
-      ...categories.map((category) => ({ value: category, label: category })),
+      ...transactionCategories.map((category) => ({ value: category, label: category })),
     ],
     [],
   );
   const formCategoryOptions = useMemo(
     () => [
       { value: "", label: "Select category" },
-      ...categories.map((category) => ({ value: category, label: category })),
+      ...transactionCategories.map((category) => ({ value: category, label: category })),
     ],
     [],
   );
@@ -624,7 +615,12 @@ export function TransactionsPage() {
                         {transaction.vendor || "Unknown"}
                       </td>
                       <td>
-                        <span className={styles.badge}>{transaction.category}</span>
+                        <img
+                          alt={transaction.category}
+                          className={styles.categoryIcon}
+                          src={getCategoryIcon(transaction.category)}
+                          title={transaction.category}
+                        />
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
                         <span>{transaction.notes || "-"}</span>

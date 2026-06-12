@@ -10,21 +10,10 @@ import {
   type SavingsGoalDraft,
   Select,
 } from "../components";
+import { spendingCategories } from "../constants/categories";
 import { useAuth, type FinancialProfile } from "../contexts/AuthContext";
 import { api, getApiErrorMessage } from "../services/api";
 import styles from "./ProfilePage.module.css";
-
-const categories = [
-  "Housing",
-  "Food & Dining",
-  "Transportation",
-  "Utilities",
-  "Health",
-  "Shopping",
-  "Entertainment",
-  "Education",
-  "Travel",
-];
 
 export function OnboardingPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -141,7 +130,7 @@ export function OnboardingPage() {
               <fieldset className={styles.fieldGroup}>
                 <legend className={styles.fieldLabel}>Spending categories</legend>
                 <div className={styles.categories}>
-                  {categories.map((category) => (
+                  {spendingCategories.map((category) => (
                     <label className={styles.category} key={category}>
                       <input
                         checked={selectedCategories.includes(category)}
