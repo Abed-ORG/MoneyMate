@@ -30,6 +30,7 @@ def list_transactions(
     page_size: int,
     sort_by: SortField,
     sort_dir: SortDirection,
+    search: str | None = None,
     category: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
@@ -37,6 +38,13 @@ def list_transactions(
     amount_max: Decimal | None = None,
 ) -> TransactionListResponse:
     transactions = transaction_repository.list_by_user(user_id)
+    if search and search.strip():
+        normalized_search = search.strip().casefold()
+        transactions = [
+            item
+            for item in transactions
+            if normalized_search in item.vendor.casefold()
+        ]
     if category:
         transactions = [item for item in transactions if item.category == category]
     if date_from:

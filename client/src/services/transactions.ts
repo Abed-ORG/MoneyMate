@@ -16,6 +16,7 @@ function buildQuery(params: TransactionListParams) {
   });
 
   if (params.category) search.set("category", params.category);
+  if (params.search) search.set("search", params.search);
   if (params.dateFrom) search.set("date_from", new Date(params.dateFrom).toISOString());
   if (params.dateTo) search.set("date_to", new Date(`${params.dateTo}T23:59:59`).toISOString());
   if (params.amountMin) search.set("amount_min", params.amountMin);

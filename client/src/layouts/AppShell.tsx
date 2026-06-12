@@ -74,10 +74,6 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className={styles.sidebarNote}>
-          <span>Money in focus</span>
-          <p>Build stronger habits, one clear decision at a time.</p>
-        </div>
       </aside>
 
       {isSidebarOpen ? (

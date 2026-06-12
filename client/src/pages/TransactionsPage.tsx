@@ -1,5 +1,13 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Button, FormField, Input, Modal, Toast } from "../components";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Button,
+  FormField,
+  Input,
+  Modal,
+  Select,
+  Toast,
+  type SelectOption,
+} from "../components";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
@@ -26,11 +34,6 @@ type FormState = {
 
 type CsvRow = Record<string, string>;
 
-type SelectOption = {
-  value: string;
-  label: string;
-};
-
 const categories = [
   "Food & Dining",
   "Transport",
@@ -43,6 +46,8 @@ const categories = [
   "Utilities",
   "Other",
 ];
+
+const noteMaxLength = 160;
 
 const emptyForm: FormState = {
   date: new Date().toISOString().slice(0, 10),
@@ -84,7 +89,7 @@ function transactionToForm(transaction: Transaction): FormState {
     amount: String(transaction.amount),
     category: transaction.category,
     vendor: transaction.vendor,
-    notes: transaction.notes,
+    notes: transaction.notes.slice(0, noteMaxLength),
   };
 }
 
@@ -145,7 +150,7 @@ function toPayload(form: FormState): TransactionPayload {
     amount: Number(form.amount),
     category: form.category.trim(),
     vendor: form.vendor.trim(),
-    notes: form.notes.trim(),
+    notes: form.notes.trim().slice(0, noteMaxLength),
   };
 }
 
@@ -183,91 +188,6 @@ function FilterIcon() {
   );
 }
 
-function ThemedSelect({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-  className = "",
-}: {
-  value: string;
-  options: SelectOption[];
-  onChange: (value: string) => void;
-  ariaLabel: string;
-  className?: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const listboxId = useId();
-  const selectedOption = options.find((option) => option.value === value) ?? options[0];
-
-  useEffect(() => {
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, []);
-
-  return (
-    <div className={`${styles.selectWrap} ${className}`} ref={rootRef}>
-      <button
-        aria-label={ariaLabel}
-        aria-controls={listboxId}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        className={styles.selectTrigger}
-        onClick={() => setIsOpen((current) => !current)}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setIsOpen(false);
-          }
-        }}
-        type="button"
-      >
-        <span>{selectedOption?.label}</span>
-        <svg
-          aria-hidden="true"
-          className={`${styles.selectArrow} ${isOpen ? styles.selectArrowOpen : ""}`}
-          focusable="false"
-          viewBox="0 0 20 20"
-        >
-          <path d="m5 7.5 5 5 5-5" />
-        </svg>
-      </button>
-      {isOpen ? (
-        <div className={styles.selectMenu} id={listboxId} role="listbox">
-          {options.map((option) => (
-            <button
-              aria-selected={option.value === value}
-              className={`${styles.selectOption} ${
-                option.value === value ? styles.selectOptionActive : ""
-              }`}
-              key={option.value || option.label}
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              role="option"
-              type="button"
-            >
-              <span>{option.label}</span>
-              {option.value === value ? (
-                <svg aria-hidden="true" className={styles.optionCheck} viewBox="0 0 20 20">
-                  <path d="m4.5 10.5 3.2 3.2 7.8-8" />
-                </svg>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
@@ -278,6 +198,7 @@ export function TransactionsPage() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
   const [datePreset, setDatePreset] = useState("custom");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -339,6 +260,18 @@ export function TransactionsPage() {
     void loadTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setFilters((current) => ({
+        ...current,
+        page: 1,
+        search: searchTerm.trim() || undefined,
+      }));
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
 
   const updateFilter = (values: Partial<TransactionListParams>) => {
     setFilters((current) => ({ ...current, ...values, page: values.page ?? 1 }));
@@ -503,11 +436,11 @@ export function TransactionsPage() {
         />
       </FormField>
       <FormField label="Category" error={formErrors.category}>
-        <ThemedSelect
-          ariaLabel="Transaction category"
+        <Select
+          aria-label="Transaction category"
           value={form.category}
           options={formCategoryOptions}
-          onChange={(value) => setForm((current) => ({ ...current, category: value }))}
+          onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
         />
       </FormField>
       <FormField label="Vendor">
@@ -517,8 +450,12 @@ export function TransactionsPage() {
           onChange={(event) => setForm((current) => ({ ...current, vendor: event.target.value }))}
         />
       </FormField>
-      <FormField label="Notes">
+      <FormField
+        helperText={`${form.notes.length}/${noteMaxLength} characters`}
+        label="Notes"
+      >
         <Input
+          maxLength={noteMaxLength}
           placeholder="Optional note"
           value={form.notes}
           onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
@@ -543,28 +480,33 @@ export function TransactionsPage() {
 
       <aside className={styles.filters}>
         <div className={styles.panelHeader}>
-          <span className={styles.iconBox}><FilterIcon /></span>
           <h2>Filters</h2>
+          <span className={styles.iconBox}><FilterIcon /></span>
         </div>
-        <Input placeholder="Search transactions..." onChange={() => undefined} />
+        <Input
+          aria-label="Search transactions by vendor"
+          placeholder="Search transactions..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
         <FormField label="Category">
-          <ThemedSelect
-            ariaLabel="Filter by category"
+          <Select
+            aria-label="Filter by category"
             value={filters.category ?? ""}
             options={categoryOptions}
-            onChange={(value) => updateFilter({ category: value || undefined })}
+            onValueChange={(value) => updateFilter({ category: value || undefined })}
           />
         </FormField>
         <FormField label="Date Range">
-          <ThemedSelect
-            ariaLabel="Date range preset"
+          <Select
+            aria-label="Date range preset"
             value={datePreset}
             options={[
               { value: "custom", label: "Custom range" },
               { value: "7", label: "Last 7 days" },
               { value: "30", label: "Last 30 days" },
             ]}
-            onChange={(value) => applyDatePreset(value as "7" | "30" | "custom")}
+            onValueChange={(value) => applyDatePreset(value as "7" | "30" | "custom")}
           />
         </FormField>
         <div className={styles.splitFields}>
@@ -578,8 +520,8 @@ export function TransactionsPage() {
           </div>
         </FormField>
         <FormField label="Sort By">
-          <ThemedSelect
-            ariaLabel="Sort transactions"
+          <Select
+            aria-label="Sort transactions"
             value={`${filters.sortBy}:${filters.sortDir}`}
             options={[
               { value: "date:desc", label: "Newest First" },
@@ -588,13 +530,13 @@ export function TransactionsPage() {
               { value: "amount:asc", label: "Amount Low to High" },
               { value: "category:asc", label: "Category A to Z" },
             ]}
-            onChange={(value) => {
+            onValueChange={(value) => {
               const [sortBy, sortDir] = value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
               updateFilter({ sortBy, sortDir });
             }}
           />
         </FormField>
-        <Button variant="secondary" onClick={() => { setDatePreset("custom"); setFilters(defaultFilters); }}>
+        <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
           Clear Filters
         </Button>
 
@@ -684,7 +626,9 @@ export function TransactionsPage() {
                       <td>
                         <span className={styles.badge}>{transaction.category}</span>
                       </td>
-                      <td>{transaction.notes || "-"}</td>
+                      <td className={styles.notesCell} title={transaction.notes || undefined}>
+                        <span>{transaction.notes || "-"}</span>
+                      </td>
                       <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
                         {toMoney(transaction.amount)}
                       </td>
@@ -722,16 +666,17 @@ export function TransactionsPage() {
             </div>
             <div className={styles.rowsControl}>
               <span>Rows per page</span>
-              <ThemedSelect
-                ariaLabel="Rows per page"
+              <Select
+                aria-label="Rows per page"
                 className={styles.pageSizeSelect}
+                menuPlacement="top"
                 value={String(filters.pageSize)}
                 options={[
                   { value: "5", label: "5" },
                   { value: "10", label: "10" },
                   { value: "25", label: "25" },
                 ]}
-                onChange={(value) => updateFilter({ pageSize: Number(value) })}
+                onValueChange={(value) => updateFilter({ pageSize: Number(value) })}
               />
             </div>
           </footer>
@@ -755,7 +700,14 @@ export function TransactionsPage() {
             <section className={styles.detailCard}>
               <header className={styles.detailsHeader}>
                 <h2>Transaction Details</h2>
-                <button type="button" aria-label="Close transaction details" onClick={() => setIsDetailsCollapsed(true)}>
+                <button
+                  type="button"
+                  aria-label="Close transaction details"
+                  onClick={() => {
+                    setIsDetailsCollapsed(true);
+                    setSelectedId(null);
+                  }}
+                >
                   &times;
                 </button>
               </header>
@@ -835,14 +787,14 @@ export function TransactionsPage() {
               <div className={styles.mappingGrid}>
                 {["date", "amount", "category", "vendor", "notes"].map((field) => (
                   <FormField key={field} label={field[0].toUpperCase() + field.slice(1)}>
-                    <ThemedSelect
-                      ariaLabel={`Map ${field} column`}
+                    <Select
+                      aria-label={`Map ${field} column`}
                       value={mapping[field] ?? ""}
                       options={[
                         { value: "", label: "Do not map" },
                         ...csvHeaders.map((header) => ({ value: header, label: header })),
                       ]}
-                      onChange={(value) => setMapping((current) => ({ ...current, [field]: value }))}
+                      onValueChange={(value) => setMapping((current) => ({ ...current, [field]: value }))}
                     />
                   </FormField>
                 ))}

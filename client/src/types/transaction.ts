@@ -37,6 +37,7 @@ export type TransactionListParams = {
   sortBy: "date" | "amount" | "category";
   sortDir: "asc" | "desc";
   category?: string;
+  search?: string;
   dateFrom?: string;
   dateTo?: string;
   amountMin?: string;
