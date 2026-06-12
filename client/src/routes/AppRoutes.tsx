@@ -30,13 +30,7 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppShell />
-          </ProtectedRoute>
-        }
-      >
+      <Route element={<AppShell />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
