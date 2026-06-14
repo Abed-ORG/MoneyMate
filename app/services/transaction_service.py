@@ -136,7 +136,6 @@ def bulk_create_transactions(
         transactions=created,
     )
 
-
 def import_transactions(
     user_id: str,
     payload: TransactionImportRequest,
@@ -144,15 +143,11 @@ def import_transactions(
     try:
         rows = list(csv.DictReader(StringIO(payload.csv_content)))
     except csv.Error as exc:
+        msg = f"Malformed CSV: {exc}"
         return TransactionImportResponse(
             imported=0,
             failed=1,
-            errors=[
-                TransactionImportError(
-                    row=0,
-                    message=f"Malformed CSV: {exc}",
-                )
-            ],
+            errors=[TransactionImportError(row=0, message=msg)],
             transactions=[],
         )
 
@@ -162,15 +157,20 @@ def import_transactions(
 
     for index, row in enumerate(rows, start=2):
         try:
+            date_str = row.get(mapping.get("date", ""), "")
+            amount_str = row.get(mapping.get("amount", ""), "")
+            category = row.get(mapping.get("category", ""), "")
+            vendor = row.get(mapping.get("vendor", ""), "")
+            notes = row.get(mapping.get("notes", ""), "")
+
             transaction = TransactionCreate(
-                date=datetime.fromisoformat(
-                    row.get(mapping.get("date", ""), "")
-                ),
-                amount=Decimal(row.get(mapping.get("amount", ""), "")),
-                category=row.get(mapping.get("category", ""), ""),
-                vendor=row.get(mapping.get("vendor", ""), ""),
-                notes=row.get(mapping.get("notes", ""), ""),
+                date=datetime.fromisoformat(date_str),
+                amount=Decimal(amount_str),
+                category=category,
+                vendor=vendor,
+                notes=notes,
             )
+
             created.append(
                 transaction_repository.create(
                     user_id,
