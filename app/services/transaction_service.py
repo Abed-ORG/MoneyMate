@@ -79,7 +79,11 @@ def create_transaction(user_id: str, payload: TransactionCreate) -> Transaction:
 
 
 def update_transaction(user_id: str, transaction_id: str, payload: TransactionUpdate) -> Transaction:
-    transaction = transaction_repository.update(user_id, transaction_id, payload)
+    transaction = transaction_repository.update(
+        user_id,
+        transaction_id,
+        payload,
+    )
     if not transaction:
         raise TransactionNotFoundError
     return transaction
@@ -92,11 +96,19 @@ def delete_transaction(user_id: str, transaction_id: str) -> None:
 
 def bulk_create_transactions(user_id: str, payload: TransactionBulkRequest) -> TransactionImportResponse:
     created = [
-        transaction_repository.create(user_id, transaction, event="Transaction imported")
+        transaction_repository.create(
+            user_id,
+            transaction,
+            event="Transaction imported",
+        )
         for transaction in payload.transactions
     ]
-    return TransactionImportResponse(imported=len(created), failed=0, errors=[], transactions=created)
-
+    return TransactionImportResponse(
+        imported=len(created),
+        failed=0,
+        errors=[],
+        transactions=created,
+    )
 
 def import_transactions(
     user_id: str,
