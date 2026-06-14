@@ -45,16 +45,32 @@ def list_transactions(
             for item in transactions
             if normalized_search in item.vendor.casefold()
         ]
-    if category:
-        transactions = [item for item in transactions if item.category == category]
-    if date_from:
-        transactions = [item for item in transactions if item.date >= date_from]
-    if date_to:
-        transactions = [item for item in transactions if item.date <= date_to]
-    if amount_min is not None:
-        transactions = [item for item in transactions if item.amount >= amount_min]
-    if amount_max is not None:
-        transactions = [item for item in transactions if item.amount <= amount_max]
+   if category:
+    transactions = [
+        item
+        for item in transactions
+        if item.category == category
+    ]
+if date_from:
+    transactions = [
+        item
+        for item in transactions
+        if item.date >= date_from
+    ]
+if date_to:
+    transactions = [item for item in transactions if item.date <= date_to]
+if amount_min is not None:
+    transactions = [
+        item
+        for item in transactions
+        if item.amount >= amount_min
+    ]
+if amount_max is not None:
+    transactions = [
+        item
+        for item in transactions
+        if item.amount <= amount_max
+    ]
 
     key_map = {
         "date": lambda item: item.date,
@@ -74,7 +90,9 @@ def list_transactions(
     )
 
 
-def create_transaction(user_id: str, payload: TransactionCreate) -> Transaction:
+def create_transaction(
+    user_id: str, payload: TransactionCreate
+) -> Transaction:
     return transaction_repository.create(user_id, payload)
 
 
