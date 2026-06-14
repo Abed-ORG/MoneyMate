@@ -27,7 +27,11 @@ app.add_middleware(
 app.include_router(items.router, prefix="/items", tags=["items"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
-app.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
+app.include_router(
+    transactions.router,
+    prefix="/transactions",
+    tags=["transactions"],
+)
 app.include_router(status_router.router, prefix="/status", tags=["status"])
 
 

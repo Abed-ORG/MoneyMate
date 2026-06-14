@@ -46,15 +46,31 @@ def list_transactions(
             if normalized_search in item.vendor.casefold()
         ]
     if category:
-        transactions = [item for item in transactions if item.category == category]
+        transactions = [
+            item
+            for item in transactions
+            if item.category == category
+        ]
     if date_from:
-        transactions = [item for item in transactions if item.date >= date_from]
+        transactions = [
+            item
+            for item in transactions
+            if item.date >= date_from
+        ]
     if date_to:
         transactions = [item for item in transactions if item.date <= date_to]
     if amount_min is not None:
-        transactions = [item for item in transactions if item.amount >= amount_min]
+        transactions = [
+            item
+            for item in transactions
+            if item.amount >= amount_min
+        ]
     if amount_max is not None:
-        transactions = [item for item in transactions if item.amount <= amount_max]
+        transactions = [
+            item
+            for item in transactions
+            if item.amount <= amount_max
+        ]
 
     key_map = {
         "date": lambda item: item.date,
@@ -74,12 +90,23 @@ def list_transactions(
     )
 
 
-def create_transaction(user_id: str, payload: TransactionCreate) -> Transaction:
+def create_transaction(
+    user_id: str,
+    payload: TransactionCreate,
+) -> Transaction:
     return transaction_repository.create(user_id, payload)
 
 
-def update_transaction(user_id: str, transaction_id: str, payload: TransactionUpdate) -> Transaction:
-    transaction = transaction_repository.update(user_id, transaction_id, payload)
+def update_transaction(
+    user_id: str,
+    transaction_id: str,
+    payload: TransactionUpdate,
+) -> Transaction:
+    transaction = transaction_repository.update(
+        user_id,
+        transaction_id,
+        payload,
+    )
     if not transaction:
         raise TransactionNotFoundError
     return transaction
@@ -90,22 +117,42 @@ def delete_transaction(user_id: str, transaction_id: str) -> None:
         raise TransactionNotFoundError
 
 
-def bulk_create_transactions(user_id: str, payload: TransactionBulkRequest) -> TransactionImportResponse:
+def bulk_create_transactions(
+    user_id: str,
+    payload: TransactionBulkRequest,
+) -> TransactionImportResponse:
     created = [
-        transaction_repository.create(user_id, transaction, event="Transaction imported")
+        transaction_repository.create(
+            user_id,
+            transaction,
+            event="Transaction imported",
+        )
         for transaction in payload.transactions
     ]
-    return TransactionImportResponse(imported=len(created), failed=0, errors=[], transactions=created)
+    return TransactionImportResponse(
+        imported=len(created),
+        failed=0,
+        errors=[],
+        transactions=created,
+    )
 
 
-def import_transactions(user_id: str, payload: TransactionImportRequest) -> TransactionImportResponse:
+def import_transactions(
+    user_id: str,
+    payload: TransactionImportRequest,
+) -> TransactionImportResponse:
     try:
         rows = list(csv.DictReader(StringIO(payload.csv_content)))
     except csv.Error as exc:
         return TransactionImportResponse(
             imported=0,
             failed=1,
-            errors=[TransactionImportError(row=0, message=f"Malformed CSV: {exc}")],
+            errors=[
+                TransactionImportError(
+                    row=0,
+                    message=f"Malformed CSV: {exc}",
+                )
+            ],
             transactions=[],
         )
 
@@ -116,13 +163,21 @@ def import_transactions(user_id: str, payload: TransactionImportRequest) -> Tran
     for index, row in enumerate(rows, start=2):
         try:
             transaction = TransactionCreate(
-                date=datetime.fromisoformat(row.get(mapping.get("date", ""), "")),
+                date=datetime.fromisoformat(
+                    row.get(mapping.get("date", ""), "")
+                ),
                 amount=Decimal(row.get(mapping.get("amount", ""), "")),
                 category=row.get(mapping.get("category", ""), ""),
                 vendor=row.get(mapping.get("vendor", ""), ""),
                 notes=row.get(mapping.get("notes", ""), ""),
             )
-            created.append(transaction_repository.create(user_id, transaction, event="Transaction imported"))
+            created.append(
+                transaction_repository.create(
+                    user_id,
+                    transaction,
+                    event="Transaction imported",
+                )
+            )
         except (ValueError, InvalidOperation, ValidationError) as exc:
             errors.append(TransactionImportError(row=index, message=str(exc)))
 

@@ -86,7 +86,11 @@ def read_transactions(
     )
 
 
-@router.post("", response_model=Transaction, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=Transaction,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_transaction(
     payload: TransactionCreate,
     user_id: str = Depends(get_transaction_user_id),
@@ -103,7 +107,10 @@ def edit_transaction(
     try:
         return update_transaction(user_id, transaction_id, payload)
     except TransactionNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found.",
+        )
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -114,7 +121,10 @@ def remove_transaction(
     try:
         delete_transaction(user_id, transaction_id)
     except TransactionNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found.",
+        )
 
 
 @router.post("/bulk", response_model=TransactionImportResponse)

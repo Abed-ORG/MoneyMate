@@ -57,7 +57,10 @@ class TransactionUpdate(BaseModel):
 
     @field_validator("amount")
     @classmethod
-    def amount_cannot_be_zero(cls, value: Optional[Decimal]) -> Optional[Decimal]:
+    def amount_cannot_be_zero(
+        cls,
+        value: Optional[Decimal],
+    ) -> Optional[Decimal]:
         if value == 0:
             raise ValueError("Amount cannot be zero")
         return value
