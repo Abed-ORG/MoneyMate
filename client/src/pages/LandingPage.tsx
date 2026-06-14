@@ -94,12 +94,16 @@ function FeatureIcon({ type }: { type: string }) {
 }
 
 export function LandingPage() {
-  const scrollToFeatures = (event: MouseEvent<HTMLAnchorElement>) => {
+  const scrollToSection = (
+    event: MouseEvent<HTMLAnchorElement>,
+    sectionId: string,
+  ) => {
     event.preventDefault();
-    document.getElementById("features")?.scrollIntoView({
+    document.getElementById(sectionId)?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
+    window.history.replaceState(null, "", `#${sectionId}`);
   };
 
   return (
@@ -113,11 +117,21 @@ export function LandingPage() {
         </Link>
 
         <nav className={styles.navigation} aria-label="Primary navigation">
-          <a href="#features" onClick={scrollToFeatures}>
+          <a href="#about" onClick={(event) => scrollToSection(event, "about")}>
+            About Us
+          </a>
+          <a
+            href="#features"
+            onClick={(event) => scrollToSection(event, "features")}
+          >
             Features
           </a>
-          <a href="#about">About Us</a>
-          <a href="#contact">Contact</a>
+          <a
+            href="#contact"
+            onClick={(event) => scrollToSection(event, "contact")}
+          >
+            Contact
+          </a>
         </nav>
 
         <div className={styles.authActions}>
@@ -150,7 +164,7 @@ export function LandingPage() {
             <a
               className={styles.secondaryCta}
               href="#features"
-              onClick={scrollToFeatures}
+              onClick={(event) => scrollToSection(event, "features")}
             >
               Explore Features
             </a>
@@ -176,9 +190,68 @@ export function LandingPage() {
           <span className={`${styles.orbit} ${styles.orbitInner}`} />
           <span className={styles.dots} />
           <div className={styles.logoHalo}>
-            <img src="/moneymate-logo.png" alt="" />
+            <div className={styles.logoSculpture}>
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthBack}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthMiddle}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoDepthFront}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <img
+                className={`${styles.logoLayer} ${styles.logoFace}`}
+                src="/moneymate-logo.png"
+                alt=""
+              />
+              <span className={styles.logoShine} />
+            </div>
           </div>
+          <span className={styles.logoShadow} />
           <span className={styles.lightBeam} />
+        </div>
+      </section>
+
+      <section className={styles.aboutSection} id="about">
+        <div className={`${styles.aboutSide} ${styles.aboutSideLeft}`}>
+          <p className={styles.sectionLabel}>About MoneyMate</p>
+          <h2>
+            Your financial life, made <span>clearer.</span>
+          </h2>
+          <p className={styles.aboutDescription}>
+            MoneyMate is a personal finance platform built to help you
+            understand, manage, and improve your spending habits.
+          </p>
+        </div>
+
+        <div className={styles.aboutCenter} aria-hidden="true">
+          <span className={styles.aboutOrbital} />
+          <span className={styles.aboutOrbitalInner} />
+          <span className={styles.aboutFloor} />
+          <div className={styles.growthSculpture}>
+            <img src="/moneymate-growth-3d.png" alt="" />
+          </div>
+        </div>
+
+        <div className={`${styles.aboutSide} ${styles.aboutSideRight}`}>
+          <p className={styles.sectionLabel}>One clear overview</p>
+          <h3>See the whole picture. Make the next move.</h3>
+          <p className={styles.aboutDescription}>
+            Income, expenses, budgets, and financial goals come together in one
+            visual space, making money tracking simple and stress-free.
+          </p>
+          <div className={styles.aboutHighlights}>
+            <span>Understand where your money goes</span>
+            <span>Build healthier spending habits</span>
+            <span>Turn financial goals into progress</span>
+          </div>
         </div>
       </section>
 
@@ -217,17 +290,6 @@ export function LandingPage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className={styles.aboutSection} id="about">
-        <div>
-          <p className={styles.sectionLabel}>About MoneyMate</p>
-          <h2>Money management without the noise.</h2>
-        </div>
-        <p>
-          We are building a calmer, clearer way to understand spending, prepare
-          for what is next, and make progress toward the goals that matter.
-        </p>
       </section>
 
       <footer className={styles.footer} id="contact">
