@@ -254,6 +254,23 @@
   padding: clamp(1rem, 3vw, 2.5rem);
 }
 
+.logoutPrompt {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.logoutPrompt p {
+  margin: 0;
+  color: var(--mm-text-soft);
+  line-height: 1.6;
+}
+
+.logoutActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 @media (max-width: 840px) {
   .shell,
   .shellCollapsed {
@@ -319,5 +336,14 @@
   .user strong,
   .user span {
     display: none;
+  }
+
+  .logoutActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .logoutActions button {
+    width: 100%;
   }
 }

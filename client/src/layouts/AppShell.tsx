@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../components";
+import { Button, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import {
@@ -21,6 +21,8 @@ function getInitials(name: string) {
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -39,8 +41,14 @@ export function AppShell() {
   }, [user?.id]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutConfirmationOpen(false);
+    }
   };
 
   return (
@@ -125,7 +133,10 @@ export function AppShell() {
                 <span>{user?.email}</span>
               </div>
             </div>
-            <Button variant="secondary" onClick={handleLogout}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsLogoutConfirmationOpen(true)}
+            >
               Logout
             </Button>
           </div>
@@ -135,6 +146,36 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      <Modal
+        isOpen={isLogoutConfirmationOpen}
+        onClose={() => {
+          if (!isLoggingOut) {
+            setIsLogoutConfirmationOpen(false);
+          }
+        }}
+        title="Are you sure you want to log out?"
+      >
+        <div className={styles.logoutPrompt}>
+          <p>You will need to sign in again to access your MoneyMate account.</p>
+          <div className={styles.logoutActions}>
+            <Button
+              disabled={isLoggingOut}
+              onClick={() => setIsLogoutConfirmationOpen(false)}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+              variant="danger"
+            >
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
