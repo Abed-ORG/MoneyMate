@@ -46,31 +46,15 @@ def list_transactions(
             if normalized_search in item.vendor.casefold()
         ]
     if category:
-        transactions = [
-            item
-            for item in transactions
-            if item.category == category
-        ]
+        transactions = [item for item in transactions if item.category == category]
     if date_from:
-        transactions = [
-            item
-            for item in transactions
-            if item.date >= date_from
-        ]
+        transactions = [item for item in transactions if item.date >= date_from]
     if date_to:
         transactions = [item for item in transactions if item.date <= date_to]
     if amount_min is not None:
-        transactions = [
-            item
-            for item in transactions
-            if item.amount >= amount_min
-        ]
+        transactions = [item for item in transactions if item.amount >= amount_min]
     if amount_max is not None:
-        transactions = [
-            item
-            for item in transactions
-            if item.amount <= amount_max
-        ]
+        transactions = [item for item in transactions if item.amount <= amount_max]
 
     key_map = {
         "date": lambda item: item.date,
@@ -90,17 +74,12 @@ def list_transactions(
     )
 
 
-def create_transaction(
-    user_id: str,
-    payload: TransactionCreate,
-) -> Transaction:
+def create_transaction(user_id: str, payload: TransactionCreate) -> Transaction:
     return transaction_repository.create(user_id, payload)
 
 
 def update_transaction(
-    user_id: str,
-    transaction_id: str,
-    payload: TransactionUpdate,
+    user_id: str, transaction_id: str, payload: TransactionUpdate
 ) -> Transaction:
     transaction = transaction_repository.update(
         user_id,
@@ -118,8 +97,7 @@ def delete_transaction(user_id: str, transaction_id: str) -> None:
 
 
 def bulk_create_transactions(
-    user_id: str,
-    payload: TransactionBulkRequest,
+    user_id: str, payload: TransactionBulkRequest
 ) -> TransactionImportResponse:
     created = [
         transaction_repository.create(
@@ -135,6 +113,7 @@ def bulk_create_transactions(
         errors=[],
         transactions=created,
     )
+
 
 def import_transactions(
     user_id: str,
