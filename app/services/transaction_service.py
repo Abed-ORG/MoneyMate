@@ -38,6 +38,7 @@ def list_transactions(
     amount_max: Decimal | None = None,
 ) -> TransactionListResponse:
     transactions = transaction_repository.list_by_user(user_id)
+
     if search and search.strip():
         normalized_search = search.strip().casefold()
         transactions = [
@@ -45,32 +46,37 @@ def list_transactions(
             for item in transactions
             if normalized_search in item.vendor.casefold()
         ]
-  if category:
-    transactions = [
-        item
-        for item in transactions
-        if item.category == category
-    ]
-if date_from:
-    transactions = [
-        item
-        for item in transactions
-        if item.date >= date_from
-    ]
-if date_to:
-    transactions = [item for item in transactions if item.date <= date_to]
-if amount_min is not None:
-    transactions = [
-        item
-        for item in transactions
-        if item.amount >= amount_min
-    ]
-if amount_max is not None:
-    transactions = [
-        item
-        for item in transactions
-        if item.amount <= amount_max
-    ]
+
+    if category:
+        transactions = [
+            item
+            for item in transactions
+            if item.category == category
+        ]
+
+    if date_from:
+        transactions = [
+            item
+            for item in transactions
+            if item.date >= date_from
+        ]
+
+    if date_to:
+        transactions = [item for item in transactions if item.date <= date_to]
+
+    if amount_min is not None:
+        transactions = [
+            item
+            for item in transactions
+            if item.amount >= amount_min
+        ]
+
+    if amount_max is not None:
+        transactions = [
+            item
+            for item in transactions
+            if item.amount <= amount_max
+        ]
 
     key_map = {
         "date": lambda item: item.date,
