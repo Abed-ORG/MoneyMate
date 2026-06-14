@@ -45,7 +45,7 @@ def list_transactions(
             for item in transactions
             if normalized_search in item.vendor.casefold()
         ]
-   if category:
+  if category:
     transactions = [
         item
         for item in transactions
