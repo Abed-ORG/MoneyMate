@@ -17,6 +17,24 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     is_email_verified = Column(Boolean, nullable=False, default=False)
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
+    email_verification_token_hash = Column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
+    email_verification_expires_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    password_reset_token_hash = Column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
+    password_reset_expires_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     accounts = relationship("Account", back_populates="user")
     categories = relationship("Category", back_populates="user")

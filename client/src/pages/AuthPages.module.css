@@ -270,6 +270,20 @@
     text-shadow 160ms ease;
 }
 
+.forgotLink {
+  justify-self: end;
+  margin-top: -0.35rem;
+  color: var(--auth-forest);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.forgotLink:hover {
+  color: var(--auth-forest-soft);
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
 .switchText a:hover {
   color: var(--auth-forest-soft);
   text-shadow: 0 0 0.7rem rgba(22, 101, 52, 0.24);

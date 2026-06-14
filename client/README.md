@@ -27,12 +27,11 @@ Open the local Vite URL that appears in the terminal, usually
 npm run build
 ```
 
-## Demo Auth
+## Authentication
 
-Authentication is intentionally mocked for Epic 1. Submitting the login or
-register form stores a local demo token and redirects to `/dashboard`. The
-logout button clears that token.
+The client uses the MoneyMate FastAPI authentication endpoints. It reads
+`VITE_API_BASE_URL` from `client/.env`, persists access and refresh tokens, and
+protects all authenticated application routes.
 
-The prepared API client reads `VITE_API_URL` from the environment, attaches the
-mock token when present, and formats future API errors consistently. It does not
-connect to a backend yet.
+See the root `AUTH_EMAIL_DATABASE_SETUP.md` for email verification, password
+recovery, shared database, and environment setup.

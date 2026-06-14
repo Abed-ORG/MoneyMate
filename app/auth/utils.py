@@ -1,7 +1,10 @@
-from passlib.context import CryptContext
-from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
+import hashlib
 import os
+import secrets
+from datetime import datetime, timedelta, timezone
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 # Use Argon2 via passlib to avoid bcrypt binary issues on Windows
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -24,6 +27,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 EMAIL_VERIFICATION_EXPIRE_HOURS = int(
     os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
+)
+EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv(
+        "EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES",
+        str(EMAIL_VERIFICATION_EXPIRE_HOURS * 60),
+    )
+)
+PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
 )
 
 
@@ -60,24 +72,21 @@ def decode_access_token(token: str) -> dict | None:
     return payload
 
 
-def create_email_verification_token(user_id: int, email: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
-        hours=EMAIL_VERIFICATION_EXPIRE_HOURS
-    )
-    return jwt.encode(
-        {
-            "sub": str(user_id),
-            "email": email,
-            "purpose": "verify_email",
-            "exp": expire,
-        },
-        SECRET_KEY,
-        algorithm=ALGORITHM,
-    )
+def generate_secure_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
-def decode_email_verification_token(token: str) -> dict | None:
-    payload = decode_token(token)
-    if not payload or payload.get("purpose") != "verify_email":
-        return None
-    return payload
+def hash_security_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def token_expiration(minutes: int) -> datetime:
+    return datetime.now(timezone.utc) + timedelta(minutes=minutes)
+
+
+def token_is_expired(expires_at: datetime | None) -> bool:
+    if expires_at is None:
+        return True
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at <= datetime.now(timezone.utc)

@@ -10,7 +10,11 @@ export type ApiError = {
   details?: unknown;
 };
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ??
+  import.meta.env.VITE_API_URL ??
+  ""
+).replace(/\/$/, "");
 
 function normalizeError(status: number, fallback: string, details?: unknown): ApiError {
   if (status >= 500) {
@@ -122,7 +126,14 @@ export async function apiRequest<T>(
         getResponseMessage(data) ?? "Your session has expired. Please log in again.";
       clearAuthSession(message);
       window.dispatchEvent(new CustomEvent("moneymate:unauthorized"));
-      const publicPaths = ["/", "/login", "/register", "/verify-email"];
+      const publicPaths = [
+        "/",
+        "/login",
+        "/register",
+        "/verify-email",
+        "/forgot-password",
+        "/reset-password",
+      ];
       if (!publicPaths.includes(window.location.pathname)) {
         window.location.assign("/login");
       }

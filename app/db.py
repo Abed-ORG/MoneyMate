@@ -7,7 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable must be set before MoneyMate starts."
+    )
 
 # Detect sqlite to set connect args
 if DATABASE_URL.startswith("sqlite"):

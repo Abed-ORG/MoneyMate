@@ -1,15 +1,22 @@
-# flake8: noqa
+from datetime import datetime, timezone
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.services_refresh import create_refresh_token
 from app.auth.utils import (
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES,
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
     create_access_token,
-    decode_email_verification_token,
+    generate_secure_token,
     get_password_hash,
+    hash_security_token,
+    token_expiration,
+    token_is_expired,
     verify_password,
 )
 from app.models.financial_profile import FinancialProfile
+from app.models.refresh_token import RefreshToken
 from app.models.user import User as UserModel
 from app.schemas.user import UserCreate
 
@@ -26,46 +33,104 @@ def get_user_by_email(db: Session, email: str):
     return db.query(UserModel).filter(UserModel.email == normalize_email(email)).first()
 
 
-def create_user(db: Session, user: UserCreate, verification_sender=None):
+def prepare_email_verification(user: UserModel) -> str:
+    token = generate_secure_token()
+    user.email_verification_token_hash = hash_security_token(token)
+    user.email_verification_expires_at = token_expiration(
+        EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES
+    )
+    return token
+
+
+def issue_email_verification_token(
+    db: Session,
+    user: UserModel,
+) -> str:
+    token = prepare_email_verification(user)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return token
+
+
+def issue_password_reset_token(
+    db: Session,
+    user: UserModel,
+) -> str:
+    token = generate_secure_token()
+    user.password_reset_token_hash = hash_security_token(token)
+    user.password_reset_expires_at = token_expiration(
+        PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return token
+
+
+def create_user(db: Session, user: UserCreate):
     db_user = UserModel(
         email=normalize_email(user.email),
         hashed_password=get_password_hash(user.password),
         full_name=user.full_name,
     )
+    verification_token = prepare_email_verification(db_user)
     db.add(db_user)
     try:
         db.flush()
         db.add(FinancialProfile(user_id=db_user.id))
-        if verification_sender:
-            verification_sender(db_user)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise DuplicateEmailError from exc
     db.refresh(db_user)
-    return db_user
+    return db_user, verification_token
 
 
 def verify_user_email(db: Session, token: str):
-    payload = decode_email_verification_token(token)
-    if not payload:
-        return None
-    try:
-        user_id = int(payload.get("sub"))
-    except (TypeError, ValueError):
+    token_hash = hash_security_token(token)
+    user = (
+        db.query(UserModel)
+        .filter(UserModel.email_verification_token_hash == token_hash)
+        .first()
+    )
+    if not user or token_is_expired(user.email_verification_expires_at):
         return None
 
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
-    if not user or user.email != payload.get("email"):
-        return None
-    if not user.is_email_verified:
-        from datetime import datetime, timezone
+    user.is_email_verified = True
+    user.email_verified_at = datetime.now(timezone.utc)
+    user.email_verification_token_hash = None
+    user.email_verification_expires_at = None
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
-        user.is_email_verified = True
-        user.email_verified_at = datetime.now(timezone.utc)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+
+def reset_user_password(db: Session, token: str, new_password: str):
+    token_hash = hash_security_token(token)
+    user = (
+        db.query(UserModel)
+        .filter(UserModel.password_reset_token_hash == token_hash)
+        .first()
+    )
+    if not user or token_is_expired(user.password_reset_expires_at):
+        return None
+
+    user.hashed_password = get_password_hash(new_password)
+    user.password_reset_token_hash = None
+    user.password_reset_expires_at = None
+    db.add(user)
+    (
+        db.query(RefreshToken)
+        .filter(
+            RefreshToken.user_id == user.id,
+            RefreshToken.revoked.is_(False),
+        )
+        .update({"revoked": True}, synchronize_session=False)
+    )
+    db.commit()
+    db.refresh(user)
     return user
 
 
