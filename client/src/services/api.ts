@@ -117,7 +117,7 @@ export async function apiRequest<T>(
     throw {
       status: 0,
       message:
-        import.meta.env.PROD && !RAW_API_BASE_URL
+        import.meta.env.PROD && !API_BASE_URL
           ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
           : `Could not reach the MoneyMate API at ${API_BASE_URL}. Check that the backend is running and that the URL is correct.`,
       details: error,
