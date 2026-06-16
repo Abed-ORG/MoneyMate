@@ -74,6 +74,8 @@ moneymate/
 5. Set up environment variables:
    - Copy `.env.example` to `.env` in the `server/` directory
    - Fill in your PostgreSQL database URL, JWT secret, and Gemini API key
+   - If you want to point the frontend at a different API host, copy
+     `client/.env.example` to `client/.env` and change `VITE_API_URL`
 
 6. Run database migrations:
    ```bash
@@ -91,6 +93,9 @@ moneymate/
    cd client
    npm run dev
    ```
+
+   The frontend talks to `http://127.0.0.1:8000` by default if
+   `VITE_API_URL` is not set.
 
 ## Git Workflow
 
