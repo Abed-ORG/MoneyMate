@@ -34,12 +34,17 @@ def test_verification_and_password_reset_tokens_are_single_use():
 
     assert user.is_email_verified is False
     assert user.email_verification_token_hash != verification_token
-    assert verify_user_email(session, verification_token).is_email_verified is True
+    verified_user = verify_user_email(session, verification_token)
+    assert verified_user.is_email_verified is True
     assert verify_user_email(session, verification_token) is None
 
     reset_token = issue_password_reset_token(session, user)
-    assert reset_user_password(session, reset_token, "new-password") is not None
-    assert reset_user_password(session, reset_token, "another-password") is None
+    assert (
+        reset_user_password(session, reset_token, "new-password") is not None
+    )
+    assert (
+        reset_user_password(session, reset_token, "another-password") is None
+    )
     assert verify_password("new-password", user.hashed_password)
 
     session.close()
