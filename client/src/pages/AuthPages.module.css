@@ -22,7 +22,7 @@
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 1.9rem;
-  background: #fbfcfb;
+  background: #d7e5dc;
   box-shadow:
     0 0 0 1px rgba(47, 133, 90, 0.08),
     0 0 2.4rem rgba(22, 101, 52, 0.13),
@@ -84,7 +84,7 @@
   grid-row: 1;
   place-items: center;
   background:
-    radial-gradient(circle at center, #fff 0%, #fbfbfb 55%, #f4f5f4 100%);
+    radial-gradient(circle at 50% 38%, #edf5ef 0%, #dce9e0 58%, #c8d9ce 100%);
   padding: clamp(1.5rem, 3.2vw, 3.5rem);
   transition:
     opacity 280ms ease,
@@ -288,6 +288,20 @@
   transition:
     color 160ms ease,
     text-shadow 160ms ease;
+}
+
+.forgotLink {
+  justify-self: end;
+  margin-top: -0.35rem;
+  color: var(--auth-forest);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.forgotLink:hover {
+  color: var(--auth-forest-soft);
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
 }
 
 .switchText a:hover {

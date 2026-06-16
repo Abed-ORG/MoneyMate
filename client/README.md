@@ -31,9 +31,11 @@ in a local `.env` file if your API runs somewhere else.
 npm run build
 ```
 
-## Auth
+## Authentication
 
-Authentication is wired to the FastAPI backend. The API client reads
-`VITE_API_URL` when it is set, otherwise it falls back to
-`http://127.0.0.1:8000`, attaches the JWT access token automatically, and
-formats API errors consistently.
+The client uses the MoneyMate FastAPI authentication endpoints. It reads
+`VITE_API_BASE_URL` from `client/.env`, persists access and refresh tokens, and
+protects all authenticated application routes.
+
+See the root `AUTH_EMAIL_DATABASE_SETUP.md` for email verification, password
+recovery, shared database, and environment setup.

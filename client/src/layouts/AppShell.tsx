@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../components";
+import { Button, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import {
@@ -20,6 +20,9 @@ function getInitials(name: string) {
 
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -38,12 +41,22 @@ export function AppShell() {
   }, [user?.id]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutConfirmationOpen(false);
+    }
   };
 
   return (
-    <div className={styles.shell}>
+    <div
+      className={`${styles.shell} ${
+        isSidebarCollapsed ? styles.shellCollapsed : ""
+      }`}
+    >
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.brand}>
           <img className={styles.brandMark} src="/moneymate-logo.png" alt="" />
@@ -69,10 +82,6 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className={styles.sidebarNote}>
-          <span>Money in focus</span>
-          <p>Build stronger habits, one clear decision at a time.</p>
-        </div>
       </aside>
 
       {isSidebarOpen ? (
@@ -87,6 +96,17 @@ export function AppShell() {
       <div className={styles.contentWrap}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
+            <button
+              aria-label={isSidebarCollapsed ? "Show navigation" : "Hide navigation"}
+              aria-expanded={!isSidebarCollapsed}
+              className={styles.collapseButton}
+              onClick={() => setIsSidebarCollapsed((current) => !current)}
+              type="button"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
             <button
               aria-label="Open navigation"
               className={styles.menuButton}
@@ -113,7 +133,10 @@ export function AppShell() {
                 <span>{user?.email}</span>
               </div>
             </div>
-            <Button variant="secondary" onClick={handleLogout}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsLogoutConfirmationOpen(true)}
+            >
               Logout
             </Button>
           </div>
@@ -123,6 +146,36 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      <Modal
+        isOpen={isLogoutConfirmationOpen}
+        onClose={() => {
+          if (!isLoggingOut) {
+            setIsLogoutConfirmationOpen(false);
+          }
+        }}
+        title="Are you sure you want to log out?"
+      >
+        <div className={styles.logoutPrompt}>
+          <p>You will need to sign in again to access your MoneyMate account.</p>
+          <div className={styles.logoutActions}>
+            <Button
+              disabled={isLoggingOut}
+              onClick={() => setIsLogoutConfirmationOpen(false)}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+              variant="danger"
+            >
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -22,6 +22,7 @@ type RedirectState = {
     pathname?: string;
   };
   verificationSent?: boolean;
+  verificationDeliveryFailed?: boolean;
   email?: string;
 };
 
@@ -117,14 +118,26 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     }
     if (redirectState?.verificationSent) {
       setAuthNotice(
-        "Account created. Check your email and open the verification link before logging in.",
+        "Please check your email to verify your account.",
       );
+      return;
+    }
+    if (redirectState?.verificationDeliveryFailed) {
+      setAuthNotice(
+        "Your account was created, but the email could not be sent. Use the resend option below.",
+      );
+      setShowResend(true);
       return;
     }
     if (!isLoading) {
       setAuthNotice(consumeAuthNotice() ?? "");
     }
-  }, [isLoading, redirectState?.email, redirectState?.verificationSent]);
+  }, [
+    isLoading,
+    redirectState?.email,
+    redirectState?.verificationDeliveryFailed,
+    redirectState?.verificationSent,
+  ]);
 
   useEffect(
     () => () => {
@@ -170,7 +183,14 @@ export function AuthPage({ initialMode }: AuthPageProps) {
           : redirectTo;
       navigate(destination, { replace: true });
     } catch (error) {
-      setFormError(getApiErrorMessage(error));
+      if ((error as ApiError)?.status === 424) {
+        navigate("/login", {
+          replace: true,
+          state: { verificationDeliveryFailed: true, email },
+        });
+      } else {
+        setFormError(getApiErrorMessage(error));
+      }
       setShowResend((error as ApiError)?.status === 403);
     } finally {
       setSubmittingMode(null);
@@ -289,6 +309,10 @@ export function AuthPage({ initialMode }: AuthPageProps) {
               placeholder="Enter your password"
               visible={loginPasswordVisible}
             />
+
+            <Link className={styles.forgotLink} to="/forgot-password">
+              Forgot password?
+            </Link>
 
             {formError && isLogin ? <p className={styles.formError}>{formError}</p> : null}
 

@@ -21,9 +21,9 @@ export function VerifyEmailPage() {
 
     const verify = async () => {
       try {
-        const response = await api.post<{ message: string }>("/auth/verify-email", {
-          token,
-        });
+        const response = await api.get<{ message: string }>(
+          `/auth/verify-email?token=${encodeURIComponent(token)}`,
+        );
         setMessage(response.message);
         setState("success");
       } catch (error) {
@@ -49,7 +49,7 @@ export function VerifyEmailPage() {
             <h1>{message}</h1>
             <p>
               {state === "success"
-                ? "You can now log in and continue setting up MoneyMate."
+                ? "Your account is ready. Log in to continue with MoneyMate."
                 : "Return to login to request a new verification email."}
             </p>
             <Link to="/login">

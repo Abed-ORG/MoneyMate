@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth.services import (
     DuplicateEmailError,
     normalize_email,
+    prepare_email_verification,
 )
 from app.auth.utils import (
     get_password_hash,
@@ -97,10 +98,10 @@ def update_account(
     db: Session,
     user: User,
     payload: UserUpdate,
-    verification_sender=None,
-) -> User:
+) -> tuple[User, str | None]:
     values = payload.model_dump(exclude_unset=True)
     email_changed = False
+    verification_token = None
     if "email" in values:
         values["email"] = normalize_email(values["email"])
         email_changed = values["email"] != user.email
@@ -109,6 +110,7 @@ def update_account(
     if email_changed:
         user.is_email_verified = False
         user.email_verified_at = None
+        verification_token = prepare_email_verification(user)
         (
             db.query(RefreshToken)
             .filter(
@@ -119,14 +121,12 @@ def update_account(
         )
     try:
         db.flush()
-        if email_changed and verification_sender:
-            verification_sender(user)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise DuplicateEmailError from exc
     db.refresh(user)
-    return user
+    return user, verification_token
 
 
 def change_password(db: Session, user: User, payload: PasswordChange) -> None:
@@ -137,6 +137,8 @@ def change_password(db: Session, user: User, payload: PasswordChange) -> None:
             "Your new password must be different from your current password."
         )
     user.hashed_password = get_password_hash(payload.new_password)
+    user.password_reset_token_hash = None
+    user.password_reset_expires_at = None
     db.add(user)
     (
         db.query(RefreshToken)

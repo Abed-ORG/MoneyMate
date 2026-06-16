@@ -69,23 +69,30 @@ def edit_account(
     db: Session = Depends(get_db),
 ):
     try:
-        return update_account(
+        updated_user, verification_token = update_account(
             db,
             current_user,
             payload,
-            send_verification_email,
         )
     except DuplicateEmailError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists.",
         )
-    except (EmailConfigurationError, EmailDeliveryError) as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        )
+    if verification_token:
+        try:
+            send_verification_email(updated_user, verification_token)
+        except (EmailConfigurationError, EmailDeliveryError):
+            raise HTTPException(
+                status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                detail=(
+                    "Your email was updated, but the verification email could "
+                    "not be sent. Log in with the new email and request "
+                    "another "
+                    "verification link."
+                ),
+            )
+    return updated_user
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)

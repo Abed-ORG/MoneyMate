@@ -17,22 +17,14 @@ import {
   Select,
   Toast,
 } from "../components";
+import {
+  normalizeCategory,
+  spendingCategories,
+} from "../constants/categories";
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { api, getApiErrorMessage } from "../services/api";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import styles from "./SettingsPage.module.css";
-
-const categories = [
-  "Housing",
-  "Food & Dining",
-  "Transportation",
-  "Utilities",
-  "Health",
-  "Shopping",
-  "Entertainment",
-  "Education",
-  "Travel",
-];
 
 const supportedAvatarTypes = new Set([
   "image/png",
@@ -190,7 +182,11 @@ export function SettingsPage() {
       profile?.monthly_income == null ? "" : String(profile.monthly_income),
     );
     setCurrency(profile?.currency ?? "USD");
-    setSelectedCategories(profile?.spending_categories ?? []);
+    setSelectedCategories(
+      Array.from(
+        new Set((profile?.spending_categories ?? []).map(normalizeCategory)),
+      ),
+    );
     setSavingsGoals(
       profile?.savings_goals.length
         ? profile.savings_goals.map((goal) => ({
@@ -600,7 +596,7 @@ export function SettingsPage() {
                       Spending categories
                     </legend>
                     <div className={styles.categories}>
-                      {categories.map((category) => {
+                      {spendingCategories.map((category) => {
                         const isSelected = selectedCategories.includes(category);
                         return (
                           <label className={styles.category} key={category}>

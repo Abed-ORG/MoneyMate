@@ -34,6 +34,10 @@ moneymate/
 
 ## Getting Started
 
+For the current authentication, email verification, password recovery, and
+shared PostgreSQL setup, follow
+[`AUTH_EMAIL_DATABASE_SETUP.md`](AUTH_EMAIL_DATABASE_SETUP.md).
+
 ### Prerequisites
 
 - Python 3.11+

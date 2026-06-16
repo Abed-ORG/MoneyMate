@@ -4,7 +4,7 @@ export { FormField } from "./FormField/FormField";
 export { Input } from "./Input/Input";
 export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";
 export { Modal } from "./Modal/Modal";
-export { Select } from "./Select/Select";
+export { Select, type SelectOption } from "./Select/Select";
 export {
   createEmptySavingsGoal,
   SavingsGoalsEditor,

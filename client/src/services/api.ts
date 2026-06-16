@@ -10,33 +10,11 @@ export type ApiError = {
   details?: unknown;
 };
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const RAW_API_BASE_URL = import.meta.env.VITE_API_URL?.trim();
-
-function isLocalHost(hostname: string) {
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
-}
-
-function resolveApiBaseUrl() {
-  const configuredBaseUrl = RAW_API_BASE_URL || DEFAULT_API_BASE_URL;
-  const normalizedBaseUrl = configuredBaseUrl.replace(/\/$/, "");
-
-  if (typeof window !== "undefined" && window.location.protocol === "https:") {
-    try {
-      const parsedUrl = new URL(normalizedBaseUrl);
-      if (parsedUrl.protocol === "http:" && !isLocalHost(parsedUrl.hostname)) {
-        parsedUrl.protocol = "https:";
-        return parsedUrl.toString().replace(/\/$/, "");
-      }
-    } catch {
-      return normalizedBaseUrl;
-    }
-  }
-
-  return normalizedBaseUrl;
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ??
+  import.meta.env.VITE_API_URL ??
+  ""
+).replace(/\/$/, "");
 
 function normalizeError(status: number, fallback: string, details?: unknown): ApiError {
   if (status >= 500) {
@@ -139,7 +117,7 @@ export async function apiRequest<T>(
     throw {
       status: 0,
       message:
-        import.meta.env.PROD && !RAW_API_BASE_URL
+        import.meta.env.PROD && !API_BASE_URL
           ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
           : `Could not reach the MoneyMate API at ${API_BASE_URL}. Check that the backend is running and that the URL is correct.`,
       details: error,
@@ -160,7 +138,14 @@ export async function apiRequest<T>(
         getResponseMessage(data) ?? "Your session has expired. Please log in again.";
       clearAuthSession(message);
       window.dispatchEvent(new CustomEvent("moneymate:unauthorized"));
-      const publicPaths = ["/", "/login", "/register", "/verify-email"];
+      const publicPaths = [
+        "/",
+        "/login",
+        "/register",
+        "/verify-email",
+        "/forgot-password",
+        "/reset-password",
+      ];
       if (!publicPaths.includes(window.location.pathname)) {
         window.location.assign("/login");
       }
@@ -179,6 +164,8 @@ export const api = {
     apiRequest<T>(endpoint, { ...options, method: "POST", body }),
   put: <T>(endpoint: string, body?: ApiRequestOptions["body"], options?: ApiRequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: "PUT", body }),
+  patch: <T>(endpoint: string, body?: ApiRequestOptions["body"], options?: ApiRequestOptions) =>
+    apiRequest<T>(endpoint, { ...options, method: "PATCH", body }),
   delete: <T>(endpoint: string, options?: ApiRequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: "DELETE" }),
 };

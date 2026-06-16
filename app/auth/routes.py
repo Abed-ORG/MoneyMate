@@ -1,4 +1,5 @@
-# flake8: noqa
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -9,6 +10,9 @@ from app.auth.services import (
     create_tokens_for_user,
     create_user,
     get_user_by_email,
+    issue_email_verification_token,
+    issue_password_reset_token,
+    reset_user_password,
     verify_user_email,
 )
 from app.auth.services_refresh import (
@@ -18,11 +22,13 @@ from app.auth.services_refresh import (
 from app.dependencies import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import (
-    LoginRequest,
     EmailVerificationRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
     LogoutRequest,
     MessageResponse,
     RefreshRequest,
+    ResetPasswordRequest,
     TokenResponse,
     User,
     UserCreate,
@@ -31,26 +37,34 @@ from app.schemas.user import (
 from app.services.email_service import (
     EmailConfigurationError,
     EmailDeliveryError,
+    send_password_reset_email,
     send_verification_email,
 )
 
 router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
+logger = logging.getLogger(__name__)
 
 
 def _get_current_user_dep(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ):
-    """Lazy import of get_current_user to break circular import:
-    dependencies.py -> auth/utils.py -> auth/__init__.py -> auth/routes.py -> dependencies.py
+    """Lazy import of get_current_user to break circular import.
+
+    dependencies.py -> auth/utils.py -> auth/__init__.py ->
+    auth/routes.py -> dependencies.py
     """
     from app.dependencies import get_current_user as _get_current_user
 
     return _get_current_user(credentials, db)
 
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=User,
+    status_code=status.HTTP_201_CREATED,
+)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     if get_user_by_email(db, user.email):
         raise HTTPException(
@@ -58,24 +72,23 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="An account with this email already exists.",
         )
     try:
-        return create_user(db, user, send_verification_email)
+        db_user, verification_token = create_user(db, user)
     except DuplicateEmailError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists.",
         )
-    except EmailConfigurationError as exc:
-        db.rollback()
+    try:
+        send_verification_email(db_user, verification_token)
+    except (EmailConfigurationError, EmailDeliveryError):
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail=(
+                "Your account was created, but the verification email could "
+                "not be sent. Go to login and use Resend verification email."
+            ),
         )
-    except EmailDeliveryError as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        )
+    return db_user
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -94,15 +107,29 @@ def login(form_data: LoginRequest, db: Session = Depends(get_db)):
     return create_tokens_for_user(db, user)
 
 
-@router.post("/verify-email", response_model=MessageResponse)
-def verify_email(payload: EmailVerificationRequest, db: Session = Depends(get_db)):
-    user = verify_user_email(db, payload.token)
+def _verify_email_token(token: str, db: Session):
+    user = verify_user_email(db, token)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This verification link is invalid or has expired.",
         )
-    return {"message": "Your email address has been verified."}
+    return {
+        "message": "Your email has been verified. You can now log in."
+    }
+
+
+@router.get("/verify-email", response_model=MessageResponse)
+def verify_email_link(token: str, db: Session = Depends(get_db)):
+    return _verify_email_token(token, db)
+
+
+@router.post("/verify-email", response_model=MessageResponse)
+def verify_email(
+    payload: EmailVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    return _verify_email_token(payload.token, db)
 
 
 @router.post("/resend-verification", response_model=MessageResponse)
@@ -113,7 +140,8 @@ def resend_verification(
     user = get_user_by_email(db, payload.email)
     if user and not user.is_email_verified:
         try:
-            send_verification_email(user)
+            token = issue_email_verification_token(db, user)
+            send_verification_email(user, token)
         except (EmailConfigurationError, EmailDeliveryError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -123,6 +151,47 @@ def resend_verification(
         "message": (
             "If an unverified account exists for that email, "
             "a new verification link has been sent."
+        )
+    }
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    user = get_user_by_email(db, payload.email)
+    if user:
+        try:
+            token = issue_password_reset_token(db, user)
+            send_password_reset_email(user, token)
+        except (EmailConfigurationError, EmailDeliveryError):
+            logger.exception(
+                "Password reset email delivery failed for user id %s.",
+                user.id,
+            )
+    return {
+        "message": (
+            "If an account with this email exists, a reset link has been sent."
+        )
+    }
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    user = reset_user_password(db, payload.token, payload.new_password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link is invalid or has expired.",
+        )
+    return {
+        "message": (
+            "Your password has been reset. You can now log in with your new "
+            "password."
         )
     }
 
