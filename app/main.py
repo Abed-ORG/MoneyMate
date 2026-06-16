@@ -5,6 +5,8 @@ from app.routers import items, profile
 from app.auth import routes as auth_routes
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import status as status_router
+from app.db import Base, engine
+from app import models  # noqa: F401
 
 app = FastAPI(title="MoneyMate API")
 
@@ -28,6 +30,17 @@ app.include_router(items.router, prefix="/items", tags=["items"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
 app.include_router(status_router.router, prefix="/status", tags=["status"])
+
+
+@app.on_event("startup")
+def ensure_database_schema():
+    """Create any missing tables on startup.
+
+    This keeps fresh deployment databases usable even if migrations were not
+    applied yet. Existing tables are left untouched.
+    """
+    if os.getenv("RENDER_SERVICE_ID"):
+        Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
