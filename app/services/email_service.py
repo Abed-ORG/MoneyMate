@@ -55,7 +55,8 @@ def _send_with_resend(
         import resend
     except ImportError as exc:
         raise EmailConfigurationError(
-            "The resend package is not installed. Install backend requirements."
+            "The resend package is not installed. "
+            "Install backend requirements."
         ) from exc
 
     resend.api_key = get_required_setting("RESEND_API_KEY")
@@ -169,16 +170,32 @@ def _email_html(
             'border-radius:18px;background:#001b14;padding:32px">',
             '<p style="margin:0 0 24px;color:#69f56a;font-weight:700">'
             "MoneyMate</p>",
-            f'<h1 style="margin:0 0 16px;color:#ffffff">{escape(heading)}</h1>',
+            (
+                '<h1 style="margin:0 0 16px;color:#ffffff">'
+                f"{escape(heading)}</h1>"
+            ),
             f"<p>Hello {safe_name},</p>",
-            f'<p style="color:#b9cbc1;line-height:1.6">{escape(description)}</p>',
+            (
+                '<p style="color:#b9cbc1;line-height:1.6">'
+                f"{escape(description)}</p>"
+            ),
             '<p style="margin:28px 0">',
-            f'<a href="{safe_url}" style="display:inline-block;background:#69f56a;'
-            'color:#00100d;padding:13px 22px;border-radius:10px;'
-            f'text-decoration:none;font-weight:800">{escape(action_label)}</a>',
+            (
+                f'<a href="{safe_url}" '
+                'style="display:inline-block;background:#69f56a;'
+                'color:#00100d;padding:13px 22px;border-radius:10px;'
+                f'text-decoration:none;font-weight:800">{escape(action_label)}'
+                "</a>"
+            ),
             "</p>",
-            f'<p style="color:#8da79a;font-size:13px">{escape(expiry_text)}</p>',
-            '<p style="color:#8da79a;font-size:13px">If the button does not work, '
+            (
+                '<p style="color:#8da79a;font-size:13px">'
+                f"{escape(expiry_text)}</p>"
+            ),
+            (
+                '<p style="color:#8da79a;font-size:13px">If the button does '
+                "not work, "
+            ),
             f"open this link:<br>{safe_url}</p>",
             "</div>",
             "</body>",
@@ -200,7 +217,10 @@ def send_verification_email(user: User, token: str) -> None:
     html = _email_html(
         user.full_name,
         "Verify your MoneyMate email",
-        "Confirm your email address to finish securing your MoneyMate account.",
+        (
+            "Confirm your email address to finish securing your MoneyMate "
+            "account."
+        ),
         "Verify my email",
         verification_url,
         f"This single-use link expires in {duration}.",

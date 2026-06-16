@@ -30,7 +30,11 @@ def normalize_email(email: str) -> str:
 
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(UserModel).filter(UserModel.email == normalize_email(email)).first()
+    return (
+        db.query(UserModel)
+        .filter(UserModel.email == normalize_email(email))
+        .first()
+    )
 
 
 def prepare_email_verification(user: UserModel) -> str:

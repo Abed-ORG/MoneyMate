@@ -87,7 +87,8 @@ def edit_account(
                 status_code=status.HTTP_424_FAILED_DEPENDENCY,
                 detail=(
                     "Your email was updated, but the verification email could "
-                    "not be sent. Log in with the new email and request another "
+                    "not be sent. Log in with the new email and request "
+                    "another "
                     "verification link."
                 ),
             )

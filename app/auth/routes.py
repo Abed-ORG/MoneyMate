@@ -50,15 +50,21 @@ def _get_current_user_dep(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ):
-    """Lazy import of get_current_user to break circular import:
-    dependencies.py -> auth/utils.py -> auth/__init__.py -> auth/routes.py -> dependencies.py
+    """Lazy import of get_current_user to break circular import.
+
+    dependencies.py -> auth/utils.py -> auth/__init__.py ->
+    auth/routes.py -> dependencies.py
     """
     from app.dependencies import get_current_user as _get_current_user
 
     return _get_current_user(credentials, db)
 
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=User,
+    status_code=status.HTTP_201_CREATED,
+)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     if get_user_by_email(db, user.email):
         raise HTTPException(
@@ -119,7 +125,10 @@ def verify_email_link(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-def verify_email(payload: EmailVerificationRequest, db: Session = Depends(get_db)):
+def verify_email(
+    payload: EmailVerificationRequest,
+    db: Session = Depends(get_db),
+):
     return _verify_email_token(payload.token, db)
 
 
