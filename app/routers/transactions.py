@@ -36,25 +36,29 @@ def get_transaction_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> str:
+    credentials_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Your session is invalid or has expired. Please log in again.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     if not credentials:
-        return "dev-user-1"
+        raise credentials_error
 
     payload = decode_access_token(credentials.credentials)
     subject = payload.get("sub") if payload else None
     if not subject:
-        return "dev-user-1"
+        raise credentials_error
 
     try:
         user_id = int(subject)
     except (TypeError, ValueError):
-        return "dev-user-1"
+        raise credentials_error
 
-    try:
-        user = db.query(User).filter(User.id == user_id).first()
-    except Exception:
-        return "dev-user-1"
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.is_email_verified:
+        raise credentials_error
 
-    return str(user.id) if user else "dev-user-1"
+    return str(user.id)
 
 
 @router.get("", response_model=TransactionListResponse)
