@@ -21,6 +21,10 @@ npm run dev
 Open the local Vite URL that appears in the terminal, usually
 `http://localhost:5173`.
 
+If the backend is running locally, the frontend will talk to
+`http://127.0.0.1:8000` by default. You can override that with `VITE_API_URL`
+in a local `.env` file if your API runs somewhere else.
+
 ## Useful Checks
 
 ```bash

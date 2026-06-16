@@ -106,11 +106,23 @@ export async function apiRequest<T>(
 
   const body = isJsonBody(options.body) ? JSON.stringify(options.body) : options.body;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-    body,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      body,
+    });
+  } catch (error) {
+    throw {
+      status: 0,
+      message:
+        import.meta.env.PROD && !RAW_API_BASE_URL
+          ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
+          : `Could not reach the MoneyMate API at ${API_BASE_URL}. Check that the backend is running and that the URL is correct.`,
+      details: error,
+    } satisfies ApiError;
+  }
 
   const data = await parseResponse(response);
 
