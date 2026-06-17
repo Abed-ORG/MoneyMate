@@ -5,10 +5,7 @@ from email.message import EmailMessage
 from html import escape
 from urllib.parse import quote
 
-from app.auth.utils import (
-    EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES,
-    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
-)
+from app.auth.utils import PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -206,35 +203,6 @@ def _email_html(
             "</body>",
             "</html>",
         ]
-    )
-
-
-def send_verification_email(user: User, token: str) -> None:
-    verification_url = _frontend_url("/verify-email", token)
-    duration = _format_duration(EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES)
-    text = (
-        f"Hello {user.full_name},\n\n"
-        "Please verify your MoneyMate email address by opening this link:\n"
-        f"{verification_url}\n\n"
-        f"This link expires in {duration}. If you did not create or update "
-        "this account, you can ignore this email."
-    )
-    html = _email_html(
-        user.full_name,
-        "Verify your MoneyMate email",
-        (
-            "Confirm your email address to finish securing your MoneyMate "
-            "account."
-        ),
-        "Verify my email",
-        verification_url,
-        f"This single-use link expires in {duration}.",
-    )
-    _send_email(
-        user.email,
-        "Verify your MoneyMate account",
-        text,
-        html,
     )
 
 

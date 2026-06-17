@@ -22,14 +22,6 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class EmailVerificationRequest(BaseModel):
-    token: str
-
-
-class VerificationEmailRequest(BaseModel):
-    email: EmailStr
-
-
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

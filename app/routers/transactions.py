@@ -55,7 +55,7 @@ def get_transaction_user_id(
         raise credentials_error
 
     user = db.query(User).filter(User.id == user_id).first()
-    if not user or not user.is_email_verified:
+    if not user:
         raise credentials_error
 
     return str(user.id)

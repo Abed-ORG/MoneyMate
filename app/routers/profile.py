@@ -19,11 +19,6 @@ from app.services.profile_service import (
     update_account,
     update_financial_profile,
 )
-from app.services.email_service import (
-    EmailConfigurationError,
-    EmailDeliveryError,
-    send_verification_email,
-)
 
 router = APIRouter()
 
@@ -69,7 +64,7 @@ def edit_account(
     db: Session = Depends(get_db),
 ):
     try:
-        updated_user, verification_token = update_account(
+        return update_account(
             db,
             current_user,
             payload,
@@ -79,20 +74,6 @@ def edit_account(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists.",
         )
-    if verification_token:
-        try:
-            send_verification_email(updated_user, verification_token)
-        except (EmailConfigurationError, EmailDeliveryError):
-            raise HTTPException(
-                status_code=status.HTTP_424_FAILED_DEPENDENCY,
-                detail=(
-                    "Your email was updated, but the verification email could "
-                    "not be sent. Log in with the new email and request "
-                    "another "
-                    "verification link."
-                ),
-            )
-    return updated_user
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)

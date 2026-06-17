@@ -7,7 +7,7 @@ import {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { api, type ApiError, getApiErrorMessage } from "../services/api";
+import { getApiErrorMessage } from "../services/api";
 import { consumeAuthNotice } from "../utils/auth";
 import styles from "./AuthPages.module.css";
 
@@ -21,8 +21,7 @@ type RedirectState = {
   from?: {
     pathname?: string;
   };
-  verificationSent?: boolean;
-  verificationDeliveryFailed?: boolean;
+  accountCreated?: boolean;
   email?: string;
 };
 
@@ -99,8 +98,6 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   const [formError, setFormError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
-  const [showResend, setShowResend] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const [submittingMode, setSubmittingMode] = useState<AuthMode | null>(null);
   const navigationTimer = useRef<number>();
   const navigate = useNavigate();
@@ -116,28 +113,14 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     if (redirectState?.email) {
       setLoginEmail(redirectState.email);
     }
-    if (redirectState?.verificationSent) {
-      setAuthNotice(
-        "Please check your email to verify your account.",
-      );
-      return;
-    }
-    if (redirectState?.verificationDeliveryFailed) {
-      setAuthNotice(
-        "Your account was created, but the email could not be sent. Use the resend option below.",
-      );
-      setShowResend(true);
+    if (redirectState?.accountCreated) {
+      setAuthNotice("Account created. You can log in now.");
       return;
     }
     if (!isLoading) {
       setAuthNotice(consumeAuthNotice() ?? "");
     }
-  }, [
-    isLoading,
-    redirectState?.email,
-    redirectState?.verificationDeliveryFailed,
-    redirectState?.verificationSent,
-  ]);
+  }, [isLoading, redirectState?.accountCreated, redirectState?.email]);
 
   useEffect(
     () => () => {
@@ -158,7 +141,6 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     setMode(nextMode);
     setFormError("");
     setAuthNotice("");
-    setShowResend(false);
     navigationTimer.current = window.setTimeout(() => {
       navigate(nextMode === "login" ? "/login" : "/register");
     }, 520);
@@ -183,15 +165,7 @@ export function AuthPage({ initialMode }: AuthPageProps) {
           : redirectTo;
       navigate(destination, { replace: true });
     } catch (error) {
-      if ((error as ApiError)?.status === 424) {
-        navigate("/login", {
-          replace: true,
-          state: { verificationDeliveryFailed: true, email },
-        });
-      } else {
-        setFormError(getApiErrorMessage(error));
-      }
-      setShowResend((error as ApiError)?.status === 403);
+      setFormError(getApiErrorMessage(error));
     } finally {
       setSubmittingMode(null);
     }
@@ -224,33 +198,12 @@ export function AuthPage({ initialMode }: AuthPageProps) {
       });
       navigate("/login", {
         replace: true,
-        state: { verificationSent: true, email },
+        state: { accountCreated: true, email },
       });
     } catch (error) {
       setFormError(getApiErrorMessage(error));
     } finally {
       setSubmittingMode(null);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!loginEmail.trim()) {
-      setFormError("Enter your email address first.");
-      return;
-    }
-    setIsResending(true);
-    setFormError("");
-    try {
-      const response = await api.post<{ message: string }>(
-        "/auth/resend-verification",
-        { email: loginEmail.trim() },
-      );
-      setAuthNotice(response.message);
-      setShowResend(false);
-    } catch (error) {
-      setFormError(getApiErrorMessage(error));
-    } finally {
-      setIsResending(false);
     }
   };
 
@@ -315,17 +268,6 @@ export function AuthPage({ initialMode }: AuthPageProps) {
             </Link>
 
             {formError && isLogin ? <p className={styles.formError}>{formError}</p> : null}
-
-            {showResend && isLogin ? (
-              <button
-                className={styles.resendButton}
-                disabled={isResending}
-                onClick={handleResendVerification}
-                type="button"
-              >
-                {isResending ? "Sending..." : "Resend verification email"}
-              </button>
-            ) : null}
 
             <button
               className={styles.submitButton}

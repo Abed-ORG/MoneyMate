@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.auth.services_refresh import create_refresh_token
 from app.auth.utils import (
-    EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES,
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     generate_secure_token,
@@ -37,26 +36,6 @@ def get_user_by_email(db: Session, email: str):
     )
 
 
-def prepare_email_verification(user: UserModel) -> str:
-    token = generate_secure_token()
-    user.email_verification_token_hash = hash_security_token(token)
-    user.email_verification_expires_at = token_expiration(
-        EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES
-    )
-    return token
-
-
-def issue_email_verification_token(
-    db: Session,
-    user: UserModel,
-) -> str:
-    token = prepare_email_verification(user)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return token
-
-
 def issue_password_reset_token(
     db: Session,
     user: UserModel,
@@ -77,8 +56,9 @@ def create_user(db: Session, user: UserCreate):
         email=normalize_email(user.email),
         hashed_password=get_password_hash(user.password),
         full_name=user.full_name,
+        is_email_verified=True,
+        email_verified_at=datetime.now(timezone.utc),
     )
-    verification_token = prepare_email_verification(db_user)
     db.add(db_user)
     try:
         db.flush()
@@ -88,27 +68,7 @@ def create_user(db: Session, user: UserCreate):
         db.rollback()
         raise DuplicateEmailError from exc
     db.refresh(db_user)
-    return db_user, verification_token
-
-
-def verify_user_email(db: Session, token: str):
-    token_hash = hash_security_token(token)
-    user = (
-        db.query(UserModel)
-        .filter(UserModel.email_verification_token_hash == token_hash)
-        .first()
-    )
-    if not user or token_is_expired(user.email_verification_expires_at):
-        return None
-
-    user.is_email_verified = True
-    user.email_verified_at = datetime.now(timezone.utc)
-    user.email_verification_token_hash = None
-    user.email_verification_expires_at = None
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return db_user
 
 
 def reset_user_password(db: Session, token: str, new_password: str):

@@ -1,4 +1,4 @@
-# MoneyMate authentication, email, and database setup
+# MoneyMate authentication, password recovery, and database setup
 
 This guide uses placeholders only. Never place a real database password, API
 key, Gmail app password, or JWT secret in Git, chat, screenshots, or
@@ -16,7 +16,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 FRONTEND_URL=http://localhost:5173
 CORS_ALLOW_ORIGINS=http://localhost:5173
-EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES=60
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=30
 
 EMAIL_PROVIDER=resend
@@ -29,6 +28,10 @@ EMAIL_FROM_NAME=MoneyMate
 use the same shared development `DATABASE_URL`, but each person should receive
 it through a private team password manager or another approved private channel.
 Do not send it in Git or commit it.
+
+Signup does not require email verification. Newly registered users are created
+as verified and can log in immediately. Email credentials are still used for
+password reset links.
 
 The team must use the same `SECRET_KEY` only when backend instances need to
 accept one another's JWTs. Separate development and production secrets.
@@ -129,21 +132,18 @@ npm run dev
 
 ## 7. Manual test checklist
 
-1. **Sign up:** Register with an email you can access. The login page should
-   say to check email.
-2. **Blocked login:** Try logging in before verification. MoneyMate should say
-   the email must be verified and offer resend.
-3. **Verification:** Open the emailed link. The page should confirm verification
-   and the link should fail if reused.
-4. **Login:** Log in after verification and confirm the dashboard opens.
-5. **Persistence:** Refresh the dashboard and confirm the session remains.
-6. **Forgot password:** Open `/forgot-password`, submit an email, and confirm
+1. **Sign up:** Register with an email and password. The login page should say
+   the account was created.
+2. **Login:** Log in immediately after registration and confirm the dashboard
+   or onboarding screen opens.
+3. **Persistence:** Refresh the dashboard and confirm the session remains.
+4. **Forgot password:** Open `/forgot-password`, submit an email, and confirm
    the response never reveals whether the account exists.
-7. **Reset password:** Open the emailed reset link, choose a new password, and
+5. **Reset password:** Open the emailed reset link, choose a new password, and
    confirm the link cannot be reused.
-8. **Old password/session:** Confirm the old password fails and previous refresh
+6. **Old password/session:** Confirm the old password fails and previous refresh
    sessions have been revoked.
-9. **Protected routes:** Log out, then directly open `/dashboard`,
+7. **Protected routes:** Log out, then directly open `/dashboard`,
    `/transactions`, `/budgets`, `/goals`, `/reports`, `/chat`, and `/settings`.
    Each should redirect to `/login`.
 
@@ -153,4 +153,4 @@ Safe to commit: `.env.example`, migration files, code, and this guide.
 
 Never commit: `.env`, `client/.env`, database passwords, `SECRET_KEY`,
 `RESEND_API_KEY`, Gmail app passwords, private production URLs, or copied
-verification/reset links.
+reset links.

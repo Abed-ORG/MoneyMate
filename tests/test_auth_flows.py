@@ -9,7 +9,6 @@ from app.auth.services import (
     create_user,
     issue_password_reset_token,
     reset_user_password,
-    verify_user_email,
 )
 from app.auth.utils import verify_password
 from app.db import Base
@@ -18,12 +17,12 @@ from app.main import app
 from app.schemas.user import UserCreate
 
 
-def test_verification_and_password_reset_tokens_are_single_use():
+def test_new_users_are_verified_and_password_reset_tokens_are_single_use():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
 
-    user, verification_token = create_user(
+    user = create_user(
         session,
         UserCreate(
             full_name="Test User",
@@ -32,11 +31,10 @@ def test_verification_and_password_reset_tokens_are_single_use():
         ),
     )
 
-    assert user.is_email_verified is False
-    assert user.email_verification_token_hash != verification_token
-    verified_user = verify_user_email(session, verification_token)
-    assert verified_user.is_email_verified is True
-    assert verify_user_email(session, verification_token) is None
+    assert user.is_email_verified is True
+    assert user.email_verified_at is not None
+    assert user.email_verification_token_hash is None
+    assert user.email_verification_expires_at is None
 
     reset_token = issue_password_reset_token(session, user)
     assert (
@@ -50,7 +48,7 @@ def test_verification_and_password_reset_tokens_are_single_use():
     session.close()
 
 
-def test_auth_endpoints_require_verification_and_support_password_reset(
+def test_auth_endpoints_create_verified_account_and_support_password_reset(
     monkeypatch,
 ):
     engine = create_engine(
@@ -65,18 +63,10 @@ def test_auth_endpoints_require_verification_and_support_password_reset(
     def override_get_db():
         yield test_session
 
-    def capture_verification(user, token):
-        sent_tokens["verification"] = token
-
     def capture_reset(user, token):
         sent_tokens["reset"] = token
 
     app.dependency_overrides[get_db] = override_get_db
-    monkeypatch.setattr(
-        auth_routes,
-        "send_verification_email",
-        capture_verification,
-    )
     monkeypatch.setattr(
         auth_routes,
         "send_password_reset_email",
@@ -94,15 +84,7 @@ def test_auth_endpoints_require_verification_and_support_password_reset(
             json={**credentials, "full_name": "Endpoint User"},
         )
         assert registration.status_code == 201
-
-        blocked_login = client.post("/auth/login", json=credentials)
-        assert blocked_login.status_code == 403
-
-        verification = client.get(
-            "/auth/verify-email",
-            params={"token": sent_tokens["verification"]},
-        )
-        assert verification.status_code == 200
+        assert registration.json()["is_email_verified"] is True
 
         login = client.post("/auth/login", json=credentials)
         assert login.status_code == 200
