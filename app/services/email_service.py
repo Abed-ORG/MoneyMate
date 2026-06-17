@@ -1,3 +1,4 @@
+import logging
 import os
 import smtplib
 from email.message import EmailMessage
@@ -9,6 +10,8 @@ from app.auth.utils import (
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
 )
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 
 class EmailConfigurationError(Exception):
@@ -74,6 +77,7 @@ def _send_with_resend(
             }
         )
     except Exception as exc:
+        logger.exception("Resend API send failed to %s", recipient)
         raise EmailDeliveryError(
             "MoneyMate could not send the email. Please try again."
         ) from exc
@@ -121,6 +125,7 @@ def _send_with_smtp(
             server.login(smtp_username, smtp_password)
             server.send_message(message)
     except (OSError, smtplib.SMTPException) as exc:
+        logger.exception("SMTP send failed: host=%s port=%s user=%s", smtp_host, smtp_port, smtp_username)
         raise EmailDeliveryError(
             "MoneyMate could not send the email. Please try again."
         ) from exc
