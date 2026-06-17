@@ -80,7 +80,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         )
     try:
         send_verification_email(db_user, verification_token)
-    except (EmailConfigurationError, EmailDeliveryError) as exc:
+    except (EmailConfigurationError, EmailDeliveryError):
         logger.exception("Email delivery failed during registration for %s", user.email)
         raise HTTPException(
             status_code=status.HTTP_424_FAILED_DEPENDENCY,
