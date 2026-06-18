@@ -123,7 +123,9 @@ def read_categories(
     return list_categories(user_id)
 
 
-@router.post("/categories", response_model=Category, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/categories", response_model=Category, status_code=status.HTTP_201_CREATED
+)
 def add_category(
     payload: CategoryCreate,
     user_id: str = Depends(get_transaction_user_id),
@@ -146,7 +148,9 @@ def edit_category(
     return category
 
 
-@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def remove_category(
     category_id: str,
     user_id: str = Depends(get_transaction_user_id),

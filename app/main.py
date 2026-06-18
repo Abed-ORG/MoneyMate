@@ -10,6 +10,7 @@ from app.routers import status as status_router
 from app.db import Base, engine
 from app import models  # noqa: F401
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Create any missing tables on startup.

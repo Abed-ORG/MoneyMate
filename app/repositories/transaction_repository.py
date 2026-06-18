@@ -6,7 +6,6 @@ from uuid import uuid4
 from app.services.gemini_service import GeminiRequest, suggest_category
 from app.schemas.transaction import (
     AiCategorization,
-    BulkRecategorizeRequest,
     Category,
     CategoryCreate,
     CategoryUpdate,
@@ -79,7 +78,9 @@ class InMemoryTransactionRepository:
         self._ensure_user_state(user_id)
         return [deepcopy(item) for item in self._categories[user_id]]
 
-    def create_category(self, user_id: str, payload: CategoryCreate) -> Category:
+    def create_category(
+        self, user_id: str, payload: CategoryCreate
+    ) -> Category:
         self._ensure_user_state(user_id)
         category = Category(
             id=str(uuid4()),
@@ -123,7 +124,9 @@ class InMemoryTransactionRepository:
         self._ensure_user_state(user_id)
         return list(self._corrections[user_id][:10])
 
-    def _ai_category(self, user_id: str, vendor: str, notes: str, amount: Decimal) -> AiCategorization:
+    def _ai_category(
+        self, user_id: str, vendor: str, notes: str, amount: Decimal
+    ) -> AiCategorization:
         categories = self.list_categories(user_id)
         request_data = GeminiRequest(
             vendor=vendor,
@@ -352,7 +355,10 @@ class InMemoryTransactionRepository:
     ) -> Transaction | None:
         self._ensure_user_state(user_id)
         for index, transaction in enumerate(self._transactions):
-            if transaction.id != transaction_id or transaction.user_id != user_id:
+            if (
+                transaction.id != transaction_id
+                or transaction.user_id != user_id
+            ):
                 continue
             updated = transaction.model_copy(update={"category": category})
             updated.ai_categorization = AiCategorization(

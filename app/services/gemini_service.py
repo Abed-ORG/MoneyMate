@@ -1,7 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
-from urllib import error, request
+from urllib import request
 
 from app.schemas.transaction import AiCategorization
 
@@ -21,7 +21,9 @@ class GeminiRequest:
     correction_history: list[str]
 
 
-def _fallback_suggestion(vendor: str, notes: str, amount: str) -> AiCategorization:
+def _fallback_suggestion(
+    vendor: str, notes: str, amount: str
+) -> AiCategorization:
     text = f"{vendor} {notes}".lower()
     rules = [
         ("Food & Dining", ("coffee", "restaurant", "meal", "food", "dining")),
@@ -39,13 +41,18 @@ def _fallback_suggestion(vendor: str, notes: str, amount: str) -> AiCategorizati
                 category=category,
                 confidence=90,
                 provider="heuristic",
-                rationale=f"Matched vendor/description keywords for {category}.",
+                rationale=(
+                    f"Matched vendor/description keywords"
+                    f" for {category}."
+                ),
             )
     return AiCategorization(
         category="Other",
         confidence=58,
         provider="heuristic",
-        rationale=f"Used fallback reasoning for {vendor or amount}.",
+        rationale=(
+            f"Used fallback reasoning for {vendor or amount}."
+        ),
     )
 
 
@@ -59,13 +66,15 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
         )
 
     prompt = (
-        "Classify this personal finance transaction into exactly one category. "
-        "Return strict JSON with keys category, confidence, rationale.\n\n"
+        "Classify this personal finance transaction into exactly one "
+        "category. Return strict JSON with keys category, confidence, "
+        "rationale.\n\n"
         f"Vendor: {request_data.vendor}\n"
         f"Notes: {request_data.notes}\n"
         f"Amount: {request_data.amount}\n"
         f"Allowed categories: {', '.join(request_data.category_names)}\n"
-        f"Past user corrections: {', '.join(request_data.correction_history) or 'none'}\n"
+        f"Past user corrections: "
+        f"{', '.join(request_data.correction_history) or 'none'}\n"
     )
     body = {
         "contents": [
@@ -96,7 +105,7 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
 
     try:
         text = payload["candidates"][0]["content"]["parts"][0]["text"]
-        data = json.loads(text[text.find("{") : text.rfind("}") + 1])
+        data = json.loads(text[text.find("{"):text.rfind("}") + 1])
         category = str(data.get("category", "Other")).strip() or "Other"
         confidence = int(data.get("confidence", 70))
         rationale = str(data.get("rationale", "")).strip()

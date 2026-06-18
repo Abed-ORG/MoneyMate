@@ -145,7 +145,9 @@ def create_category(user_id: str, payload: CategoryCreate) -> Category:
 def update_category(
     user_id: str, category_id: str, payload: CategoryUpdate
 ) -> Category | None:
-    return transaction_repository.update_category(user_id, category_id, payload)
+    return transaction_repository.update_category(
+        user_id, category_id, payload
+    )
 
 
 def delete_category(user_id: str, category_id: str) -> bool:
@@ -171,7 +173,9 @@ def bulk_recategorize_transactions(
     user_id: str,
     payload: BulkRecategorizeRequest,
 ) -> list[Transaction]:
-    return transaction_repository.recategorize(user_id, payload.transaction_ids)
+    return transaction_repository.recategorize(
+        user_id, payload.transaction_ids
+    )
 
 
 def bulk_create_transactions(
