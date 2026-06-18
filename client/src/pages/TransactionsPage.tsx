@@ -203,6 +203,7 @@ export function TransactionsPage() {
   const [csvErrors, setCsvErrors] = useState<TransactionImportError[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selected = useMemo(
@@ -232,6 +233,7 @@ export function TransactionsPage() {
   const income = transactions
     .filter((transaction) => Number(transaction.amount) > 0)
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+  const selectedCount = selectedTransactionIds.length;
 
   const loadTransactions = async () => {
     setIsLoading(true);
@@ -243,6 +245,9 @@ export function TransactionsPage() {
       if (selectedId && !response.items.some((transaction) => transaction.id === selectedId)) {
         setSelectedId(null);
       }
+      setSelectedTransactionIds((current) =>
+        current.filter((id) => response.items.some((transaction) => transaction.id === id)),
+      );
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -273,6 +278,20 @@ export function TransactionsPage() {
 
   const updateFilter = (values: Partial<TransactionListParams>) => {
     setFilters((current) => ({ ...current, ...values, page: values.page ?? 1 }));
+  };
+
+  const toggleTransactionSelection = (id: string) => {
+    setSelectedTransactionIds((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
+  };
+
+  const selectVisibleTransactions = () => {
+    setSelectedTransactionIds(transactions.map((transaction) => transaction.id));
+  };
+
+  const clearTransactionSelection = () => {
+    setSelectedTransactionIds([]);
   };
 
   const resetImportState = () => {
@@ -390,6 +409,22 @@ export function TransactionsPage() {
       message: "AI suggestions were refreshed for the current page.",
       variant: "success",
     });
+    await loadTransactions();
+  };
+
+  const recategorizeSelected = async () => {
+    if (!selectedTransactionIds.length) {
+      return;
+    }
+    await transactionsApi.bulkRecategorize({
+      transaction_ids: selectedTransactionIds,
+    });
+    setToast({
+      title: "Selected transactions recategorized",
+      message: "AI suggestions were refreshed for the selected transactions.",
+      variant: "success",
+    });
+    clearTransactionSelection();
     await loadTransactions();
   };
 
@@ -610,9 +645,6 @@ export function TransactionsPage() {
               >
                 + Add Transaction
               </Button>
-              <Button variant="secondary" onClick={() => void recategorizeCurrentPage()}>
-                Re-categorize Page
-              </Button>
             </div>
           </section>
         </div>
@@ -625,6 +657,23 @@ export function TransactionsPage() {
               {Math.min(filters.page * filters.pageSize, total)} of {total}
             </span>
           </header>
+          <div className={styles.bulkBar}>
+            <span>{selectedCount} selected</span>
+            <div className={styles.bulkActions}>
+              <Button variant="secondary" onClick={selectVisibleTransactions}>
+                Select Page
+              </Button>
+              <Button variant="secondary" onClick={clearTransactionSelection}>
+                Clear Selection
+              </Button>
+              <Button
+                disabled={!selectedCount}
+                onClick={() => void recategorizeSelected()}
+              >
+                Re-categorize Selected
+              </Button>
+            </div>
+          </div>
 
           {isLoading ? <div className={styles.state}>Loading transactions...</div> : null}
           {error ? <div className={styles.stateError}>{error}</div> : null}
@@ -637,6 +686,7 @@ export function TransactionsPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
+                    <th>Select</th>
                     <th>Date</th>
                     <th>Vendor</th>
                     <th>Category</th>
@@ -655,6 +705,14 @@ export function TransactionsPage() {
                         setIsDetailsCollapsed(false);
                       }}
                     >
+                      <td>
+                        <input
+                          checked={selectedTransactionIds.includes(transaction.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggleTransactionSelection(transaction.id)}
+                          type="checkbox"
+                        />
+                      </td>
                       <td>{formatDate(transaction.date)}</td>
                       <td>
                         <span className={styles.vendorMark}>{transaction.vendor.slice(0, 1) || "$"}</span>

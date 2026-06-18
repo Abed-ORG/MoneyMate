@@ -123,7 +123,7 @@ class InMemoryTransactionRepository:
         self._ensure_user_state(user_id)
         return list(self._corrections[user_id][:10])
 
-    def _ai_category(self, user_id: str, category: str, vendor: str, notes: str, amount: Decimal) -> AiCategorization:
+    def _ai_category(self, user_id: str, vendor: str, notes: str, amount: Decimal) -> AiCategorization:
         categories = self.list_categories(user_id)
         request_data = GeminiRequest(
             vendor=vendor,
@@ -132,15 +132,7 @@ class InMemoryTransactionRepository:
             category_names=[item.name for item in categories],
             correction_history=self.get_corrections(user_id),
         )
-        suggestion = suggest_category(request_data)
-        if category and category in request_data.category_names:
-            return AiCategorization(
-                category=category,
-                confidence=100,
-                provider="manual",
-                rationale="User-selected category.",
-            )
-        return suggestion
+        return suggest_category(request_data)
 
     def _seed(self) -> None:
         if self._transactions:
@@ -269,13 +261,13 @@ class InMemoryTransactionRepository:
             updated_at=now,
             ai_categorization=self._ai_category(
                 user_id,
-                payload.category,
                 payload.vendor,
                 payload.notes,
                 payload.amount,
             ),
             history=[make_history_event(event)],
         )
+        self.record_correction(user_id, payload.category)
         self._transactions.insert(0, transaction)
         return deepcopy(transaction)
 
@@ -297,7 +289,6 @@ class InMemoryTransactionRepository:
             updated.updated_at = utc_now()
             updated.ai_categorization = self._ai_category(
                 user_id,
-                updated.category,
                 updated.vendor,
                 updated.notes,
                 updated.amount,
@@ -306,6 +297,8 @@ class InMemoryTransactionRepository:
                 *transaction.history,
                 make_history_event("Transaction modified"),
             ]
+            if "category" in values and values["category"]:
+                self.record_correction(user_id, str(values["category"]))
             if transaction.notes != updated.notes and updated.notes:
                 updated.history.append(
                     make_history_event(f'Added note "{updated.notes}"')
@@ -339,7 +332,6 @@ class InMemoryTransactionRepository:
             recategorized = transaction.model_copy()
             recategorized.ai_categorization = self._ai_category(
                 user_id,
-                recategorized.category,
                 recategorized.vendor,
                 recategorized.notes,
                 recategorized.amount,
@@ -381,9 +373,15 @@ class InMemoryTransactionRepository:
     def custom_categories(self, user_id: str) -> list[Category]:
         return self.list_categories(user_id)
 
-    def suggest(self, user_id: str, category: str, vendor: str, notes: str, amount: Decimal) -> AiCategorization:
+    def suggest(
+        self,
+        user_id: str,
+        vendor: str,
+        notes: str,
+        amount: Decimal,
+    ) -> AiCategorization:
         self._ensure_user_state(user_id)
-        return self._ai_category(user_id, category, vendor, notes, amount)
+        return self._ai_category(user_id, vendor, notes, amount)
 
 
 transaction_repository = InMemoryTransactionRepository()

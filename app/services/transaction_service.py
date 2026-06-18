@@ -131,12 +131,11 @@ def list_categories(user_id: str) -> list[Category]:
 
 def suggest_transaction_category(
     user_id: str,
-    category: str,
     vendor: str,
     notes: str,
     amount,
 ):
-    return transaction_repository.suggest(user_id, category, vendor, notes, amount)
+    return transaction_repository.suggest(user_id, vendor, notes, amount)
 
 
 def create_category(user_id: str, payload: CategoryCreate) -> Category:

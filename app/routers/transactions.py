@@ -209,7 +209,6 @@ def suggest_category(
 ):
     return suggest_transaction_category(
         user_id,
-        payload.category,
         payload.vendor,
         payload.notes,
         payload.amount,

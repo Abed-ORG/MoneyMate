@@ -219,6 +219,24 @@
   padding: 1rem 1.2rem;
 }
 
+.bulkBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin: 0.9rem 1.2rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(111, 239, 75, 0.14);
+  border-radius: var(--mm-radius-md);
+  background: rgba(0, 17, 13, 0.55);
+}
+
+.bulkActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .state,
 .stateError {
   padding: 2rem;
