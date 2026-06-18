@@ -14,7 +14,6 @@ import { ReportsPage } from "../pages/ReportsPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
-import { VerifyEmailPage } from "../pages/VerifyEmailPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 export function AppRoutes() {
@@ -25,7 +24,6 @@ export function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route
         path="/onboarding"
         element={

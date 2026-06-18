@@ -142,7 +142,6 @@ export async function apiRequest<T>(
         "/",
         "/login",
         "/register",
-        "/verify-email",
         "/forgot-password",
         "/reset-password",
       ];

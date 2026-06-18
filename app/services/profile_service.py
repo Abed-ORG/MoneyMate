@@ -1,10 +1,11 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.services import (
     DuplicateEmailError,
     normalize_email,
-    prepare_email_verification,
 )
 from app.auth.utils import (
     get_password_hash,
@@ -98,19 +99,19 @@ def update_account(
     db: Session,
     user: User,
     payload: UserUpdate,
-) -> tuple[User, str | None]:
+) -> User:
     values = payload.model_dump(exclude_unset=True)
     email_changed = False
-    verification_token = None
     if "email" in values:
         values["email"] = normalize_email(values["email"])
         email_changed = values["email"] != user.email
     for field, value in values.items():
         setattr(user, field, value)
     if email_changed:
-        user.is_email_verified = False
-        user.email_verified_at = None
-        verification_token = prepare_email_verification(user)
+        user.is_email_verified = True
+        user.email_verified_at = datetime.now(timezone.utc)
+        user.email_verification_token_hash = None
+        user.email_verification_expires_at = None
         (
             db.query(RefreshToken)
             .filter(
@@ -126,7 +127,7 @@ def update_account(
         db.rollback()
         raise DuplicateEmailError from exc
     db.refresh(user)
-    return user, verification_token
+    return user
 
 
 def change_password(db: Session, user: User, payload: PasswordChange) -> None:

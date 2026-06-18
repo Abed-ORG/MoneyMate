@@ -34,8 +34,7 @@ moneymate/
 
 ## Getting Started
 
-For the current authentication, email verification, password recovery, and
-shared PostgreSQL setup, follow
+For the current authentication, password recovery, and shared PostgreSQL setup, follow
 [`AUTH_EMAIL_DATABASE_SETUP.md`](AUTH_EMAIL_DATABASE_SETUP.md).
 
 ### Prerequisites
@@ -76,10 +75,12 @@ shared PostgreSQL setup, follow
    ```
 
 5. Set up environment variables:
-   - Copy `.env.example` to `.env` in the `server/` directory
-   - Fill in your PostgreSQL database URL, JWT secret, and Gemini API key
-   - If you want to point the frontend at a different API host, copy
-     `client/.env.example` to `client/.env` and change `VITE_API_URL`
+   - Copy `.env.example` to `.env` in the backend root
+   - Fill in your PostgreSQL or Neon `DATABASE_URL`, JWT secret, and email settings
+   - For Render deployment, set `CORS_ALLOW_ORIGINS` to the Vercel frontend URL and
+     `FRONTEND_URL` to the same public site URL
+   - Copy `client/.env.example` to `client/.env` and set `VITE_API_URL` to your
+     Render backend URL
 
 6. Run database migrations:
    ```bash
@@ -100,6 +101,16 @@ shared PostgreSQL setup, follow
 
    The frontend talks to `http://127.0.0.1:8000` by default if
    `VITE_API_URL` is not set.
+
+## Deployment Notes
+
+- Backend: Render
+- Database: Neon Postgres
+- Frontend: Vercel
+
+The backend reads `DATABASE_URL` directly, so the Neon connection string should be
+set in Render environment variables. The frontend reads `VITE_API_URL`, which should
+point to the Render backend service URL.
 
 ## Git Workflow
 

@@ -10,10 +10,8 @@ from app.auth.services import (
     create_tokens_for_user,
     create_user,
     get_user_by_email,
-    issue_email_verification_token,
     issue_password_reset_token,
     reset_user_password,
-    verify_user_email,
 )
 from app.auth.services_refresh import (
     get_user_for_refresh_token,
@@ -22,7 +20,6 @@ from app.auth.services_refresh import (
 from app.dependencies import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import (
-    EmailVerificationRequest,
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
@@ -32,13 +29,11 @@ from app.schemas.user import (
     TokenResponse,
     User,
     UserCreate,
-    VerificationEmailRequest,
 )
 from app.services.email_service import (
     EmailConfigurationError,
     EmailDeliveryError,
     send_password_reset_email,
-    send_verification_email,
 )
 
 router = APIRouter()
@@ -72,24 +67,12 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="An account with this email already exists.",
         )
     try:
-        db_user, verification_token = create_user(db, user)
+        return create_user(db, user)
     except DuplicateEmailError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists.",
         )
-    try:
-        send_verification_email(db_user, verification_token)
-    except (EmailConfigurationError, EmailDeliveryError):
-        logger.exception("Email delivery failed during registration for %s", user.email)
-        raise HTTPException(
-            status_code=status.HTTP_424_FAILED_DEPENDENCY,
-            detail=(
-                "Your account was created, but the verification email could "
-                "not be sent. Go to login and use Resend verification email."
-            ),
-        )
-    return db_user
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -100,60 +83,12 @@ def login(form_data: LoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="The email or password you entered is incorrect.",
         )
-    if not user.is_email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Verify your email address before logging in.",
-        )
     return create_tokens_for_user(db, user)
 
 
-def _verify_email_token(token: str, db: Session):
-    user = verify_user_email(db, token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This verification link is invalid or has expired.",
-        )
-    return {
-        "message": "Your email has been verified. You can now log in."
-    }
-
-
-@router.get("/verify-email", response_model=MessageResponse)
-def verify_email_link(token: str, db: Session = Depends(get_db)):
-    return _verify_email_token(token, db)
-
-
-@router.post("/verify-email", response_model=MessageResponse)
-def verify_email(
-    payload: EmailVerificationRequest,
-    db: Session = Depends(get_db),
-):
-    return _verify_email_token(payload.token, db)
-
-
-@router.post("/resend-verification", response_model=MessageResponse)
-def resend_verification(
-    payload: VerificationEmailRequest,
-    db: Session = Depends(get_db),
-):
-    user = get_user_by_email(db, payload.email)
-    if user and not user.is_email_verified:
-        try:
-            token = issue_email_verification_token(db, user)
-            send_verification_email(user, token)
-        except (EmailConfigurationError, EmailDeliveryError) as exc:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=str(exc),
-            )
-    return {
-        "message": (
-            "If an unverified account exists for that email, "
-            "a new verification link has been sent."
-        )
-    }
+# Email verification is intentionally disabled for signup/login.
+# Users are created as verified in create_user(), so no verification link or
+# resend-verification endpoint is needed for normal account creation.
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
@@ -200,7 +135,7 @@ def reset_password(
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_tokens(payload: RefreshRequest, db: Session = Depends(get_db)):
     user = get_user_for_refresh_token(db, payload.refresh_token)
-    if not user or not user.is_email_verified:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Your session has expired. Please log in again.",

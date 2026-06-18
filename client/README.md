@@ -34,8 +34,8 @@ npm run build
 ## Authentication
 
 The client uses the MoneyMate FastAPI authentication endpoints. It reads
-`VITE_API_BASE_URL` from `client/.env`, persists access and refresh tokens, and
+`VITE_API_URL` from `client/.env`, persists access and refresh tokens, and
 protects all authenticated application routes.
 
-See the root `AUTH_EMAIL_DATABASE_SETUP.md` for email verification, password
-recovery, shared database, and environment setup.
+See the root setup docs for password recovery, shared database, and environment
+setup.

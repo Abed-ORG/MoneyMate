@@ -25,15 +25,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440")
 )
-EMAIL_VERIFICATION_EXPIRE_HOURS = int(
-    os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
-)
-EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv(
-        "EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES",
-        str(EMAIL_VERIFICATION_EXPIRE_HOURS * 60),
-    )
-)
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", "30")
 )
