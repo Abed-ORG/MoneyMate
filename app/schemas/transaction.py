@@ -129,6 +129,13 @@ class BulkRecategorizeRequest(BaseModel):
     transaction_ids: list[str] = Field(default_factory=list)
 
 
+class TransactionSuggestionRequest(BaseModel):
+    date: Optional[datetime] = None
+    amount: Decimal
+    vendor: str = Field("", max_length=120)
+    notes: str = Field("", max_length=500)
+
+
 class TransactionListResponse(BaseModel):
     items: list[Transaction]
     total: int

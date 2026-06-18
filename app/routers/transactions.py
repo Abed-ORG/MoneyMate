@@ -22,6 +22,7 @@ from app.schemas.transaction import (
     TransactionImportResponse,
     TransactionListResponse,
     TransactionCorrectionRequest,
+    TransactionSuggestionRequest,
     TransactionUpdate,
     AiCategorization,
 )
@@ -204,7 +205,7 @@ def upload_csv_transactions(
 
 @router.post("/suggest", response_model=AiCategorization)
 def suggest_category(
-    payload: TransactionCreate,
+    payload: TransactionSuggestionRequest,
     user_id: str = Depends(get_transaction_user_id),
 ):
     return suggest_transaction_category(

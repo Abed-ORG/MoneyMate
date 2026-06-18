@@ -10,6 +10,7 @@ import type {
   TransactionListResponse,
   TransactionPayload,
   TransactionCorrectionPayload,
+  TransactionSuggestionPayload,
 } from "../types/transaction";
 
 function buildQuery(params: TransactionListParams) {
@@ -45,7 +46,7 @@ export const transactionsApi = {
   delete: (id: string) => api.delete<void>(`/transactions/${id}`),
   bulk: (transactions: TransactionPayload[]) =>
     api.post<TransactionImportResponse>("/transactions/bulk", { transactions }),
-  suggest: (payload: TransactionPayload) =>
+  suggest: (payload: TransactionSuggestionPayload) =>
     api.post<{ category: string; confidence: number; provider: string; rationale: string }>(
       "/transactions/suggest",
       payload,

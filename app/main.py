@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import os
+
+from fastapi import FastAPI
 
 from app.routers import items, profile, transactions
 from app.auth import routes as auth_routes
@@ -8,7 +10,19 @@ from app.routers import status as status_router
 from app.db import Base, engine
 from app import models  # noqa: F401
 
-app = FastAPI(title="MoneyMate API")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Create any missing tables on startup.
+
+    This keeps fresh deployment databases usable even if migrations were not
+    applied yet. Existing tables are left untouched.
+    """
+    if os.getenv("RENDER_SERVICE_ID"):
+        Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="MoneyMate API", lifespan=lifespan)
 
 # CORS
 
@@ -35,17 +49,6 @@ app.include_router(
     tags=["transactions"],
 )
 app.include_router(status_router.router, prefix="/status", tags=["status"])
-
-
-@app.on_event("startup")
-def ensure_database_schema():
-    """Create any missing tables on startup.
-
-    This keeps fresh deployment databases usable even if migrations were not
-    applied yet. Existing tables are left untouched.
-    """
-    if os.getenv("RENDER_SERVICE_ID"):
-        Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")

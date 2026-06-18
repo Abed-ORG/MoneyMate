@@ -381,7 +381,11 @@ export function TransactionsPage() {
 
   const applyAiSuggestion = async () => {
     try {
-      const suggestion = await transactionsApi.suggest(toPayload(form));
+      const suggestion = await transactionsApi.suggest({
+        amount: Number(form.amount || 0),
+        vendor: form.vendor.trim(),
+        notes: form.notes.trim(),
+      });
       setForm((current) => ({ ...current, category: suggestion.category }));
       setToast({
         title: "AI suggestion ready",

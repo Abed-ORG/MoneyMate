@@ -53,6 +53,12 @@ export type TransactionCorrectionPayload = {
   category: string;
 };
 
+export type TransactionSuggestionPayload = {
+  amount: number;
+  vendor: string;
+  notes: string;
+};
+
 export type TransactionListParams = {
   page: number;
   pageSize: number;
