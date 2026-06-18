@@ -14,6 +14,8 @@ class TransactionHistoryEvent(BaseModel):
 class AiCategorization(BaseModel):
     category: str
     confidence: int = Field(..., ge=0, le=100)
+    provider: str = "heuristic"
+    rationale: str = ""
 
 
 class TransactionBase(BaseModel):
@@ -88,6 +90,43 @@ class Transaction(TransactionBase):
     updated_at: datetime
     ai_categorization: AiCategorization
     history: list[TransactionHistoryEvent] = []
+
+
+class CategoryBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    color: str = Field("#69f56a", min_length=4, max_length=16)
+    is_default: bool = False
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("Category name is required")
+        return normalized
+
+
+class CategoryCreate(CategoryBase):
+    pass
+
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=80)
+    color: Optional[str] = Field(None, min_length=4, max_length=16)
+    is_default: Optional[bool] = None
+
+
+class Category(CategoryBase):
+    id: str
+    user_id: str
+
+
+class TransactionCorrectionRequest(BaseModel):
+    category: str = Field(..., min_length=1, max_length=80)
+
+
+class BulkRecategorizeRequest(BaseModel):
+    transaction_ids: list[str] = Field(default_factory=list)
 
 
 class TransactionListResponse(BaseModel):

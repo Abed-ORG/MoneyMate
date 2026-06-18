@@ -15,6 +15,7 @@ import {
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
+  Category,
   Transaction,
   TransactionImportError,
   TransactionListParams,
@@ -201,6 +202,7 @@ export function TransactionsPage() {
   const [csvContent, setCsvContent] = useState("");
   const [csvErrors, setCsvErrors] = useState<TransactionImportError[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selected = useMemo(
@@ -219,9 +221,10 @@ export function TransactionsPage() {
   const formCategoryOptions = useMemo(
     () => [
       { value: "", label: "Select category" },
+      ...categories.map((category) => ({ value: category.name, label: category.name })),
       ...transactionCategories.map((category) => ({ value: category, label: category })),
     ],
-    [],
+    [categories],
   );
   const expenses = transactions
     .filter((transaction) => Number(transaction.amount) < 0)
@@ -251,6 +254,10 @@ export function TransactionsPage() {
     void loadTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
+
+  useEffect(() => {
+    void transactionsApi.categories().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -353,6 +360,39 @@ export function TransactionsPage() {
     setIsEditOpen(true);
   };
 
+  const applyAiSuggestion = async () => {
+    try {
+      const suggestion = await transactionsApi.suggest(toPayload(form));
+      setForm((current) => ({ ...current, category: suggestion.category }));
+      setToast({
+        title: "AI suggestion ready",
+        message: `MoneyMate suggested ${suggestion.category}.`,
+        variant: "info",
+      });
+    } catch (err) {
+      setToast({
+        title: "AI suggestion failed",
+        message: getApiErrorMessage(err),
+        variant: "warning",
+      });
+    }
+  };
+
+  const recategorizeCurrentPage = async () => {
+    if (!transactions.length) {
+      return;
+    }
+    await transactionsApi.bulkRecategorize({
+      transaction_ids: transactions.map((item) => item.id),
+    });
+    setToast({
+      title: "Page recategorized",
+      message: "AI suggestions were refreshed for the current page.",
+      variant: "success",
+    });
+    await loadTransactions();
+  };
+
   const handleFile = async (file: File | null) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
@@ -434,6 +474,9 @@ export function TransactionsPage() {
           onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
         />
       </FormField>
+      <Button type="button" variant="secondary" onClick={() => void applyAiSuggestion()}>
+        AI Suggest Category
+      </Button>
       <FormField label="Vendor">
         <Input
           placeholder="Vendor"
@@ -566,6 +609,9 @@ export function TransactionsPage() {
                 }}
               >
                 + Add Transaction
+              </Button>
+              <Button variant="secondary" onClick={() => void recategorizeCurrentPage()}>
+                Re-categorize Page
               </Button>
             </div>
           </section>

@@ -9,6 +9,10 @@ from app.auth.utils import decode_access_token
 from app.dependencies import bearer_scheme, get_db
 from app.models.user import User
 from app.schemas.transaction import (
+    BulkRecategorizeRequest,
+    Category,
+    CategoryCreate,
+    CategoryUpdate,
     SortDirection,
     SortField,
     Transaction,
@@ -17,15 +21,24 @@ from app.schemas.transaction import (
     TransactionImportRequest,
     TransactionImportResponse,
     TransactionListResponse,
+    TransactionCorrectionRequest,
     TransactionUpdate,
+    AiCategorization,
 )
 from app.services.transaction_service import (
     TransactionNotFoundError,
+    bulk_recategorize_transactions,
     bulk_create_transactions,
+    create_category,
     create_transaction,
+    correct_transaction_category,
+    delete_category,
     delete_transaction,
     import_transactions,
+    list_categories,
     list_transactions,
+    suggest_transaction_category,
+    update_category,
     update_transaction,
 )
 
@@ -102,6 +115,48 @@ def add_transaction(
     return create_transaction(user_id, payload)
 
 
+@router.get("/categories", response_model=list[Category])
+def read_categories(
+    user_id: str = Depends(get_transaction_user_id),
+):
+    return list_categories(user_id)
+
+
+@router.post("/categories", response_model=Category, status_code=status.HTTP_201_CREATED)
+def add_category(
+    payload: CategoryCreate,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    return create_category(user_id, payload)
+
+
+@router.patch("/categories/{category_id}", response_model=Category)
+def edit_category(
+    category_id: str,
+    payload: CategoryUpdate,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    category = update_category(user_id, category_id, payload)
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found.",
+        )
+    return category
+
+
+@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_category(
+    category_id: str,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    if not delete_category(user_id, category_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found.",
+        )
+
+
 @router.patch("/{transaction_id}", response_model=Transaction)
 def edit_transaction(
     transaction_id: str,
@@ -145,3 +200,40 @@ def upload_csv_transactions(
     user_id: str = Depends(get_transaction_user_id),
 ):
     return import_transactions(user_id, payload)
+
+
+@router.post("/suggest", response_model=AiCategorization)
+def suggest_category(
+    payload: TransactionCreate,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    return suggest_transaction_category(
+        user_id,
+        payload.category,
+        payload.vendor,
+        payload.notes,
+        payload.amount,
+    )
+
+
+@router.post("/{transaction_id}/correction", response_model=Transaction)
+def correct_transaction(
+    transaction_id: str,
+    payload: TransactionCorrectionRequest,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    try:
+        return correct_transaction_category(user_id, transaction_id, payload)
+    except TransactionNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found.",
+        )
+
+
+@router.post("/bulk-recategorize", response_model=list[Transaction])
+def bulk_recategorize(
+    payload: BulkRecategorizeRequest,
+    user_id: str = Depends(get_transaction_user_id),
+):
+    return bulk_recategorize_transactions(user_id, payload)

@@ -7,6 +7,10 @@ from pydantic import ValidationError
 
 from app.repositories.transaction_repository import transaction_repository
 from app.schemas.transaction import (
+    BulkRecategorizeRequest,
+    Category,
+    CategoryCreate,
+    CategoryUpdate,
     SortDirection,
     SortField,
     Transaction,
@@ -17,6 +21,7 @@ from app.schemas.transaction import (
     TransactionImportResponse,
     TransactionListResponse,
     TransactionUpdate,
+    TransactionCorrectionRequest,
 )
 
 
@@ -118,6 +123,56 @@ def update_transaction(
 def delete_transaction(user_id: str, transaction_id: str) -> None:
     if not transaction_repository.delete(user_id, transaction_id):
         raise TransactionNotFoundError
+
+
+def list_categories(user_id: str) -> list[Category]:
+    return transaction_repository.custom_categories(user_id)
+
+
+def suggest_transaction_category(
+    user_id: str,
+    category: str,
+    vendor: str,
+    notes: str,
+    amount,
+):
+    return transaction_repository.suggest(user_id, category, vendor, notes, amount)
+
+
+def create_category(user_id: str, payload: CategoryCreate) -> Category:
+    return transaction_repository.create_category(user_id, payload)
+
+
+def update_category(
+    user_id: str, category_id: str, payload: CategoryUpdate
+) -> Category | None:
+    return transaction_repository.update_category(user_id, category_id, payload)
+
+
+def delete_category(user_id: str, category_id: str) -> bool:
+    return transaction_repository.delete_category(user_id, category_id)
+
+
+def correct_transaction_category(
+    user_id: str,
+    transaction_id: str,
+    payload: TransactionCorrectionRequest,
+) -> Transaction:
+    transaction = transaction_repository.correct_category(
+        user_id,
+        transaction_id,
+        payload.category,
+    )
+    if not transaction:
+        raise TransactionNotFoundError
+    return transaction
+
+
+def bulk_recategorize_transactions(
+    user_id: str,
+    payload: BulkRecategorizeRequest,
+) -> list[Transaction]:
+    return transaction_repository.recategorize(user_id, payload.transaction_ids)
 
 
 def bulk_create_transactions(
