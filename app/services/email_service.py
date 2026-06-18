@@ -122,7 +122,12 @@ def _send_with_smtp(
             server.login(smtp_username, smtp_password)
             server.send_message(message)
     except (OSError, smtplib.SMTPException) as exc:
-        logger.exception("SMTP send failed: host=%s port=%s user=%s", smtp_host, smtp_port, smtp_username)
+        logger.exception(
+            "SMTP send failed: host=%s port=%s user=%s",
+            smtp_host,
+            smtp_port,
+            smtp_username,
+        )
         raise EmailDeliveryError(
             "MoneyMate could not send the email. Please try again."
         ) from exc
