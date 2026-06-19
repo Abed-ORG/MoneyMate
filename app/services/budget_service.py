@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from calendar import month_name
-from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy.exc import IntegrityError
@@ -57,17 +56,29 @@ DEFAULT_SPENDING_CATEGORIES = [
 ]
 
 CATEGORY_META = {
-    "Food & Dining": {"icon": "/category-icons/food-dining.png", "color": "#51f35b"},
+    "Food & Dining": {
+        "icon": "/category-icons/food-dining.png",
+        "color": "#51f35b",
+    },
     "Transport": {"icon": "/category-icons/transport.png", "color": "#26bc50"},
     "Housing": {"icon": "/category-icons/housing.png", "color": "#78ff68"},
     "Groceries": {"icon": "/category-icons/groceries.png", "color": "#9ef01a"},
-    "Entertainment": {"icon": "/category-icons/entertainment.png", "color": "#f59e0b"},
+    "Entertainment": {
+        "icon": "/category-icons/entertainment.png",
+        "color": "#f59e0b",
+    },
     "Shopping": {"icon": "/category-icons/shopping.png", "color": "#fb923c"},
-    "Healthcare": {"icon": "/category-icons/healthcare.png", "color": "#22c55e"},
+    "Healthcare": {
+        "icon": "/category-icons/healthcare.png",
+        "color": "#22c55e",
+    },
     "Utilities": {"icon": "/category-icons/utilities.png", "color": "#84cc16"},
     "Education": {"icon": "/category-icons/education.png", "color": "#14b8a6"},
     "Travel": {"icon": "/category-icons/travel.png", "color": "#38bdf8"},
-    "Personal Care": {"icon": "/category-icons/personal-care.png", "color": "#a3e635"},
+    "Personal Care": {
+        "icon": "/category-icons/personal-care.png",
+        "color": "#a3e635",
+    },
     "Other": {"icon": "/category-icons/other.png", "color": "#d9f99d"},
 }
 
@@ -151,7 +162,10 @@ def ensure_budget_categories(db: Session, user_id: int) -> list[Category]:
         .order_by(Category.name.asc())
         .all()
     )
-    by_name = {normalized_category(category.name): category for category in existing}
+    by_name = {
+        normalized_category(category.name): category
+        for category in existing
+    }
 
     for name in get_profile_category_names(db, user_id):
         key = normalized_category(name)
@@ -229,7 +243,11 @@ def find_duplicate_budget(
     return query.first()
 
 
-def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> BudgetRead:
+def create_budget(
+    db: Session,
+    user_id: int,
+    payload: BudgetCreate,
+) -> BudgetRead:
     get_category(db, user_id, payload.category_id)
     if find_duplicate_budget(
         db, user_id, payload.category_id, payload.month, payload.year
@@ -284,7 +302,9 @@ def list_budgets(
         query = query.filter(Budget.category_id == category_id)
     return [
         budget_to_schema(budget)
-        for budget in query.outerjoin(Category).order_by(Category.name.asc()).all()
+        for budget in query.outerjoin(Category)
+        .order_by(Category.name.asc())
+        .all()
     ]
 
 
@@ -333,7 +353,11 @@ def delete_budget(db: Session, user_id: int, budget_id: int) -> None:
     db.commit()
 
 
-def spending_by_category(user_id: int, month: int, year: int) -> dict[str, Decimal]:
+def spending_by_category(
+    user_id: int,
+    month: int,
+    year: int,
+) -> dict[str, Decimal]:
     totals: dict[str, Decimal] = {}
     for transaction in transaction_repository.list_by_user(str(user_id)):
         transaction_date = transaction.date
@@ -389,7 +413,11 @@ def calculate_monthly_overview(
 ) -> BudgetOverview:
     budgets = (
         db.query(Budget)
-        .filter(Budget.user_id == user_id, Budget.month == month, Budget.year == year)
+        .filter(
+            Budget.user_id == user_id,
+            Budget.month == month,
+            Budget.year == year,
+        )
         .outerjoin(Category)
         .order_by(Category.name.asc())
         .all()
@@ -398,8 +426,15 @@ def calculate_monthly_overview(
     summaries: list[BudgetCategorySummary] = []
 
     for budget in budgets:
-        category_name = budget.category.name if budget.category else "Deleted category"
-        actual = spend_map.get(normalized_category(category_name), Decimal("0.00"))
+        category_name = (
+            budget.category.name
+            if budget.category
+            else "Deleted category"
+        )
+        actual = spend_map.get(
+            normalized_category(category_name),
+            Decimal("0.00"),
+        )
         budgeted = quantize_money(budget.amount)
         remaining = quantize_money(budgeted - actual)
         usage = (
@@ -452,7 +487,10 @@ def calculate_monthly_overview(
     )
     alerts = [
         alert
-        for alert in (build_alert(summary, month, year) for summary in summaries)
+        for alert in (
+            build_alert(summary, month, year)
+            for summary in summaries
+        )
         if alert is not None
     ]
     return BudgetOverview(
@@ -465,7 +503,9 @@ def calculate_monthly_overview(
             total_remaining_amount=total_remaining,
             overall_usage_percentage=overall_usage,
             categories_over_budget=sum(
-                1 for item in summaries if item.usage_percentage >= Decimal("100")
+                1
+                for item in summaries
+                if item.usage_percentage >= Decimal("100")
             ),
         ),
         budgets=summaries,
@@ -500,17 +540,26 @@ def summarize_history_month(
     overview = calculate_monthly_overview(db, user_id, month, year)
     total_categories = len(overview.budgets)
     within_budget = sum(
-        1 for item in overview.budgets if item.usage_percentage <= Decimal("100")
+        1
+        for item in overview.budgets
+        if item.usage_percentage <= Decimal("100")
     )
     adherence = (
-        quantize_percent((Decimal(within_budget) / Decimal(total_categories)) * 100)
+        quantize_percent(
+            (Decimal(within_budget) / Decimal(total_categories)) * 100
+        )
         if total_categories
         else Decimal("0.00")
     )
     return overview, adherence
 
 
-def build_history_item(db: Session, user_id: int, year: int, month: int) -> BudgetHistoryMonth:
+def build_history_item(
+    db: Session,
+    user_id: int,
+    year: int,
+    month: int,
+) -> BudgetHistoryMonth:
     overview, adherence = summarize_history_month(db, user_id, year, month)
     previous_year, previous_month_number = previous_month(year, month)
     previous_overview, previous_adherence = summarize_history_month(
@@ -527,7 +576,10 @@ def build_history_item(db: Session, user_id: int, year: int, month: int) -> Budg
         trend_message = (
             "No previous budget data to compare."
             if not has_previous_budget
-            else f"No meaningful change compared with {month_name[previous_month_number]}."
+            else (
+                "No meaningful change compared with "
+                f"{month_name[previous_month_number]}."
+            )
         )
     elif difference > 0:
         trend = "improvement"
@@ -551,7 +603,9 @@ def build_history_item(db: Session, user_id: int, year: int, month: int) -> Budg
         overall_usage_percentage=overview.totals.overall_usage_percentage,
         adherence_percentage=adherence,
         categories_within_budget=sum(
-            1 for item in overview.budgets if item.usage_percentage <= Decimal("100")
+            1
+            for item in overview.budgets
+            if item.usage_percentage <= Decimal("100")
         ),
         categories_over_budget=overview.totals.categories_over_budget,
         trend=trend,

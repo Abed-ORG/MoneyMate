@@ -19,10 +19,20 @@ def upgrade():
     with op.batch_alter_table("budgets") as batch_op:
         batch_op.add_column(sa.Column("user_id", sa.Integer(), nullable=True))
         batch_op.add_column(
-            sa.Column("month", sa.Integer(), nullable=False, server_default="6")
+            sa.Column(
+                "month",
+                sa.Integer(),
+                nullable=False,
+                server_default="6",
+            )
         )
         batch_op.add_column(
-            sa.Column("year", sa.Integer(), nullable=False, server_default="2026")
+            sa.Column(
+                "year",
+                sa.Integer(),
+                nullable=False,
+                server_default="2026",
+            )
         )
         batch_op.add_column(
             sa.Column(
@@ -54,11 +64,24 @@ def upgrade():
             """
         )
     )
-    op.execute(sa.text("DELETE FROM budgets WHERE user_id IS NULL OR category_id IS NULL"))
+    op.execute(
+        sa.text(
+            "DELETE FROM budgets "
+            "WHERE user_id IS NULL OR category_id IS NULL"
+        )
+    )
 
     with op.batch_alter_table("budgets") as batch_op:
-        batch_op.alter_column("user_id", existing_type=sa.Integer(), nullable=False)
-        batch_op.alter_column("category_id", existing_type=sa.Integer(), nullable=False)
+        batch_op.alter_column(
+            "user_id",
+            existing_type=sa.Integer(),
+            nullable=False,
+        )
+        batch_op.alter_column(
+            "category_id",
+            existing_type=sa.Integer(),
+            nullable=False,
+        )
         batch_op.alter_column("month", server_default=None)
         batch_op.alter_column("year", server_default=None)
         batch_op.create_foreign_key(
@@ -79,22 +102,41 @@ def upgrade():
 def downgrade():
     with op.batch_alter_table("budgets") as batch_op:
         batch_op.add_column(sa.Column("period", sa.String(), nullable=True))
-        batch_op.add_column(sa.Column("start_date", sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column("end_date", sa.DateTime(), nullable=True))
+        batch_op.add_column(
+            sa.Column("start_date", sa.DateTime(), nullable=True)
+        )
+        batch_op.add_column(
+            sa.Column("end_date", sa.DateTime(), nullable=True)
+        )
 
-    op.execute(sa.text("UPDATE budgets SET period = 'monthly' WHERE period IS NULL"))
+    op.execute(
+        sa.text(
+            "UPDATE budgets SET period = 'monthly' "
+            "WHERE period IS NULL"
+        )
+    )
 
     with op.batch_alter_table("budgets") as batch_op:
         batch_op.drop_constraint(
             "uq_budgets_user_category_month_year",
             type_="unique",
         )
-        batch_op.drop_constraint("fk_budgets_user_id_users", type_="foreignkey")
-        batch_op.alter_column("period", existing_type=sa.String(), nullable=False)
-        batch_op.alter_column("category_id", existing_type=sa.Integer(), nullable=True)
+        batch_op.drop_constraint(
+            "fk_budgets_user_id_users",
+            type_="foreignkey",
+        )
+        batch_op.alter_column(
+            "period",
+            existing_type=sa.String(),
+            nullable=False,
+        )
+        batch_op.alter_column(
+            "category_id",
+            existing_type=sa.Integer(),
+            nullable=True,
+        )
         batch_op.drop_column("updated_at")
         batch_op.drop_column("created_at")
         batch_op.drop_column("year")
         batch_op.drop_column("month")
         batch_op.drop_column("user_id")
-

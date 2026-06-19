@@ -5,7 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 AlertLevel = Literal["warning", "alert"]
-BudgetStatus = Literal["under_budget", "close_to_budget", "on_budget", "over_budget"]
+BudgetStatus = Literal[
+    "under_budget",
+    "close_to_budget",
+    "on_budget",
+    "over_budget",
+]
 ProgressState = Literal["green", "yellow", "orange", "red"]
 TrendDirection = Literal["improvement", "decline", "no_change"]
 
@@ -127,4 +132,3 @@ class BudgetHistoryMonth(BaseModel):
 
 class BudgetHistoryResponse(BaseModel):
     months: list[BudgetHistoryMonth]
-

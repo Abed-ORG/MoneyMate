@@ -108,7 +108,8 @@ def forgot_password(
             )
     return {
         "message": (
-            "If an account with this email exists, a reset link has been sent."
+            "If an account with this email exists, a reset link has "
+            "been sent."
         )
     }
 

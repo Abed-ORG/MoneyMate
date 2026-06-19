@@ -84,7 +84,11 @@ def test_budget_crud_duplicate_prevention_and_calculations(monkeypatch):
         )
         categories = client.get("/budgets/categories", headers=headers)
         assert categories.status_code == 200
-        food = next(item for item in categories.json() if item["name"] == "Food & Dining")
+        food = next(
+            item
+            for item in categories.json()
+            if item["name"] == "Food & Dining"
+        )
 
         created = client.post(
             "/budgets",
@@ -193,8 +197,12 @@ def test_new_user_budget_has_zero_spent_until_user_adds_expense(monkeypatch):
         )
         assert empty_overview.status_code == 200
         empty_summary = empty_overview.json()["budgets"][0]
-        assert Decimal(str(empty_summary["actual_spending"])) == Decimal("0.00")
-        assert Decimal(str(empty_summary["remaining_amount"])) == Decimal("100.00")
+        assert Decimal(str(empty_summary["actual_spending"])) == Decimal(
+            "0.00"
+        )
+        assert Decimal(str(empty_summary["remaining_amount"])) == Decimal(
+            "100.00"
+        )
 
         add_transaction(
             user.id,
@@ -207,8 +215,12 @@ def test_new_user_budget_has_zero_spent_until_user_adds_expense(monkeypatch):
             headers=headers,
         )
         updated_summary = updated_overview.json()["budgets"][0]
-        assert Decimal(str(updated_summary["actual_spending"])) == Decimal("12.34")
-        assert Decimal(str(updated_summary["remaining_amount"])) == Decimal("87.66")
+        assert Decimal(str(updated_summary["actual_spending"])) == Decimal(
+            "12.34"
+        )
+        assert Decimal(str(updated_summary["remaining_amount"])) == Decimal(
+            "87.66"
+        )
     finally:
         app.dependency_overrides.clear()
         session.close()
@@ -282,8 +294,16 @@ def test_budget_history_and_threshold_boundaries(monkeypatch):
             ["Food & Dining", "Shopping"],
         )
         categories = client.get("/budgets/categories", headers=headers).json()
-        food = next(item for item in categories if item["name"] == "Food & Dining")
-        shopping = next(item for item in categories if item["name"] == "Shopping")
+        food = next(
+            item
+            for item in categories
+            if item["name"] == "Food & Dining"
+        )
+        shopping = next(
+            item
+            for item in categories
+            if item["name"] == "Shopping"
+        )
 
         for month, category, amount in [
             (5, food, 100),
@@ -323,12 +343,18 @@ def test_budget_history_and_threshold_boundaries(monkeypatch):
 
         history = client.get("/budgets/history", headers=headers)
         assert history.status_code == 200
-        june = next(item for item in history.json()["months"] if item["month"] == 6)
+        june = next(
+            item
+            for item in history.json()["months"]
+            if item["month"] == 6
+        )
         assert Decimal(str(june["adherence_percentage"])) == Decimal("50.00")
         assert june["categories_within_budget"] == 1
         assert june["categories_over_budget"] == 1
         assert june["trend"] == "decline"
-        assert Decimal(str(june["trend_percentage_points"])) == Decimal("-50.00")
+        assert Decimal(str(june["trend_percentage_points"])) == Decimal(
+            "-50.00"
+        )
 
         assert get_progress_state(Decimal("49.99")) == "green"
         assert get_progress_state(Decimal("50")) == "yellow"

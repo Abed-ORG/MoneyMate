@@ -59,7 +59,11 @@ def read_budgets(
     )
 
 
-@router.post("", response_model=BudgetRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=BudgetRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_budget(
     payload: BudgetCreate,
     current_user: User = Depends(get_current_user),
@@ -186,4 +190,3 @@ def remove_budget(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Budget not found.",
         )
-
