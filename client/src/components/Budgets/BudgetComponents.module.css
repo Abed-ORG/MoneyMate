@@ -1,0 +1,372 @@
+.kicker {
+  color: var(--mm-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.monthSelector,
+.summaryMetrics,
+.formSplit {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.monthSelector {
+  grid-template-columns: minmax(9rem, 1fr) minmax(7rem, 0.75fr);
+}
+
+.summaryCard,
+.panel,
+.budgetCard,
+.historyItem {
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(81, 243, 91, 0.08), transparent 14rem),
+    linear-gradient(145deg, rgba(3, 35, 26, 0.92), rgba(0, 17, 13, 0.94));
+  box-shadow: var(--mm-shadow-card);
+}
+
+.summaryCard {
+  display: grid;
+  gap: 1.2rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+}
+
+.summaryCard h2,
+.panel h2,
+.budgetCard h3,
+.alertItem h3 {
+  margin: 0;
+  color: var(--mm-text);
+}
+
+.summaryMetrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.summaryMetrics div,
+.budgetStats div,
+.alertItem dl div,
+.historyItem dl div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.summaryMetrics span,
+.budgetStats dt,
+.alertItem dt,
+.historyItem dt,
+.emptyText,
+.chartEmpty {
+  color: var(--mm-text-muted);
+}
+
+.summaryMetrics strong {
+  color: var(--mm-text);
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.budgetCard {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.budgetCard header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.categoryIcon,
+.tableCategory img {
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(248, 255, 249, 0.14);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
+    0 0 0.8rem rgba(81, 243, 91, 0.07);
+}
+
+.categoryIcon {
+  width: 2.8rem;
+  height: 2.8rem;
+}
+
+.categoryIcon img,
+.tableCategory img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.cardActions button {
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: rgba(1, 24, 18, 0.75);
+  color: var(--mm-accent-soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.45rem 0.65rem;
+}
+
+.cardActions button:last-child {
+  border-color: rgba(255, 107, 114, 0.42);
+  color: var(--color-error);
+}
+
+.progressTrack {
+  overflow: hidden;
+  height: 0.75rem;
+  border: 1px solid rgba(248, 255, 249, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 17, 13, 0.82);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  min-width: 0.2rem;
+  border-radius: inherit;
+  transition: width 220ms ease;
+}
+
+.green span {
+  background: linear-gradient(90deg, #26bc50, #51f35b);
+}
+
+.yellow span {
+  background: linear-gradient(90deg, #eab308, #facc15);
+}
+
+.orange span {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.red span {
+  background: linear-gradient(90deg, #ef4444, #ff6b72);
+}
+
+.budgetStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.budgetStats dd,
+.alertItem dd,
+.historyItem dd {
+  margin: 0;
+  color: var(--mm-text);
+  font-weight: 800;
+}
+
+.statusBadge,
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  border: 1px solid rgba(81, 243, 91, 0.28);
+  border-radius: 999px;
+  background: rgba(81, 243, 91, 0.1);
+  color: var(--mm-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.35rem 0.6rem;
+}
+
+.close_to_budget,
+.warning {
+  border-color: rgba(245, 158, 11, 0.42);
+  color: #facc15;
+}
+
+.over_budget,
+.alert,
+.decline {
+  border-color: rgba(255, 107, 114, 0.42);
+  color: var(--color-error);
+}
+
+.on_budget {
+  color: var(--mm-text);
+}
+
+.improvement {
+  color: var(--mm-accent-soft);
+}
+
+.no_change {
+  color: var(--mm-text-soft);
+}
+
+.positive {
+  color: var(--mm-accent-soft);
+}
+
+.negative {
+  color: var(--color-error);
+}
+
+.alertList,
+.historyList,
+.formGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.alertItem {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: var(--mm-radius-md);
+  background: rgba(1, 24, 18, 0.72);
+  padding: 0.9rem;
+}
+
+.alertItem p,
+.confirmText {
+  margin: 0;
+  color: var(--mm-text-soft);
+  line-height: 1.5;
+}
+
+.alertItem dl,
+.historyItem dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.chartWrap,
+.chartEmpty {
+  width: 100%;
+  height: 22rem;
+}
+
+.chartEmpty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--mm-border);
+  border-radius: var(--mm-radius-md);
+  background: rgba(0, 17, 13, 0.36);
+  text-align: center;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.comparisonTable {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+  border-bottom: 1px solid rgba(111, 239, 75, 0.12);
+  color: var(--mm-text-soft);
+  padding: 0.8rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.comparisonTable th {
+  color: var(--mm-text);
+  font-size: 0.82rem;
+}
+
+.tableCategory {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.tableCategory img {
+  width: 2rem;
+  height: 2rem;
+}
+
+.historyItem {
+  display: grid;
+  width: 100%;
+  gap: 0.55rem;
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  padding: 1rem;
+  text-align: left;
+}
+
+.historyItem:hover {
+  border-color: var(--mm-border-strong);
+}
+
+.historyItem strong {
+  color: var(--mm-text);
+  font-size: 1.05rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+@media (max-width: 980px) {
+  .summaryMetrics,
+  .budgetStats,
+  .alertItem dl,
+  .historyItem dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .monthSelector,
+  .formSplit {
+    grid-template-columns: 1fr;
+  }
+
+  .budgetCard header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .cardActions {
+    grid-column: 1 / -1;
+  }
+
+  .summaryMetrics,
+  .budgetStats,
+  .alertItem dl,
+  .historyItem dl {
+    grid-template-columns: 1fr;
+  }
+
+  .modalActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

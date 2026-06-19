@@ -1,6 +1,5 @@
 from copy import deepcopy
 from datetime import datetime, timezone
-from decimal import Decimal
 from uuid import uuid4
 
 from app.schemas.transaction import (
@@ -59,100 +58,8 @@ def make_history_event(event: str) -> TransactionHistoryEvent:
 class InMemoryTransactionRepository:
     def __init__(self) -> None:
         self._transactions: list[Transaction] = []
-        self._seed()
-
-    def _seed(self) -> None:
-        if self._transactions:
-            return
-        seed_user_id = "dev-user-1"
-        samples = [
-            (
-                "2026-06-10T08:12:00+00:00",
-                Decimal("-5.45"),
-                "Food & Dining",
-                "Starbucks",
-                "Morning coffee",
-            ),
-            (
-                "2026-06-09T19:35:00+00:00",
-                Decimal("-34.21"),
-                "Transport",
-                "Uber",
-                "Ride to airport",
-            ),
-            (
-                "2026-06-08T09:00:00+00:00",
-                Decimal("5200.00"),
-                "Income",
-                "Salary",
-                "Monthly salary",
-            ),
-            (
-                "2026-06-06T12:00:00+00:00",
-                Decimal("-1500.00"),
-                "Housing",
-                "Rent",
-                "June rent",
-            ),
-            (
-                "2026-06-05T17:20:00+00:00",
-                Decimal("-87.63"),
-                "Groceries",
-                "Whole Foods",
-                "Weekly groceries",
-            ),
-            (
-                "2026-06-03T22:10:00+00:00",
-                Decimal("-15.49"),
-                "Entertainment",
-                "Netflix",
-                "Monthly subscription",
-            ),
-            (
-                "2026-06-02T07:44:00+00:00",
-                Decimal("-48.75"),
-                "Transport",
-                "Shell Gas",
-                "Fuel fill up",
-            ),
-            (
-                "2026-06-01T16:15:00+00:00",
-                Decimal("-62.18"),
-                "Shopping",
-                "Amazon",
-                "Home essentials",
-            ),
-        ]
-        for date, amount, category, vendor, notes in samples:
-            self.create(
-                seed_user_id,
-                TransactionCreate(
-                    date=datetime.fromisoformat(date),
-                    amount=amount,
-                    category=category,
-                    vendor=vendor,
-                    notes=notes,
-                ),
-                event="Transaction imported",
-            )
 
     def list_by_user(self, user_id: str) -> list[Transaction]:
-        has_user_transactions = any(
-            item.user_id == user_id
-            for item in self._transactions
-        )
-        if user_id != "dev-user-1" and not has_user_transactions:
-            samples = [
-                item
-                for item in self._transactions
-                if item.user_id == "dev-user-1"
-            ]
-            for sample in samples:
-                clone = sample.model_copy(deep=True)
-                clone.id = str(uuid4())
-                clone.user_id = user_id
-                clone.history = [make_history_event("Transaction imported")]
-                self._transactions.append(clone)
         return [
             deepcopy(item)
             for item in self._transactions

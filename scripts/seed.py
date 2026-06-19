@@ -47,19 +47,19 @@ def create_seed_data():
 
         # categories
         groceries = Category(user_id=user.id, name="Groceries")
-        rent = Category(user_id=user.id, name="Rent")
+        housing = Category(user_id=user.id, name="Housing")
         entertainment = Category(user_id=user.id, name="Entertainment")
-        db.add_all([groceries, rent, entertainment])
+        db.add_all([groceries, housing, entertainment])
         db.flush()
 
         # budgets
         b1 = Budget(
             user_id=user.id, category_id=groceries.id,
-            amount=400, period="monthly"
+            amount=400, month=6, year=2026
         )
         b2 = Budget(
             user_id=user.id, category_id=entertainment.id,
-            amount=100, period="monthly"
+            amount=100, month=6, year=2026
         )
         db.add_all([b1, b2])
 
@@ -80,7 +80,7 @@ def create_seed_data():
             amount=75.50, description="Supermarket"
         )
         t2 = Transaction(
-            account_id=checking.id, category_id=rent.id,
+            account_id=checking.id, category_id=housing.id,
             amount=1200, description="June rent"
         )
         t3 = Transaction(
