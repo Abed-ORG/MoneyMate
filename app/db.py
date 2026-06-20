@@ -10,7 +10,8 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db").strip()
 if not DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL environment variable must be set before MoneyMate starts."
+        "DATABASE_URL environment variable must be set before "
+        "MoneyMate starts."
     )
 
 # Detect sqlite to set connect args
@@ -30,7 +31,7 @@ Base = declarative_base()
 
 def init_db():
     """Create database tables."""
-    # Alembic manages schema migrations; avoid create_all to prevent schema drift.
+    # Alembic manages schema migrations; avoid create_all to prevent drift.
     # If you need to create tables for quick local testing, run:
     # Base.metadata.create_all(bind=engine)
     return

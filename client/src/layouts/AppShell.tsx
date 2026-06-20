@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button, Modal } from "../components";
+import { Button, Modal, Toast } from "../components";
 import { useAuth } from "../contexts/AuthContext";
+import { budgetsApi } from "../services/budgets";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import {
   getProfileAvatar,
@@ -23,6 +24,12 @@ export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [budgetToast, setBudgetToast] = useState<{
+    title: string;
+    message: string;
+    variant: "warning" | "error" | "success" | "info";
+  } | null>(null);
+  const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -39,6 +46,45 @@ export function AppShell() {
       }
     });
   }, [user?.id]);
+
+  useEffect(() => {
+    const handleTransactionChange = async (event: Event) => {
+      if (location.pathname === "/budgets") {
+        return;
+      }
+
+      const detail = (event as CustomEvent<{ month?: number; year?: number }>).detail;
+      const now = new Date();
+      const month = detail?.month ?? now.getMonth() + 1;
+      const year = detail?.year ?? now.getFullYear();
+
+      try {
+        const alerts = await budgetsApi.alerts(month, year);
+        const alert = alerts.find((item) => {
+          const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
+          if (shownBudgetAlerts.current.has(key)) {
+            return false;
+          }
+          shownBudgetAlerts.current.add(key);
+          return true;
+        });
+        if (alert) {
+          setBudgetToast({
+            title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
+            message: alert.message,
+            variant: alert.severity === "alert" ? "error" : "warning",
+          });
+        }
+      } catch {
+        // Budget alerts should never block transaction workflows.
+      }
+    };
+
+    window.addEventListener("moneymate:transactions-changed", handleTransactionChange);
+    return () => {
+      window.removeEventListener("moneymate:transactions-changed", handleTransactionChange);
+    };
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -94,6 +140,12 @@ export function AppShell() {
       ) : null}
 
       <div className={styles.contentWrap}>
+        {budgetToast ? (
+          <div className={styles.toastDock}>
+            <Toast {...budgetToast} onClose={() => setBudgetToast(null)} />
+          </div>
+        ) : null}
+
         <header className={styles.header}>
           <div className={styles.headerLeft}>
             <button

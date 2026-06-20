@@ -18,7 +18,11 @@ def create_item_endpoint(item: ItemCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[Item])
-def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_items(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
     return get_items(db, skip, limit)
 
 

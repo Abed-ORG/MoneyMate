@@ -14,7 +14,11 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
     is_email_verified = Column(Boolean, nullable=False, default=False)
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     email_verification_token_hash = Column(
