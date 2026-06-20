@@ -1,0 +1,164 @@
+.page {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.toastDock {
+  position: fixed;
+  top: 6.25rem;
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 90;
+  width: min(28rem, calc(100vw - 2rem));
+}
+
+.hero,
+.panel,
+.emptyState,
+.state,
+.errorState {
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at 85% 40%, rgba(81, 243, 91, 0.14), transparent 18rem),
+    linear-gradient(135deg, rgba(4, 43, 32, 0.96), rgba(0, 17, 13, 0.92));
+  box-shadow: var(--mm-shadow-card);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 32rem);
+  gap: 1.2rem;
+  align-items: end;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.hero h2,
+.hero p,
+.panel h2,
+.panel p,
+.emptyState h2,
+.emptyState p {
+  margin: 0;
+}
+
+.hero h2 {
+  margin-top: 0.4rem;
+  color: var(--mm-text);
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.055em;
+}
+
+.hero p,
+.panel p,
+.emptyState p {
+  margin-top: 0.65rem;
+  color: var(--mm-text-soft);
+  line-height: 1.6;
+}
+
+.kicker {
+  color: var(--mm-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heroControls {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.heroControls button {
+  justify-self: end;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panelHeader span:not(.kicker),
+.panelHeader p {
+  color: var(--mm-text-muted);
+}
+
+.panelHeader p {
+  max-width: 42rem;
+  margin-top: 0;
+  text-align: right;
+}
+
+.budgetList {
+  display: grid;
+  gap: 1rem;
+}
+
+.emptyState,
+.state,
+.errorState {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.emptyState {
+  gap: 1rem;
+}
+
+.emptyState p {
+  max-width: 42rem;
+}
+
+.state {
+  color: var(--mm-text-muted);
+}
+
+.errorState {
+  gap: 1rem;
+  color: var(--color-error);
+}
+
+@media (max-width: 1100px) {
+  .hero,
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+
+  .heroControls button {
+    justify-self: stretch;
+  }
+
+  .panelHeader {
+    flex-direction: column;
+  }
+
+  .panelHeader p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .toastDock {
+    top: 1rem;
+    right: 0.75rem;
+    width: calc(100vw - 1.5rem);
+  }
+}

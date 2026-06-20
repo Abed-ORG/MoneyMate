@@ -173,7 +173,8 @@ def _email_html(
             "<html>",
             '<body style="margin:0;background:#00100d;padding:32px;'
             'font-family:Arial,sans-serif;color:#eaf7ef">',
-            '<div style="max-width:560px;margin:auto;border:1px solid #166534;'
+            '<div style="max-width:560px;margin:auto;'
+            'border:1px solid #166534;'
             'border-radius:18px;background:#001b14;padding:32px">',
             '<p style="margin:0 0 24px;color:#69f56a;font-weight:700">'
             "MoneyMate</p>",
@@ -191,7 +192,8 @@ def _email_html(
                 f'<a href="{safe_url}" '
                 'style="display:inline-block;background:#69f56a;'
                 'color:#00100d;padding:13px 22px;border-radius:10px;'
-                f'text-decoration:none;font-weight:800">{escape(action_label)}'
+                'text-decoration:none;font-weight:800">'
+                f"{escape(action_label)}"
                 "</a>"
             ),
             "</p>",
@@ -225,7 +227,10 @@ def send_password_reset_email(user: User, token: str) -> None:
     html = _email_html(
         user.full_name,
         "Reset your MoneyMate password",
-        "Use the secure link below to choose a new password for your account.",
+        (
+            "Use the secure link below to choose a new password for "
+            "your account."
+        ),
         "Reset my password",
         reset_url,
         f"This single-use link expires in {duration}.",
