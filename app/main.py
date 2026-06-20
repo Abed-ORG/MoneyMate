@@ -3,7 +3,6 @@ import os
 
 from fastapi import FastAPI
 
-from app.routers import items, profile, transactions
 from app.routers import budgets, items, profile, transactions
 from app.auth import routes as auth_routes
 from fastapi.middleware.cors import CORSMiddleware
