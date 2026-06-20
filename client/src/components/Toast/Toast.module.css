@@ -8,11 +8,11 @@
   border-left-width: 5px;
   border-radius: var(--mm-radius-md);
   background:
-    radial-gradient(circle at 10% 0%, rgba(81, 243, 91, 0.09), transparent 12rem),
-    rgba(2, 29, 22, 0.97);
+    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.09), transparent 12rem),
+    rgba(9, 30, 24, 0.97);
   box-shadow:
     var(--mm-shadow-card),
-    0 0 1.5rem rgba(81, 243, 91, 0.08);
+    0 0 1.5rem rgba(var(--mm-accent-rgb), 0.08);
   padding: 0.9rem 1rem;
 }
 

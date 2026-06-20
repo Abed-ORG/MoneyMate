@@ -308,7 +308,7 @@ export function BudgetComparisonChart({
     <div className={styles.chartWrap}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(111, 239, 75, 0.14)" strokeDasharray="4 4" vertical={false} />
+          <CartesianGrid stroke="rgba(220, 239, 219, 0.12)" strokeDasharray="4 4" vertical={false} />
           <XAxis
             axisLine={false}
             dataKey="category"
@@ -324,22 +324,22 @@ export function BudgetComparisonChart({
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(2, 29, 22, 0.96)",
-              border: "1px solid rgba(111, 239, 75, 0.34)",
+              background: "rgba(9, 30, 24, 0.96)",
+              border: "1px solid rgba(170, 252, 117, 0.34)",
               borderRadius: "12px",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-              color: "#f8fff9",
+              color: "#f2f7f0",
             }}
-            cursor={{ fill: "rgba(81, 243, 91, 0.06)" }}
+            cursor={{ fill: "rgba(170, 252, 117, 0.08)" }}
             formatter={(value, name) => [
               formatCurrency(Number(value), currency),
               name === "actual" ? "Actual spending" : "Budgeted",
             ]}
-            labelStyle={{ color: "#78ff68", fontWeight: 800 }}
+            labelStyle={{ color: "#AAFC75", fontWeight: 800 }}
           />
           <Legend wrapperStyle={{ color: "rgba(239, 249, 242, 0.76)" }} />
-          <Bar dataKey="budgeted" fill="rgba(120, 255, 104, 0.34)" name="Budgeted" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="actual" fill="#51f35b" name="Actual spending" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="budgeted" fill="rgba(170, 252, 117, 0.34)" name="Budgeted" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="actual" fill="#AAFC75" name="Actual spending" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

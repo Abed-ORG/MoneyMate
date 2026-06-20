@@ -186,7 +186,7 @@ export function BudgetsPage() {
 
       <header className={styles.hero}>
         <div>
-          <span className={styles.kicker}>Epic 7</span>
+          <span className={styles.kicker}>Planning</span>
           <h2>Budget Management</h2>
           <p>
             Set category limits, compare actual spending, and track month-over-month adherence.
@@ -208,7 +208,10 @@ export function BudgetsPage() {
 
       {!isLoading && !error && overview ? (
         <>
-          <BudgetSummaryCard overview={overview} />
+          <section className={styles.overviewGrid}>
+            <BudgetSummaryCard overview={overview} />
+            <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
+          </section>
 
           {!hasBudgets ? (
             <section className={styles.emptyState}>
@@ -221,8 +224,8 @@ export function BudgetsPage() {
             </section>
           ) : (
             <>
-              <section className={styles.gridTwo}>
-                <div className={styles.panel}>
+              <section className={styles.workspaceGrid}>
+                <div className={`${styles.panel} ${styles.categoryPanel}`}>
                   <div className={styles.panelHeader}>
                     <div>
                       <span className={styles.kicker}>Progress</span>
@@ -243,18 +246,16 @@ export function BudgetsPage() {
                   </div>
                 </div>
 
-                <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
-              </section>
-
-              <section className={styles.panel}>
-                <div className={styles.panelHeader}>
-                  <div>
-                    <span className={styles.kicker}>Comparison</span>
-                    <h2>Budgeted versus actual</h2>
+                <div className={`${styles.panel} ${styles.comparisonPanel}`}>
+                  <div className={styles.panelHeader}>
+                    <div>
+                      <span className={styles.kicker}>Comparison</span>
+                      <h2>Budgeted versus actual</h2>
+                    </div>
                   </div>
+                  <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
+                  <BudgetComparisonTable budgets={overview.budgets} currency={currency} />
                 </div>
-                <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
-                <BudgetComparisonTable budgets={overview.budgets} currency={currency} />
               </section>
             </>
           )}

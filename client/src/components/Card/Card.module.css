@@ -2,7 +2,7 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
   background:
-    radial-gradient(circle at 8% 0%, rgba(53, 157, 59, 0.1), transparent 14rem),
-    linear-gradient(145deg, rgba(3, 35, 26, 0.92), rgba(0, 17, 13, 0.94));
+    radial-gradient(circle at 8% 0%, rgba(var(--mm-accent-rgb), 0.08), transparent 14rem),
+    linear-gradient(145deg, rgba(19, 51, 42, 0.92), rgba(7, 25, 20, 0.94));
   box-shadow: var(--mm-shadow-card);
 }

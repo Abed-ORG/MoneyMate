@@ -1,28 +1,30 @@
 :root {
-  --mm-bg: #0b131a;
-  --mm-bg-deep: #05090f;
-  --mm-bg-raised: #111b26;
-  --mm-surface: rgba(18, 28, 38, 0.92);
-  --mm-surface-strong: rgba(12, 18, 27, 0.96);
-  --mm-surface-soft: rgba(22, 35, 49, 0.36);
-  --mm-border: rgba(170, 213, 218, 0.18);
-  --mm-border-strong: rgba(170, 213, 218, 0.28);
-  --mm-accent: #4cc597;
-  --mm-accent-soft: #7eddb6;
-  --mm-accent-deep: #2f7e65;
-  --mm-text: #eef4f7;
-  --mm-text-soft: rgba(238, 244, 247, 0.72);
-  --mm-text-muted: rgba(206, 218, 226, 0.58);
-  --mm-radius-sm: 0.7rem;
-  --mm-radius-md: 1rem;
-  --mm-radius-lg: 1.25rem;
+  --mm-bg: #102a23;
+  --mm-bg-rgb: 16, 42, 35;
+  --mm-bg-deep: #071914;
+  --mm-bg-raised: #15352c;
+  --mm-surface: rgba(19, 51, 42, 0.94);
+  --mm-surface-strong: rgba(9, 30, 24, 0.96);
+  --mm-surface-soft: rgba(170, 252, 117, 0.07);
+  --mm-border: rgba(220, 239, 219, 0.16);
+  --mm-border-strong: rgba(220, 239, 219, 0.28);
+  --mm-accent: #aafc75;
+  --mm-accent-rgb: 170, 252, 117;
+  --mm-accent-soft: #91d46a;
+  --mm-accent-deep: #5f9f47;
+  --mm-text: #f2f7f0;
+  --mm-text-soft: rgba(242, 247, 240, 0.74);
+  --mm-text-muted: rgba(218, 231, 214, 0.58);
+  --mm-radius-sm: 0.45rem;
+  --mm-radius-md: 0.55rem;
+  --mm-radius-lg: 0.65rem;
   --mm-shadow-card:
     inset 0 1px rgba(255, 255, 255, 0.03),
     0 1rem 2.6rem rgba(0, 0, 0, 0.28);
   --mm-shadow-glow:
-    0 0 0.8rem rgba(76, 197, 151, 0.12),
-    0 0 2.2rem rgba(76, 197, 151, 0.06);
-  --color-deep-emerald: #084e42;
+    0 0 0.65rem rgba(var(--mm-accent-rgb), 0.1),
+    0 0 1.8rem rgba(var(--mm-accent-rgb), 0.04);
+  --color-deep-emerald: var(--mm-bg);
   --color-forest-green: var(--mm-accent);
   --color-dark-green: var(--mm-text);
   --color-light-bg: var(--mm-bg);
@@ -49,6 +51,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 14px;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
@@ -73,10 +79,10 @@ a {
 }
 
 ::selection {
-  background: rgba(76, 197, 151, 0.18);
+  background: rgba(var(--mm-accent-rgb), 0.16);
   color: var(--mm-text);
 }
 
 :focus-visible {
-  outline-color: rgba(76, 197, 151, 0.45);
+  outline-color: rgba(var(--mm-accent-rgb), 0.5);
 }

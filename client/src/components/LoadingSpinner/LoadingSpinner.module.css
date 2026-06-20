@@ -9,9 +9,9 @@
 .spinner {
   width: 1.25rem;
   height: 1.25rem;
-  border: 3px solid rgba(81, 243, 91, 0.16);
+  border: 3px solid rgba(var(--mm-accent-rgb), 0.16);
   border-top-color: var(--mm-accent-soft);
-  box-shadow: 0 0 0.8rem rgba(81, 243, 91, 0.16);
+  box-shadow: 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.16);
   border-radius: 999px;
   animation: spin 800ms linear infinite;
 }

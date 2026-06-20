@@ -164,7 +164,7 @@ export function SettingsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#69f56a");
+  const [newCategoryColor, setNewCategoryColor] = useState("#91d46a");
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoalDraft[]>([
     createEmptySavingsGoal(),
   ]);
@@ -224,7 +224,7 @@ export function SettingsPage() {
     });
     setCustomCategories((current) => [...current, created]);
     setNewCategoryName("");
-    setNewCategoryColor("#69f56a");
+    setNewCategoryColor("#91d46a");
   };
 
   const updateCustomCategory = async (category: Category) => {
@@ -419,13 +419,6 @@ export function SettingsPage() {
   const displayName = fullName.trim() || user?.full_name || "MoneyMate user";
   const displayEmail = email.trim() || user?.email || "No email available";
   const initials = getInitials(displayName) || "MM";
-  const incomeLabel = monthlyIncome
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(Number(monthlyIncome))
-    : "Not set";
   const activeSectionDetails = settingsSections.find(
     (section) => section.id === activeSection,
   );
@@ -500,14 +493,6 @@ export function SettingsPage() {
                 <span>Cardholder</span>
                 <strong>{displayName}</strong>
                 <small>{displayEmail}</small>
-              </div>
-              <div className={styles.cardMetric}>
-                <span>Monthly income</span>
-                <strong>{incomeLabel}</strong>
-              </div>
-              <div className={styles.cardMetric}>
-                <span>Currency</span>
-                <strong>{currency}</strong>
               </div>
             </div>
           </div>

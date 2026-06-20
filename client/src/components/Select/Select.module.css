@@ -21,17 +21,17 @@
 .selectTrigger {
   display: flex;
   width: 100%;
-  min-height: 2.85rem;
+  min-height: 2.45rem;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
   background:
-    linear-gradient(145deg, rgba(3, 35, 26, 0.96), rgba(0, 17, 13, 0.98));
+    linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
   color: var(--mm-text);
   cursor: pointer;
-  padding: 0.7rem 0.8rem 0.7rem 0.85rem;
+  padding: 0.58rem 0.72rem 0.58rem 0.75rem;
   text-align: left;
   transition:
     border-color 160ms ease,
@@ -42,14 +42,14 @@
 .selectTrigger:hover:not(:disabled) {
   border-color: var(--mm-border-strong);
   background:
-    linear-gradient(145deg, rgba(5, 45, 34, 0.98), rgba(0, 20, 15, 0.98));
+    linear-gradient(145deg, rgba(23, 61, 50, 0.98), rgba(9, 30, 24, 0.98));
 }
 
 .selectTrigger:focus-visible {
   border-color: var(--mm-accent-soft);
   box-shadow:
-    0 0 0 3px rgba(81, 243, 91, 0.1),
-    0 0 1rem rgba(81, 243, 91, 0.1);
+    0 0 0 2px rgba(var(--mm-accent-rgb), 0.08),
+    0 0 0.4rem rgba(var(--mm-accent-rgb), 0.08);
   outline: none;
 }
 
@@ -90,13 +90,13 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-sm);
   background:
-    radial-gradient(circle at 15% 0%, rgba(81, 243, 91, 0.12), transparent 10rem),
-    #021b14;
+    radial-gradient(circle at 15% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 10rem),
+    #071914;
   box-shadow:
     0 1rem 2.2rem rgba(0, 0, 0, 0.42),
-    0 0 1.25rem rgba(81, 243, 91, 0.08);
+    0 0 1.25rem rgba(var(--mm-accent-rgb), 0.08);
   padding: 0.35rem;
-  scrollbar-color: rgba(81, 243, 91, 0.52) rgba(0, 17, 13, 0.45);
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
 }
 
 .selectMenuTop {
@@ -109,19 +109,19 @@
 }
 
 .selectMenu::-webkit-scrollbar-track {
-  background: rgba(0, 17, 13, 0.5);
+  background: rgba(var(--mm-bg-rgb), 0.5);
 }
 
 .selectMenu::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(0, 17, 13, 0.5);
+  border: 2px solid rgba(var(--mm-bg-rgb), 0.5);
   border-radius: 999px;
-  background: rgba(81, 243, 91, 0.48);
+  background: rgba(var(--mm-accent-rgb), 0.48);
 }
 
 .selectOption {
   display: flex;
   width: 100%;
-  min-height: 2.35rem;
+  min-height: 2.1rem;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -130,13 +130,13 @@
   background: transparent;
   color: var(--mm-text-soft);
   cursor: pointer;
-  padding: 0.55rem 0.65rem;
+  padding: 0.45rem 0.58rem;
   text-align: left;
 }
 
 .selectOption:hover:not(:disabled),
 .selectOptionActive {
-  background: rgba(81, 243, 91, 0.12);
+  background: rgba(var(--mm-accent-rgb), 0.12);
   color: var(--mm-accent-soft);
 }
 

@@ -12,6 +12,16 @@ const summaries = [
 export function DashboardPage() {
   return (
     <div className={styles.page}>
+      <section className={styles.summaryGrid} aria-label="Financial summary">
+        {summaries.map((item) => (
+          <Card className={styles.summaryCard} key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <p>{item.detail}</p>
+          </Card>
+        ))}
+      </section>
+
       <section className={styles.hero}>
         <div>
           <p className={styles.kicker}>Demo dashboard</p>
@@ -21,16 +31,6 @@ export function DashboardPage() {
             routing, components, and charting setup.
           </p>
         </div>
-      </section>
-
-      <section className={styles.summaryGrid} aria-label="Financial summary">
-        {summaries.map((item) => (
-          <Card className={styles.summaryCard} key={item.label}>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-            <p>{item.detail}</p>
-          </Card>
-        ))}
       </section>
 
       <Card className={styles.chartCard}>
