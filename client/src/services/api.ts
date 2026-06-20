@@ -114,12 +114,13 @@ export async function apiRequest<T>(
       body,
     });
   } catch (error) {
+    const baseInfo = API_BASE_URL || "(no API base URL configured)";
     throw {
       status: 0,
       message:
-        import.meta.env.PROD && !API_BASE_URL
-          ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
-          : `Could not reach the MoneyMate API at ${API_BASE_URL}. Check that the backend is running and that the URL is correct.`,
+        !API_BASE_URL
+          ? "MoneyMate frontend is not configured with an API URL. Set VITE_API_URL in client/.env (or in your hosting env) to your backend URL."
+          : `Could not reach the MoneyMate API at ${baseInfo}. Check that the backend is running and that the URL is correct.`,
       details: error,
     } satisfies ApiError;
   }
