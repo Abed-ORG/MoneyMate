@@ -468,10 +468,32 @@
   padding: 0;
 }
 
+.categoriesSection {
+  display: grid;
+  gap: 1rem;
+}
+
 .categories {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
+}
+
+.customCategoryCard {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.customCategoryList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.customCategoryRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7rem auto auto;
+  gap: 0.65rem;
+  align-items: center;
 }
 
 .category {

@@ -24,6 +24,8 @@ import {
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { api, getApiErrorMessage } from "../services/api";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
+import { transactionsApi } from "../services/transactions";
+import type { Category } from "../types/transaction";
 import styles from "./SettingsPage.module.css";
 
 const supportedAvatarTypes = new Set([
@@ -160,6 +162,9 @@ export function SettingsPage() {
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [customCategories, setCustomCategories] = useState<Category[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("#69f56a");
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoalDraft[]>([
     createEmptySavingsGoal(),
   ]);
@@ -198,12 +203,42 @@ export function SettingsPage() {
     );
   }, [profile]);
 
+  useEffect(() => {
+    void transactionsApi.categories().then(setCustomCategories).catch(() => setCustomCategories([]));
+  }, []);
+
   const toggleCategory = (category: string) => {
     setSelectedCategories((current) =>
       current.includes(category)
         ? current.filter((item) => item !== category)
         : [...current, category],
     );
+  };
+
+  const addCustomCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    const created = await transactionsApi.createCategory({
+      name: newCategoryName.trim(),
+      color: newCategoryColor,
+      is_default: false,
+    });
+    setCustomCategories((current) => [...current, created]);
+    setNewCategoryName("");
+    setNewCategoryColor("#69f56a");
+  };
+
+  const updateCustomCategory = async (category: Category) => {
+    const updated = await transactionsApi.updateCategory(category.id, {
+      name: category.name,
+      color: category.color,
+      is_default: category.is_default,
+    });
+    setCustomCategories((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+  };
+
+  const deleteCustomCategory = async (id: string) => {
+    await transactionsApi.deleteCategory(id);
+    setCustomCategories((current) => current.filter((item) => item.id !== id));
   };
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -591,33 +626,66 @@ export function SettingsPage() {
                 ) : null}
 
                 {activeSection === "categories" ? (
-                  <fieldset className={styles.fieldGroup}>
-                    <legend className={styles.visuallyHidden}>
-                      Spending categories
-                    </legend>
-                    <div className={styles.categories}>
-                      {spendingCategories.map((category) => {
-                        const isSelected = selectedCategories.includes(category);
-                        return (
-                          <label className={styles.category} key={category}>
-                            <input
-                              checked={isSelected}
-                              onChange={() => toggleCategory(category)}
-                              type="checkbox"
+                  <div className={styles.categoriesSection}>
+                    <fieldset className={styles.fieldGroup}>
+                      <legend className={styles.visuallyHidden}>
+                        Spending categories
+                      </legend>
+                      <div className={styles.categories}>
+                        {spendingCategories.map((category) => {
+                          const isSelected = selectedCategories.includes(category);
+                          return (
+                            <label className={styles.category} key={category}>
+                              <input
+                                checked={isSelected}
+                                onChange={() => toggleCategory(category)}
+                                type="checkbox"
+                              />
+                              <span className={styles.categoryCheck} aria-hidden="true">
+                                {isSelected ? (
+                                  <svg viewBox="0 0 16 16">
+                                    <path d="m3 8.2 3 3L13 4.8" />
+                                  </svg>
+                                ) : null}
+                              </span>
+                              <span>{category}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                    <Card className={styles.customCategoryCard}>
+                      <h3>Custom categories</h3>
+                      <div className={styles.formGrid}>
+                        <FormField label="Name">
+                          <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} />
+                        </FormField>
+                        <FormField label="Color">
+                          <Input type="color" value={newCategoryColor} onChange={(event) => setNewCategoryColor(event.target.value)} />
+                        </FormField>
+                      </div>
+                      <Button type="button" onClick={() => void addCustomCategory()}>Add Category</Button>
+                      <div className={styles.customCategoryList}>
+                        {customCategories.map((category) => (
+                          <div key={category.id} className={styles.customCategoryRow}>
+                            <Input
+                              value={category.name}
+                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, name: event.target.value } : item))}
                             />
-                            <span className={styles.categoryCheck} aria-hidden="true">
-                              {isSelected ? (
-                                <svg viewBox="0 0 16 16">
-                                  <path d="m3 8.2 3 3L13 4.8" />
-                                </svg>
-                              ) : null}
-                            </span>
-                            <span>{category}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </fieldset>
+                            <Input
+                              type="color"
+                              value={category.color}
+                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, color: event.target.value } : item))}
+                            />
+                            <Button type="button" variant="secondary" onClick={() => void updateCustomCategory(category)}>Save</Button>
+                            {!category.is_default ? (
+                              <Button type="button" variant="danger" onClick={() => void deleteCustomCategory(category.id)}>Delete</Button>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
                 ) : null}
 
                 {activeSection === "goals" ? (

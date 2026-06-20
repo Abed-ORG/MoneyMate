@@ -1,6 +1,8 @@
 export type AiCategorization = {
   category: string;
   confidence: number;
+  provider: string;
+  rationale: string;
 };
 
 export type TransactionHistoryEvent = {
@@ -27,6 +29,32 @@ export type TransactionPayload = {
   date: string;
   amount: number;
   category: string;
+  vendor: string;
+  notes: string;
+};
+
+export type Category = {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  is_default: boolean;
+};
+
+export type CategoryPayload = {
+  name: string;
+  color: string;
+  is_default?: boolean;
+};
+
+export type CategoryUpdatePayload = Partial<CategoryPayload>;
+
+export type TransactionCorrectionPayload = {
+  category: string;
+};
+
+export type TransactionSuggestionPayload = {
+  amount: number;
   vendor: string;
   notes: string;
 };
@@ -61,4 +89,8 @@ export type TransactionImportResponse = {
   failed: number;
   errors: TransactionImportError[];
   transactions: Transaction[];
+};
+
+export type BulkRecategorizePayload = {
+  transaction_ids: string[];
 };
