@@ -517,7 +517,12 @@ export function BudgetFormModal({
         </FormField>
         {!categories.length ? (
           <p className={styles.emptyText}>
-            Budget categories are loading. The shared spending categories are shown once the backend data is available.
+            Budget categories are loading. This picker needs real backend category IDs before you can create a budget.
+          </p>
+        ) : null}
+        {!categories.length ? (
+          <p className={styles.emptyText}>
+            If the list stays empty after a refresh, the /budgets/categories API is not returning the expected data for your session yet.
           </p>
         ) : null}
         <div className={styles.formSplit}>
