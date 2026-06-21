@@ -1,6 +1,8 @@
 import json
 import os
+import re
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from urllib import request
 
 from app.schemas.transaction import AiCategorization
@@ -223,6 +225,23 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
     },
 }
 
+COMMON_ALIASES: dict[str, str] = {
+    "mcdo": "Food & Dining",
+    "mcd": "Food & Dining",
+    "mcdonalds": "Food & Dining",
+    "mcdonald's": "Food & Dining",
+    "starbucks": "Food & Dining",
+    "uber": "Transport",
+    "lyft": "Transport",
+    "airbnb": "Travel",
+    "netflix": "Entertainment",
+    "spotify": "Entertainment",
+    "amazon": "Shopping",
+    "wholefoods": "Groceries",
+    "whole food": "Groceries",
+    "shell": "Transport",
+}
+
 
 @dataclass
 class GeminiRequest:
@@ -237,16 +256,45 @@ def _fallback_suggestion(
     vendor: str, notes: str, amount: str
 ) -> AiCategorization:
     text = f"{vendor} {notes}".lower()
-    for category, details in CATEGORY_CONTEXT.items():
-        keywords = details["keywords"]
-        if any(keyword in text for keyword in keywords):
+    compact_text = re.sub(r"[^a-z0-9]+", "", text)
+
+    for alias, category in COMMON_ALIASES.items():
+        alias_compact = re.sub(r"[^a-z0-9]+", "", alias.lower())
+        if (
+            alias in text
+            or alias_compact == compact_text
+            or alias_compact in compact_text
+        ):
             return AiCategorization(
                 category=category,
-                confidence=90,
+                confidence=96,
+                provider="heuristic",
+                rationale=f"Matched common merchant alias for {category}.",
+            )
+
+    for category, details in CATEGORY_CONTEXT.items():
+        keywords = details["keywords"]
+        matched_keyword = None
+        for keyword in keywords:
+            keyword_compact = re.sub(r"[^a-z0-9]+", "", keyword.lower())
+            if (
+                keyword in text
+                or keyword_compact in compact_text
+                or compact_text
+                and (
+                    SequenceMatcher(None, compact_text, keyword_compact)
+                    .ratio() >= 0.78
+                )
+            ):
+                matched_keyword = keyword
+                break
+        if matched_keyword:
+            return AiCategorization(
+                category=category,
+                confidence=92,
                 provider="heuristic",
                 rationale=(
-                    f"Matched vendor/description keywords"
-                    f" for {category}."
+                    f"Matched vendor/description keywords for {category}."
                 ),
             )
     return AiCategorization(
@@ -281,6 +329,8 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
         "category is a reasonable fit.\n"
         "Use Other only when the merchant, notes, and amount are unrelated "
         "to every listed category.\n\n"
+        "Be tolerant of abbreviations, misspellings, and merchant aliases "
+        "such as mcdo or mcdonalds for fast-food purchases.\n\n"
         f"Vendor: {request_data.vendor}\n"
         f"Notes: {request_data.notes}\n"
         f"Amount: {request_data.amount}\n"

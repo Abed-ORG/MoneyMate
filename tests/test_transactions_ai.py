@@ -158,3 +158,20 @@ def test_correction_and_bulk_recategorization(monkeypatch):
     finally:
         app.dependency_overrides.clear()
         session.close()
+
+
+def test_heuristic_ai_matches_typos_and_aliases(monkeypatch):
+    client, session, headers = _make_client(monkeypatch)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    try:
+        suggestion = client.post(
+            "/transactions/suggest",
+            headers=headers,
+            json={"amount": -8.5, "vendor": "mcdo", "notes": "food"},
+        )
+        assert suggestion.status_code == 200
+        assert suggestion.json()["category"] == "Food & Dining"
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
