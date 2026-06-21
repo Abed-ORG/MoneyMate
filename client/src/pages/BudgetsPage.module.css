@@ -11,8 +11,6 @@
   width: min(28rem, calc(100vw - 2rem));
 }
 
-.controlsBar,
-.viewHeader,
 .panel,
 .emptyState,
 .state,
@@ -30,12 +28,12 @@
   flex-wrap: wrap;
   align-items: end;
   justify-content: flex-end;
-  gap: 0.85rem;
-  padding: 1rem;
+  gap: 0.7rem;
+  padding: 0;
 }
 
 .controlsBar > button {
-  min-width: 11rem;
+  min-width: 10rem;
 }
 
 .viewHeader {
@@ -43,7 +41,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.1rem;
+  padding: 0;
 }
 
 .viewHeader h2,
@@ -57,7 +55,7 @@
 .viewHeader h2 {
   margin-top: 0.25rem;
   color: var(--mm-text);
-  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
   letter-spacing: 0;
 }
 

@@ -257,14 +257,13 @@ export function BudgetsPage() {
               <div className={styles.viewHeader}>
                 <div>
                   <span className={styles.kicker}>
-                    {viewMode === "visualize" ? "Comparison" : "Progress"}
+                    {viewMode === "visualize" ? "Comparison" : "Budgets"}
                   </span>
                   <h2>
                     {viewMode === "visualize" ? "Budgeted versus actual" : "Category budgets"}
                   </h2>
                 </div>
                 <Button
-                  variant="secondary"
                   onClick={() => setViewMode((current) => (current === "visualize" ? "list" : "visualize"))}
                 >
                   {viewMode === "visualize" ? <ListIcon /> : <VisualizeIcon />}
@@ -282,7 +281,6 @@ export function BudgetsPage() {
                   <div className={`${styles.panel} ${styles.categoryPanel}`}>
                     <div className={styles.panelHeader}>
                       <div>
-                        <span className={styles.kicker}>Progress</span>
                         <h2>Category budgets</h2>
                       </div>
                       <span>{overview.budgets.length} categories</span>

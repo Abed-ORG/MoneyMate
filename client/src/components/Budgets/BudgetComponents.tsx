@@ -150,7 +150,6 @@ export function BudgetSummaryCard({
     { label: "Actual spending", value: formatCurrency(totals.total_actual_spending, currency) },
     { label: "Remaining", value: formatCurrency(totals.total_remaining_amount, currency) },
     { label: "Usage", value: formatPercent(totals.overall_usage_percentage) },
-    { label: "Over budget", value: String(totals.categories_over_budget) },
   ];
 
   return (

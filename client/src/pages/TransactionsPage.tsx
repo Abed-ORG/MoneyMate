@@ -862,11 +862,8 @@ export function TransactionsPage() {
             />
           </FormField>
           <div className={styles.filterActions}>
-            <Button variant="secondary" onClick={() => updateFilter({})}>
-              Reset Filters
-            </Button>
             <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
-              Clear
+              Reset Filters
             </Button>
           </div>
 
@@ -971,9 +968,11 @@ export function TransactionsPage() {
                               openActionMenu(transaction);
                             }}
                           >
-                            <span />
-                            <span />
-                            <span />
+                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                              <circle cx="12" cy="5" r="1.8" />
+                              <circle cx="12" cy="12" r="1.8" />
+                              <circle cx="12" cy="19" r="1.8" />
+                            </svg>
                           </button>
                           {actionMenuId === transaction.id ? (
                             <div className={styles.actionMenu}>

@@ -79,8 +79,8 @@
   z-index: 70;
   display: grid;
   gap: 0.7rem;
-  width: min(25rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 7.5rem);
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: min(34rem, calc(100vh - 7.5rem));
   overflow: auto;
   padding: 0.75rem;
 }
@@ -339,7 +339,7 @@
 }
 
 .tableWrap {
-  overflow-x: auto;
+  overflow: visible;
   scrollbar-width: none;
 }
 
@@ -495,21 +495,21 @@
 }
 
 .dotsButton {
-  gap: 0.18rem;
+  background: rgba(var(--mm-accent-rgb), 0.08);
 }
 
-.dotsButton span {
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 50%;
-  background: currentColor;
+.dotsButton svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+  stroke: none;
 }
 
 .actionMenu {
   position: absolute;
-  top: calc(100% + 0.4rem);
+  top: 50%;
   right: 0;
-  z-index: 25;
+  z-index: 80;
   display: grid;
   min-width: 13rem;
   overflow: hidden;
@@ -518,6 +518,7 @@
   background: rgba(7, 25, 20, 0.98);
   box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.34);
   padding: 0.35rem;
+  transform: translateY(-0.35rem);
 }
 
 .actionMenu button {

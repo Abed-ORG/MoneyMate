@@ -8,10 +8,10 @@ import {
 } from "react";
 import {
   Button,
-  Card,
   CategoryIcon,
   FormField,
   Input,
+  Modal,
   Select,
   Toast,
 } from "../components";
@@ -156,6 +156,8 @@ export function SettingsPage() {
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#91d46a");
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -195,7 +197,7 @@ export function SettingsPage() {
   };
 
   const addCustomCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    if (!newCategoryName.trim()) return false;
     const created = await transactionsApi.createCategory({
       name: newCategoryName.trim(),
       color: newCategoryColor,
@@ -204,20 +206,13 @@ export function SettingsPage() {
     setCustomCategories((current) => [...current, created]);
     setNewCategoryName("");
     setNewCategoryColor("#91d46a");
-  };
-
-  const updateCustomCategory = async (category: Category) => {
-    const updated = await transactionsApi.updateCategory(category.id, {
-      name: category.name,
-      color: category.color,
-      is_default: category.is_default,
-    });
-    setCustomCategories((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+    return true;
   };
 
   const deleteCustomCategory = async (id: string) => {
     await transactionsApi.deleteCategory(id);
     setCustomCategories((current) => current.filter((item) => item.id !== id));
+    setCategoryToDelete(null);
   };
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -379,6 +374,7 @@ export function SettingsPage() {
   const activeSectionDetails = settingsSections.find(
     (section) => section.id === activeSection,
   );
+  const editableCategories = customCategories.filter((category) => !category.is_default);
 
   return (
     <div className={styles.page}>
@@ -469,7 +465,6 @@ export function SettingsPage() {
               <SectionIcon name={section.icon} />
               <span>
                 <strong>{section.label}</strong>
-                <small>{section.description}</small>
               </span>
             </button>
           ))}
@@ -496,7 +491,7 @@ export function SettingsPage() {
         <div className={styles.sectionContent}>
           {activeSection !== "security" ? (
             <div className={styles.profileForm}>
-              <Card className={styles.sectionCard}>
+              <section className={styles.sectionCard}>
                 <div className={styles.sectionHeading}>
                   <SectionIcon name={activeSectionDetails?.icon ?? "profile"} />
                   <div>
@@ -599,44 +594,31 @@ export function SettingsPage() {
                         })}
                       </div>
                     </fieldset>
-                    <Card className={styles.customCategoryCard}>
-                      <h3>Custom categories</h3>
-                      <div className={styles.formGrid}>
-                        <FormField label="Name">
-                          <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} />
-                        </FormField>
-                        <FormField label="Color">
-                          <Input type="color" value={newCategoryColor} onChange={(event) => setNewCategoryColor(event.target.value)} />
-                        </FormField>
-                      </div>
-                      <Button type="button" onClick={() => void addCustomCategory()}>Add Category</Button>
+                    <div className={styles.customCategoryControls}>
+                      <Button type="button" onClick={() => setIsCustomizeOpen(true)}>
+                        Customize
+                      </Button>
+                    </div>
+                    {editableCategories.length ? (
                       <div className={styles.customCategoryList}>
-                        {customCategories.map((category) => (
+                        {editableCategories.map((category) => (
                           <div key={category.id} className={styles.customCategoryRow}>
-                            <Input
-                              value={category.name}
-                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, name: event.target.value } : item))}
-                            />
-                            <Input
-                              type="color"
-                              value={category.color}
-                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, color: event.target.value } : item))}
-                            />
-                            <Button type="button" variant="secondary" onClick={() => void updateCustomCategory(category)}>Save</Button>
-                            {!category.is_default ? (
-                              <Button type="button" variant="danger" onClick={() => void deleteCustomCategory(category.id)}>Delete</Button>
-                            ) : null}
+                            <span className={styles.categoryColor} style={{ background: category.color }} />
+                            <strong>{category.name}</strong>
+                            <Button type="button" variant="danger" onClick={() => setCategoryToDelete(category)}>
+                              Delete
+                            </Button>
                           </div>
                         ))}
                       </div>
-                    </Card>
+                    ) : null}
                   </div>
                 ) : null}
 
-              </Card>
+              </section>
             </div>
           ) : (
-            <Card className={styles.sectionCard}>
+            <section className={styles.sectionCard}>
               <div className={styles.sectionHeading}>
                 <SectionIcon name="security" />
                 <div>
@@ -680,10 +662,87 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
+            </section>
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={isCustomizeOpen}
+        title="Customize category"
+        onClose={() => {
+          setIsCustomizeOpen(false);
+          setNewCategoryName("");
+          setNewCategoryColor("#91d46a");
+        }}
+      >
+        <div className={styles.categoryModalBody}>
+          <FormField label="Name">
+            <Input
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+            />
+          </FormField>
+          <FormField label="Color">
+            <Input
+              type="color"
+              value={newCategoryColor}
+              onChange={(event) => setNewCategoryColor(event.target.value)}
+            />
+          </FormField>
+          <div className={styles.modalActions}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsCustomizeOpen(false);
+                setNewCategoryName("");
+                setNewCategoryColor("#91d46a");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                if (await addCustomCategory()) {
+                  setIsCustomizeOpen(false);
+                }
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(categoryToDelete)}
+        title="Delete category"
+        onClose={() => setCategoryToDelete(null)}
+      >
+        <div className={styles.categoryModalBody}>
+          <p>
+            Are you sure you want to delete {categoryToDelete?.name}? This cannot be undone.
+          </p>
+          <div className={styles.modalActions}>
+            <Button type="button" variant="secondary" onClick={() => setCategoryToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                if (categoryToDelete) {
+                  void deleteCustomCategory(categoryToDelete.id);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
