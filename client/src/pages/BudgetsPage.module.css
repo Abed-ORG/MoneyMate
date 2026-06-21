@@ -19,14 +19,14 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
   background:
-    radial-gradient(circle at 85% 40%, rgba(81, 243, 91, 0.14), transparent 18rem),
-    linear-gradient(135deg, rgba(4, 43, 32, 0.96), rgba(0, 17, 13, 0.92));
+    radial-gradient(circle at 85% 40%, rgba(var(--mm-accent-rgb), 0.1), transparent 18rem),
+    linear-gradient(135deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.94));
   box-shadow: var(--mm-shadow-card);
 }
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 32rem);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 30rem);
   gap: 1.2rem;
   align-items: end;
   padding: clamp(1.25rem, 3vw, 2rem);
@@ -44,8 +44,8 @@
 .hero h2 {
   margin-top: 0.4rem;
   color: var(--mm-text);
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.055em;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  letter-spacing: 0;
 }
 
 .hero p,
@@ -73,11 +73,23 @@
   justify-self: end;
 }
 
-.gridTwo {
+.overviewGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.8fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
   gap: 1rem;
   align-items: start;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 0.92fr) minmax(0, 1.08fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.categoryPanel,
+.comparisonPanel {
+  min-width: 0;
 }
 
 .panel {
@@ -106,7 +118,7 @@
 
 .budgetList {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .emptyState,
@@ -138,7 +150,8 @@
 
 @media (max-width: 1100px) {
   .hero,
-  .gridTwo {
+  .overviewGrid,
+  .workspaceGrid {
     grid-template-columns: 1fr;
   }
 

@@ -23,7 +23,7 @@ export function SpendingChart() {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={spendingData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
           <CartesianGrid
-            stroke="rgba(111, 239, 75, 0.14)"
+            stroke="rgba(220, 239, 219, 0.12)"
             strokeDasharray="4 4"
             vertical={false}
           />
@@ -41,14 +41,14 @@ export function SpendingChart() {
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(2, 29, 22, 0.96)",
-              border: "1px solid rgba(111, 239, 75, 0.34)",
+              background: "rgba(9, 30, 24, 0.96)",
+              border: "1px solid rgba(170, 252, 117, 0.22)",
               borderRadius: "12px",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-              color: "#f8fff9",
+              color: "#f2f7f0",
             }}
-            cursor={{ fill: "rgba(81, 243, 91, 0.06)" }}
-            labelStyle={{ color: "#78ff68", fontWeight: 800 }}
+            cursor={{ fill: "rgba(170, 252, 117, 0.055)" }}
+            labelStyle={{ color: "#91d46a", fontWeight: 800 }}
             formatter={(value, name) => {
               const amount = typeof value === "number" ? value : Number(value ?? 0);
 
@@ -58,8 +58,8 @@ export function SpendingChart() {
               ];
             }}
           />
-          <Bar dataKey="budget" fill="rgba(120, 255, 104, 0.18)" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="spent" fill="#51f35b" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="budget" fill="rgba(170, 252, 117, 0.16)" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="spent" fill="#91d46a" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

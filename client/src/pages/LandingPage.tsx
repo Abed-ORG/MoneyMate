@@ -299,7 +299,13 @@ export function LandingPage() {
             Money<span>Mate</span>
           </span>
         </Link>
-        <p>Questions? Reach the MoneyMate team through your project workspace.</p>
+        <p>
+          Questions? Email us at{' '}
+          <a href="mailto:moneymate.app.mail@gmail.com">
+            moneymate.app.mail@gmail.com
+          </a>
+          .
+        </p>
       </footer>
     </main>
   );

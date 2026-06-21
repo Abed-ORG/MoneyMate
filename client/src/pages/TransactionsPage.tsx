@@ -9,7 +9,7 @@ import {
   type SelectOption,
 } from "../components";
 import {
-  getCategoryIcon,
+  normalizeCategory,
   transactionCategories,
 } from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
@@ -40,6 +40,7 @@ type FormState = {
 type CsvRow = Record<string, string>;
 
 const noteMaxLength = 160;
+const templateHeaders = ["date", "amount", "category", "vendor", "notes"];
 
 const emptyForm: FormState = {
   date: new Date().toISOString().slice(0, 10),
@@ -73,6 +74,108 @@ function formatDate(value: string, includeTime = false) {
     year: "numeric",
     ...(includeTime ? { hour: "numeric", minute: "2-digit" } : {}),
   }).format(date);
+}
+
+const categoryIconMap: Record<string, JSX.Element> = {
+  "Food & Dining": (
+    <>
+      <path d="M8 4h1v16H8V4Zm6 0h1v16h-1V4Z" />
+      <path d="M12 4h1v16h-1V4Z" />
+    </>
+  ),
+  Transport: (
+    <>
+      <path d="M4 15h16v3H4v-3Z" />
+      <path d="M6 12V8h12v4" />
+      <circle cx="7" cy="19" r="1.5" />
+      <circle cx="17" cy="19" r="1.5" />
+    </>
+  ),
+  Housing: (
+    <>
+      <path d="M3 12 12 4l9 8v8H3v-8Z" />
+      <path d="M9 21v-6h6v6" />
+    </>
+  ),
+  Groceries: (
+    <>
+      <path d="M8 8h8l-1 10H9L8 8Z" />
+      <path d="M6 8h12" />
+      <path d="M10 4h4v4h-4z" />
+    </>
+  ),
+  Entertainment: (
+    <>
+      <path d="M6 8h12v8H6z" />
+      <path d="M9 11.5 13 14l-4 2.5V11.5Z" />
+    </>
+  ),
+  Shopping: (
+    <>
+      <path d="M6 8h12l-1 10H7L6 8Z" />
+      <path d="M9 8V5a3 3 0 0 1 6 0v3" />
+    </>
+  ),
+  Healthcare: (
+    <>
+      <path d="M12 7v10" />
+      <path d="M7 12h10" />
+      <path d="M12 5c-4 0-7 3-7 7 0 4 3 7 7 7s7-3 7-7c0-4-3-7-7-7Z" />
+    </>
+  ),
+  Utilities: (
+    <>
+      <path d="M13 5.5V3h-2v2.5" />
+      <path d="M12 22V9" />
+      <path d="M8 13h8" />
+      <path d="M6 18h12" />
+    </>
+  ),
+  Education: (
+    <>
+      <path d="M4 8l8 4 8-4-8-4-8 4Z" />
+      <path d="M12 12v8" />
+      <path d="M5 14v4" />
+      <path d="M19 14v4" />
+    </>
+  ),
+  Travel: (
+    <>
+      <path d="M4 10l16 4-6 3-2 4-2-4-6-3Z" />
+      <path d="M12 6v4" />
+      <path d="M10 4h4" />
+    </>
+  ),
+  "Personal Care": (
+    <>
+      <path d="M12 4c-1.5 2-6 6-6 8 0 3 2 5 6 5s6-2 6-5c0-2-4.5-6-6-8Z" />
+      <path d="M12 10.5v4" />
+    </>
+  ),
+  Other: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <rect x="14" y="14" width="6" height="6" rx="1" />
+    </>
+  ),
+  Income: (
+    <>
+      <path d="M12 4v16" />
+      <path d="M8 12l4-4 4 4" />
+      <path d="M8 20h8" />
+    </>
+  ),
+};
+
+function CategoryIconSvg({ category }: { category: string }) {
+  const normalized = normalizeCategory(category);
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      {categoryIconMap[normalized] ?? categoryIconMap.Other}
+    </svg>
+  );
 }
 
 function transactionToForm(transaction: Transaction): FormState {
@@ -125,6 +228,82 @@ function parseCsv(content: string) {
   return { headers, rows };
 }
 
+function parseHtmlTable(content: string) {
+  const document = new DOMParser().parseFromString(content, "text/html");
+  const table = document.querySelector("table");
+  if (!table) {
+    throw new Error("Excel template must include a transaction table.");
+  }
+
+  const tableRows = Array.from(table.querySelectorAll("tr")).map((row) =>
+    Array.from(row.querySelectorAll("th,td")).map((cell) =>
+      cell.textContent?.trim() ?? "",
+    ),
+  );
+  const [headers = [], ...bodyRows] = tableRows.filter((row) =>
+    row.some((cell) => cell.length > 0),
+  );
+
+  if (!headers.length || !bodyRows.length) {
+    throw new Error("Excel template must include a header row and at least one transaction.");
+  }
+
+  const rows = bodyRows.map((cells) =>
+    headers.reduce<CsvRow>((row, header, index) => {
+      row[header] = cells[index] ?? "";
+      return row;
+    }, {}),
+  );
+
+  return { headers, rows };
+}
+
+function parseImportContent(content: string, fileName: string) {
+  if (fileName.toLowerCase().endsWith(".xls") || /<table[\s>]/i.test(content)) {
+    return parseHtmlTable(content);
+  }
+
+  return parseCsv(content);
+}
+
+function downloadExcelTemplate() {
+  const rows = [
+    templateHeaders,
+    [new Date().toISOString().slice(0, 10), "-24.50", "Groceries", "Market", "Weekly groceries"],
+  ];
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    table { border-collapse: collapse; font-family: Arial, sans-serif; }
+    th, td { border: 1px solid #d7dfd5; padding: 8px 10px; min-width: 130px; }
+    th { background: #102A23; color: #ffffff; }
+  </style>
+</head>
+<body>
+  <table>
+    ${rows
+      .map((row, rowIndex) =>
+        `<tr>${row
+          .map((cell) => `<${rowIndex === 0 ? "th" : "td"}>${cell}</${rowIndex === 0 ? "th" : "td"}>`)
+          .join("")}</tr>`,
+      )
+      .join("")}
+  </table>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "moneymate-transaction-template.xls";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function validateForm(form: FormState) {
   const errors: Partial<Record<keyof FormState, string>> = {};
   if (!form.date) errors.date = "Date is required.";
@@ -146,10 +325,19 @@ function toPayload(form: FormState): TransactionPayload {
   };
 }
 
+function AddIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 function PencilIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M4 20h4.3L19.1 9.2a2.1 2.1 0 0 0 0-3L17.8 5a2.1 2.1 0 0 0-3 0L4 15.7V20Zm2-3.5 10.2-10.2 1.5 1.5L7.5 18H6v-1.5Z" />
+      <path d="m4 20 4.2-1 10.9-10.9a2.2 2.2 0 0 0-3.1-3.1L5.1 15.9 4 20Z" />
+      <path d="m14.5 6.5 3 3" />
     </svg>
   );
 }
@@ -157,7 +345,10 @@ function PencilIcon() {
 function TrashIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M8 21a2.5 2.5 0 0 1-2.5-2.5V8H4V6h4V4.8C8 3.8 8.8 3 9.8 3h4.4c1 0 1.8.8 1.8 1.8V6h4v2h-1.5v10.5A2.5 2.5 0 0 1 16 21H8Zm1.8-16v1h4.4V5H9.8ZM7.5 8v10.5c0 .3.2.5.5.5h8c.3 0 .5-.2.5-.5V8h-9Zm2.2 9h1.8v-7H9.7v7Zm2.8 0h1.8v-7h-1.8v7Z" />
+      <path d="M4 7h16" />
+      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
+      <path d="M18 7 17 19a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" />
+      <path d="M10 11v6M14 11v6" />
     </svg>
   );
 }
@@ -165,7 +356,8 @@ function TrashIcon() {
 function CloudUploadIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M7 19.5a5 5 0 0 1-.7-9.9A6.5 6.5 0 0 1 18.5 8a5.8 5.8 0 0 1 .3 11.5h-4.3v-2h4.3a3.8 3.8 0 0 0 0-7.5h-1.5l-.2-1.2a4.5 4.5 0 0 0-8.8 1l-.1 1.6-1.6.1A3 3 0 0 0 7 17.5h2.5v2H7Zm4-1.5v-5.2l-1.8 1.8-1.4-1.4L12 9l4.2 4.2-1.4 1.4-1.8-1.8V18h-2Z" />
+      <path d="M7 18.5a4.5 4.5 0 0 1-.6-8.95A6 6 0 0 1 17.7 7.8a5.4 5.4 0 0 1 .3 10.7h-3.5" />
+      <path d="M12 18V9.5M8.8 12.7 12 9.5l3.2 3.2" />
     </svg>
   );
 }
@@ -176,6 +368,25 @@ function FilterIcon() {
       <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M7 14v6" />
       <circle cx="14" cy="7" r="2" />
       <circle cx="7" cy="17" r="2" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 4v10" />
+      <path d="m8 10 4 4 4-4" />
+      <path d="M5 20h14" />
+    </svg>
+  );
+}
+
+function SpreadsheetIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M6 3h9l3 3v15H6V3Z" />
+      <path d="M15 3v4h4M8.5 11h7M8.5 15h7M11 9v9" />
     </svg>
   );
 }
@@ -195,6 +406,7 @@ export function TransactionsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -212,20 +424,31 @@ export function TransactionsPage() {
   );
 
   const totalPages = Math.max(1, Math.ceil(total / filters.pageSize));
+  const categoryNames = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...categories.map((category) => category.name),
+          ...transactionCategories,
+        ]),
+      ).sort(),
+    [categories],
+  );
+
   const categoryOptions = useMemo(
     () => [
       { value: "", label: "All Categories" },
-      ...transactionCategories.map((category) => ({ value: category, label: category })),
+      ...categoryNames.map((category) => ({ value: category, label: category })),
     ],
-    [],
+    [categoryNames],
   );
+
   const formCategoryOptions = useMemo(
     () => [
       { value: "", label: "Select category" },
-      ...categories.map((category) => ({ value: category.name, label: category.name })),
-      ...transactionCategories.map((category) => ({ value: category, label: category })),
+      ...categoryNames.map((category) => ({ value: category, label: category })),
     ],
-    [categories],
+    [categoryNames],
   );
   const expenses = transactions
     .filter((transaction) => Number(transaction.amount) < 0)
@@ -434,13 +657,21 @@ export function TransactionsPage() {
 
   const handleFile = async (file: File | null) => {
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
-      setToast({ title: "Unsupported file", message: "Please upload a CSV file.", variant: "warning" });
+    const lowerName = file.name.toLowerCase();
+    const isSupported =
+      lowerName.endsWith(".csv") ||
+      lowerName.endsWith(".xls") ||
+      lowerName.endsWith(".html") ||
+      file.type === "text/csv" ||
+      file.type === "text/html" ||
+      file.type === "application/vnd.ms-excel";
+    if (!isSupported) {
+      setToast({ title: "Unsupported file", message: "Please upload a CSV or MoneyMate Excel template file.", variant: "warning" });
       return;
     }
     try {
       const content = await file.text();
-      const parsed = parseCsv(content);
+      const parsed = parseImportContent(content, file.name);
       const guessed = {
         date: parsed.headers.find((header) => /date/i.test(header)) ?? parsed.headers[0],
         amount: parsed.headers.find((header) => /amount|debit|credit/i.test(header)) ?? parsed.headers[1],
@@ -544,17 +775,68 @@ export function TransactionsPage() {
   );
 
   return (
-    <section className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""}`}>
+    <section
+      className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""} ${
+        !isFiltersOpen ? styles.filtersClosed : ""
+      }`}
+    >
       {toast ? (
         <div className={styles.toastDock}>
           <Toast {...toast} onClose={() => setToast(null)} />
         </div>
       ) : null}
 
+      <header className={styles.pageHeader}>
+        <div>
+          <span className={styles.kicker}>Ledger</span>
+          <h2>Transactions</h2>
+          <p>Review, filter, import, and categorize every money movement in one place.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <div className={styles.addTransactionAction}>
+            <Button
+              onClick={() => {
+                setForm(emptyForm);
+                setFormErrors({});
+                setIsAddOpen(true);
+              }}
+            >
+              <AddIcon />
+              Add Transaction
+            </Button>
+          </div>
+          <div className={styles.utilityActions}>
+            <Button variant="secondary" onClick={openImportModal}>
+              <CloudUploadIcon />
+              Import
+            </Button>
+            <Button variant="secondary" onClick={downloadExcelTemplate}>
+              <DownloadIcon />
+              Template
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!transactions.length}
+              onClick={() => void recategorizeCurrentPage()}
+            >
+              Re-categorize Page
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {isFiltersOpen ? (
       <aside className={styles.filters}>
         <div className={styles.panelHeader}>
           <h2>Filters</h2>
-          <span className={styles.iconBox}><FilterIcon /></span>
+          <button
+            aria-label="Close filters"
+            className={styles.iconBox}
+            onClick={() => setIsFiltersOpen(false)}
+            type="button"
+          >
+            <FilterIcon />
+          </button>
         </div>
         <Input
           aria-label="Search transactions by vendor"
@@ -609,9 +891,15 @@ export function TransactionsPage() {
             }}
           />
         </FormField>
-        <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
-          Clear Filters
-        </Button>
+        <div className={styles.filterActions}>
+          <Button variant="secondary" onClick={() => updateFilter({})}>
+            <FilterIcon />
+            Filter
+          </Button>
+          <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
+            Clear
+          </Button>
+        </div>
 
         <section className={styles.stats}>
           <h3>Quick Stats</h3>
@@ -623,61 +911,52 @@ export function TransactionsPage() {
           <span>Total Income</span>
         </section>
       </aside>
+      ) : (
+        <aside className={styles.filterRail} aria-label="Transaction filters">
+          <button
+            aria-label="Open filters"
+            className={styles.filterRailButton}
+            onClick={() => setIsFiltersOpen(true)}
+            type="button"
+          >
+            <FilterIcon />
+          </button>
+        </aside>
+      )}
 
       <main className={styles.content}>
-        <div className={styles.topCards}>
-          <button className={styles.importCard} type="button" onClick={openImportModal}>
-            <span className={styles.largeIcon}><CloudUploadIcon /></span>
-            <span>
-              <strong>Import Transactions</strong>
-              <small>Drag & drop your CSV file here</small>
-              <small>or <em>click to browse</em></small>
-              <small>Supports CSV files up to 10MB</small>
-            </span>
-          </button>
-          <section className={styles.quickAdd}>
-            <span className={styles.plusIcon}>+</span>
-            <div>
-              <h2>Quick Add Transaction</h2>
-              <p>Manually add spending or income in a few seconds.</p>
-              <Button
-                onClick={() => {
-                  setForm(emptyForm);
-                  setFormErrors({});
-                  setIsAddOpen(true);
-                }}
-              >
-                + Add Transaction
-              </Button>
-            </div>
-          </section>
-        </div>
-
         <section className={styles.tablePanel}>
           <header className={styles.tableHeader}>
-            <h2>Transactions</h2>
-            <span>
-              Showing {transactions.length ? (filters.page - 1) * filters.pageSize + 1 : 0} to{" "}
-              {Math.min(filters.page * filters.pageSize, total)} of {total}
-            </span>
-          </header>
-          <div className={styles.bulkBar}>
-            <span>{selectedCount} selected</span>
-            <div className={styles.bulkActions}>
-              <Button variant="secondary" onClick={selectVisibleTransactions}>
-                Select Page
-              </Button>
-              <Button variant="secondary" onClick={clearTransactionSelection}>
-                Clear Selection
-              </Button>
-              <Button
-                disabled={!selectedCount}
-                onClick={() => void recategorizeSelected()}
-              >
-                Re-categorize Selected
-              </Button>
+            <div>
+              <h2>Transactions</h2>
+              <p className={styles.tableSubtitle}>
+                {total} transaction{total === 1 ? "" : "s"}
+              </p>
             </div>
-          </div>
+            <div className={styles.tableActions}>
+              <span className={styles.selectionSummary}>
+                {selectedCount ? `${selectedCount} selected` : "No selection"}
+              </span>
+              <div className={styles.tableActionButtons}>
+                <Button variant="secondary" onClick={selectVisibleTransactions}>
+                  Select Page
+                </Button>
+                <Button variant="secondary" onClick={clearTransactionSelection}>
+                  Clear Selection
+                </Button>
+                <Button
+                  disabled={!selectedCount}
+                  onClick={() => void recategorizeSelected()}
+                >
+                  Re-categorize Selected
+                </Button>
+                <Button variant="secondary" onClick={() => setIsFiltersOpen((current) => !current)}>
+                  <FilterIcon />
+                  Filters
+                </Button>
+              </div>
+            </div>
+          </header>
 
           {isLoading ? <div className={styles.state}>Loading transactions...</div> : null}
           {error ? <div className={styles.stateError}>{error}</div> : null}
@@ -718,17 +997,14 @@ export function TransactionsPage() {
                         />
                       </td>
                       <td>{formatDate(transaction.date)}</td>
+                      <td>{transaction.vendor || "Unknown vendor"}</td>
                       <td>
-                        <span className={styles.vendorMark}>{transaction.vendor.slice(0, 1) || "$"}</span>
-                        {transaction.vendor || "Unknown"}
-                      </td>
-                      <td>
-                        <img
-                          alt={transaction.category}
-                          className={styles.categoryIcon}
-                          src={getCategoryIcon(transaction.category)}
-                          title={transaction.category}
-                        />
+                        <span className={styles.categoryCell}>
+                          <span className={styles.categoryIcon}>
+                            <CategoryIconSvg category={transaction.category} />
+                          </span>
+                          {transaction.category || "Uncategorized"}
+                        </span>
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
                         <span>{transaction.notes || "-"}</span>
@@ -870,6 +1146,12 @@ export function TransactionsPage() {
         onClose={closeImportModal}
       >
         <div className={styles.importFlow}>
+          <div className={styles.importTemplateAction}>
+            <Button variant="secondary" onClick={downloadExcelTemplate}>
+              <SpreadsheetIcon />
+              Download Excel Template
+            </Button>
+          </div>
           <button
             className={styles.dropZone}
             type="button"
@@ -881,11 +1163,11 @@ export function TransactionsPage() {
             onDragOver={(event) => event.preventDefault()}
           >
             <span className={styles.dropIcon}><CloudUploadIcon /></span>
-            <strong>Drag & drop your CSV file here</strong>
+            <strong>Drag & drop your file here</strong>
             <span>or <em>click to browse</em></span>
-            <small>Supports CSV files up to 10MB</small>
+            <small>Supports CSV and MoneyMate Excel template files up to 10MB</small>
           </button>
-          <input ref={fileInputRef} hidden type="file" accept=".csv,text/csv" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
+          <input ref={fileInputRef} hidden type="file" accept=".csv,.xls,.html,text/csv,text/html,application/vnd.ms-excel" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
           {csvHeaders.length ? (
             <>
               <div className={styles.mappingGrid}>

@@ -6,10 +6,10 @@
 .goal {
   display: grid;
   gap: 0.9rem;
-  border: 1px solid rgba(111, 239, 75, 0.14);
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.08);
   border-radius: var(--mm-radius-md);
   background:
-    radial-gradient(circle at 100% 0%, rgba(81, 243, 91, 0.06), transparent 12rem),
+    radial-gradient(circle at 100% 0%, rgba(var(--mm-accent-rgb), 0.035), transparent 12rem),
     rgba(0, 17, 13, 0.46);
   padding: 1rem;
 }

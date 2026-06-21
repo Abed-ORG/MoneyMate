@@ -24,8 +24,8 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
   background:
-    radial-gradient(circle at 10% 0%, rgba(81, 243, 91, 0.08), transparent 14rem),
-    linear-gradient(145deg, rgba(3, 35, 26, 0.92), rgba(0, 17, 13, 0.94));
+    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.07), transparent 14rem),
+    linear-gradient(145deg, rgba(19, 51, 42, 0.92), rgba(7, 25, 20, 0.94));
   box-shadow: var(--mm-shadow-card);
 }
 
@@ -53,6 +53,11 @@
 .historyItem dl div {
   display: grid;
   gap: 0.2rem;
+}
+
+.summaryMetrics div {
+  border-left: 1px solid var(--mm-border);
+  padding-left: 0.9rem;
 }
 
 .summaryMetrics span,
@@ -98,7 +103,7 @@
   background: #fff;
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
-    0 0 0.8rem rgba(81, 243, 91, 0.07);
+    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
 .categoryIcon {
@@ -121,7 +126,7 @@
 .cardActions button {
   border: 1px solid var(--mm-border);
   border-radius: 999px;
-  background: rgba(1, 24, 18, 0.75);
+  background: rgba(7, 25, 20, 0.75);
   color: var(--mm-accent-soft);
   cursor: pointer;
   font-size: 0.78rem;
@@ -139,7 +144,7 @@
   height: 0.75rem;
   border: 1px solid rgba(248, 255, 249, 0.12);
   border-radius: 999px;
-  background: rgba(0, 17, 13, 0.82);
+  background: rgba(7, 25, 20, 0.82);
 }
 
 .progressTrack span {
@@ -151,7 +156,7 @@
 }
 
 .green span {
-  background: linear-gradient(90deg, #26bc50, #51f35b);
+  background: linear-gradient(90deg, #76d65b, var(--mm-accent));
 }
 
 .yellow span {
@@ -187,9 +192,9 @@
   align-items: center;
   gap: 0.35rem;
   width: fit-content;
-  border: 1px solid rgba(81, 243, 91, 0.28);
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.28);
   border-radius: 999px;
-  background: rgba(81, 243, 91, 0.1);
+  background: rgba(var(--mm-accent-rgb), 0.1);
   color: var(--mm-accent-soft);
   font-size: 0.78rem;
   font-weight: 800;
@@ -241,7 +246,7 @@
   gap: 0.65rem;
   border: 1px solid currentColor;
   border-radius: var(--mm-radius-md);
-  background: rgba(1, 24, 18, 0.72);
+  background: rgba(7, 25, 20, 0.72);
   padding: 0.9rem;
 }
 
@@ -271,7 +276,7 @@
   place-items: center;
   border: 1px dashed var(--mm-border);
   border-radius: var(--mm-radius-md);
-  background: rgba(0, 17, 13, 0.36);
+  background: rgba(7, 25, 20, 0.36);
   text-align: center;
 }
 
@@ -287,7 +292,7 @@
 
 .comparisonTable th,
 .comparisonTable td {
-  border-bottom: 1px solid rgba(111, 239, 75, 0.12);
+  border-bottom: 1px solid var(--mm-border);
   color: var(--mm-text-soft);
   padding: 0.8rem;
   text-align: left;
@@ -322,6 +327,9 @@
 
 .historyItem:hover {
   border-color: var(--mm-border-strong);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 14rem),
+    linear-gradient(145deg, rgba(23, 61, 50, 0.94), rgba(9, 30, 24, 0.96));
 }
 
 .historyItem strong {
