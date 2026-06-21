@@ -1,5 +1,6 @@
 export { Button } from "./Button/Button";
 export { Card } from "./Card/Card";
+export { CategoryIcon } from "./CategoryIcon/CategoryIcon";
 export { FormField } from "./FormField/FormField";
 export { Input } from "./Input/Input";
 export { LoadingSpinner } from "./LoadingSpinner/LoadingSpinner";

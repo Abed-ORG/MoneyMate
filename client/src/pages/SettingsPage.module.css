@@ -175,6 +175,8 @@
   background: #05271d;
   color: var(--mm-accent-soft);
   cursor: pointer;
+  line-height: 0;
+  padding: 0;
   box-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.16);
   transition:
     background 160ms ease,
@@ -190,6 +192,7 @@
 
 .avatarEdit svg {
   width: 1rem;
+  height: 1rem;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -282,7 +285,7 @@
   display: grid;
   min-height: 100%;
   align-content: stretch;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 0.35rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.12);
   margin-left: -1px;
@@ -524,6 +527,25 @@
   background: rgba(0, 17, 13, 0.58);
 }
 
+.categoryIcon {
+  display: inline-grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.14);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.18), transparent 54%),
+    rgba(4, 30, 22, 0.88);
+  color: var(--mm-accent-soft);
+}
+
+.categoryIcon svg {
+  width: 58%;
+  height: 58%;
+}
+
 .category:has(input:checked) .categoryCheck {
   border-color: var(--mm-accent-soft);
   background: var(--mm-accent);
@@ -574,7 +596,7 @@
   .sectionNav {
     margin-top: -1px;
     margin-left: 0;
-    grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
+    grid-template-columns: repeat(4, minmax(8.5rem, 1fr));
     grid-template-rows: 1fr;
     border-radius: 0 0 1.45rem 1.45rem;
     overflow-x: auto;

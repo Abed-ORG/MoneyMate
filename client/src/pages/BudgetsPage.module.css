@@ -11,7 +11,8 @@
   width: min(28rem, calc(100vw - 2rem));
 }
 
-.hero,
+.controlsBar,
+.viewHeader,
 .panel,
 .emptyState,
 .state,
@@ -24,16 +25,28 @@
   box-shadow: var(--mm-shadow-card);
 }
 
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 30rem);
-  gap: 1.2rem;
+.controlsBar {
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
-  padding: clamp(1.25rem, 3vw, 2rem);
+  justify-content: flex-end;
+  gap: 0.85rem;
+  padding: 1rem;
 }
 
-.hero h2,
-.hero p,
+.controlsBar > button {
+  min-width: 11rem;
+}
+
+.viewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.viewHeader h2,
 .panel h2,
 .panel p,
 .emptyState h2,
@@ -41,14 +54,13 @@
   margin: 0;
 }
 
-.hero h2 {
-  margin-top: 0.4rem;
+.viewHeader h2 {
+  margin-top: 0.25rem;
   color: var(--mm-text);
-  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
   letter-spacing: 0;
 }
 
-.hero p,
 .panel p,
 .emptyState p {
   margin-top: 0.65rem;
@@ -64,25 +76,9 @@
   text-transform: uppercase;
 }
 
-.heroControls {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.heroControls button {
-  justify-self: end;
-}
-
-.overviewGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
-  gap: 1rem;
-  align-items: start;
-}
-
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(20rem, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(19rem, 0.88fr);
   gap: 1rem;
   align-items: start;
 }
@@ -90,6 +86,24 @@
 .categoryPanel,
 .comparisonPanel {
   min-width: 0;
+}
+
+.viewHeader button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 8.5rem;
+  justify-content: center;
+}
+
+.viewHeader svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .panel {
@@ -149,14 +163,17 @@
 }
 
 @media (max-width: 1100px) {
-  .hero,
-  .overviewGrid,
   .workspaceGrid {
     grid-template-columns: 1fr;
   }
 
-  .heroControls button {
-    justify-self: stretch;
+  .controlsBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .controlsBar > button {
+    width: 100%;
   }
 
   .panelHeader {

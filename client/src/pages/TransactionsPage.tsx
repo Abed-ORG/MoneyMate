@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
+  CategoryIcon,
   FormField,
   Input,
   Modal,
@@ -8,10 +9,7 @@ import {
   Toast,
   type SelectOption,
 } from "../components";
-import {
-  normalizeCategory,
-  transactionCategories,
-} from "../constants/categories";
+import { transactionCategories } from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
@@ -74,108 +72,6 @@ function formatDate(value: string, includeTime = false) {
     year: "numeric",
     ...(includeTime ? { hour: "numeric", minute: "2-digit" } : {}),
   }).format(date);
-}
-
-const categoryIconMap: Record<string, JSX.Element> = {
-  "Food & Dining": (
-    <>
-      <path d="M8 4h1v16H8V4Zm6 0h1v16h-1V4Z" />
-      <path d="M12 4h1v16h-1V4Z" />
-    </>
-  ),
-  Transport: (
-    <>
-      <path d="M4 15h16v3H4v-3Z" />
-      <path d="M6 12V8h12v4" />
-      <circle cx="7" cy="19" r="1.5" />
-      <circle cx="17" cy="19" r="1.5" />
-    </>
-  ),
-  Housing: (
-    <>
-      <path d="M3 12 12 4l9 8v8H3v-8Z" />
-      <path d="M9 21v-6h6v6" />
-    </>
-  ),
-  Groceries: (
-    <>
-      <path d="M8 8h8l-1 10H9L8 8Z" />
-      <path d="M6 8h12" />
-      <path d="M10 4h4v4h-4z" />
-    </>
-  ),
-  Entertainment: (
-    <>
-      <path d="M6 8h12v8H6z" />
-      <path d="M9 11.5 13 14l-4 2.5V11.5Z" />
-    </>
-  ),
-  Shopping: (
-    <>
-      <path d="M6 8h12l-1 10H7L6 8Z" />
-      <path d="M9 8V5a3 3 0 0 1 6 0v3" />
-    </>
-  ),
-  Healthcare: (
-    <>
-      <path d="M12 7v10" />
-      <path d="M7 12h10" />
-      <path d="M12 5c-4 0-7 3-7 7 0 4 3 7 7 7s7-3 7-7c0-4-3-7-7-7Z" />
-    </>
-  ),
-  Utilities: (
-    <>
-      <path d="M13 5.5V3h-2v2.5" />
-      <path d="M12 22V9" />
-      <path d="M8 13h8" />
-      <path d="M6 18h12" />
-    </>
-  ),
-  Education: (
-    <>
-      <path d="M4 8l8 4 8-4-8-4-8 4Z" />
-      <path d="M12 12v8" />
-      <path d="M5 14v4" />
-      <path d="M19 14v4" />
-    </>
-  ),
-  Travel: (
-    <>
-      <path d="M4 10l16 4-6 3-2 4-2-4-6-3Z" />
-      <path d="M12 6v4" />
-      <path d="M10 4h4" />
-    </>
-  ),
-  "Personal Care": (
-    <>
-      <path d="M12 4c-1.5 2-6 6-6 8 0 3 2 5 6 5s6-2 6-5c0-2-4.5-6-6-8Z" />
-      <path d="M12 10.5v4" />
-    </>
-  ),
-  Other: (
-    <>
-      <rect x="4" y="4" width="6" height="6" rx="1" />
-      <rect x="14" y="4" width="6" height="6" rx="1" />
-      <rect x="4" y="14" width="6" height="6" rx="1" />
-      <rect x="14" y="14" width="6" height="6" rx="1" />
-    </>
-  ),
-  Income: (
-    <>
-      <path d="M12 4v16" />
-      <path d="M8 12l4-4 4 4" />
-      <path d="M8 20h8" />
-    </>
-  ),
-};
-
-function CategoryIconSvg({ category }: { category: string }) {
-  const normalized = normalizeCategory(category);
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      {categoryIconMap[normalized] ?? categoryIconMap.Other}
-    </svg>
-  );
 }
 
 function transactionToForm(transaction: Transaction): FormState {
@@ -784,47 +680,37 @@ export function TransactionsPage() {
         </div>
       ) : null}
 
-      <header className={styles.pageHeader}>
-        <div>
-          <span className={styles.kicker}>Ledger</span>
-          <h2>Transactions</h2>
-          <p>Review, filter, import, and categorize every money movement in one place.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <div className={styles.primaryActions}>
-            <Button
-              onClick={() => {
-                setForm(emptyForm);
-                setFormErrors({});
-                setIsAddOpen(true);
-              }}
-            >
-              <AddIcon />
-              Add Transaction
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!transactions.length}
-              onClick={() => void recategorizeCurrentPage()}
-            >
-              Re-categorize Page
-            </Button>
-          </div>
-          <div className={styles.utilityActions}>
-            <Button variant="secondary" onClick={openImportModal}>
-              <CloudUploadIcon />
-              Import
-            </Button>
-            <Button variant="secondary" onClick={downloadExcelTemplate}>
-              <DownloadIcon />
-              Template
-            </Button>
-            <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
-              <FilterIcon />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <div className={styles.actionBar}>
+        <Button
+          onClick={() => {
+            setForm(emptyForm);
+            setFormErrors({});
+            setIsAddOpen(true);
+          }}
+        >
+          <AddIcon />
+          Add Transaction
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={!transactions.length}
+          onClick={() => void recategorizeCurrentPage()}
+        >
+          Re-categorize Page
+        </Button>
+        <Button variant="secondary" onClick={openImportModal}>
+          <CloudUploadIcon />
+          Upload
+        </Button>
+        <Button variant="secondary" onClick={downloadExcelTemplate}>
+          <DownloadIcon />
+          CSV Template
+        </Button>
+        <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+          <FilterIcon />
+          Filters
+        </Button>
+      </div>
 
       {isFiltersOpen ? (
         <aside className={styles.filters} aria-label="Transaction filters">
@@ -986,7 +872,7 @@ export function TransactionsPage() {
                       <td>
                         <span className={styles.categoryCell}>
                           <span className={styles.categoryIcon}>
-                            <CategoryIconSvg category={transaction.category} />
+                            <CategoryIcon category={transaction.category} />
                           </span>
                           {transaction.category || "Uncategorized"}
                         </span>

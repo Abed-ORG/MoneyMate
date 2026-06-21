@@ -9,11 +9,9 @@ import {
 import {
   Button,
   Card,
-  createEmptySavingsGoal,
+  CategoryIcon,
   FormField,
   Input,
-  SavingsGoalsEditor,
-  type SavingsGoalDraft,
   Select,
   Toast,
 } from "../components";
@@ -46,10 +44,9 @@ type SettingsSection =
   | "personal"
   | "financial"
   | "categories"
-  | "goals"
   | "security";
 
-type SectionIconName = "profile" | "wallet" | "categories" | "goal" | "security";
+type SectionIconName = "profile" | "wallet" | "categories" | "security";
 
 const settingsSections: Array<{
   id: SettingsSection;
@@ -74,12 +71,6 @@ const settingsSections: Array<{
     label: "Spending categories",
     description: "Choose what MoneyMate tracks",
     icon: "categories",
-  },
-  {
-    id: "goals",
-    label: "Savings goals",
-    description: "Plan for important milestones",
-    icon: "goal",
   },
   {
     id: "security",
@@ -109,13 +100,6 @@ function SectionIcon({ name }: { name: SectionIconName }) {
         <rect x="14" y="4" width="6" height="6" rx="1.5" />
         <rect x="4" y="14" width="6" height="6" rx="1.5" />
         <path d="m14.5 17 1.7 1.7 3.5-4" />
-      </>
-    ),
-    goal: (
-      <>
-        <circle cx="11" cy="13" r="7" />
-        <circle cx="11" cy="13" r="3" />
-        <path d="m13 11 7-7M16 4h4v4" />
       </>
     ),
     security: (
@@ -172,9 +156,6 @@ export function SettingsPage() {
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#91d46a");
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoalDraft[]>([
-    createEmptySavingsGoal(),
-  ]);
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -198,15 +179,6 @@ export function SettingsPage() {
       Array.from(
         new Set((profile?.spending_categories ?? []).map(normalizeCategory)),
       ),
-    );
-    setSavingsGoals(
-      profile?.savings_goals.length
-        ? profile.savings_goals.map((goal) => ({
-            ...createEmptySavingsGoal(),
-            name: goal.name,
-            targetAmount: String(goal.target_amount),
-          }))
-        : [createEmptySavingsGoal()],
     );
   }, [profile]);
 
@@ -294,13 +266,6 @@ export function SettingsPage() {
 
   const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const incompleteGoal = savingsGoals.find((goal) => {
-      const hasName = Boolean(goal.name.trim());
-      const hasAmount = Boolean(goal.targetAmount.trim());
-      const amount = Number(goal.targetAmount);
-      const validAmount = Number.isFinite(amount) && amount > 0;
-      return (hasName || hasAmount) && (!hasName || !validAmount);
-    });
 
     if (!fullName.trim() || !email.trim()) {
       setActiveSection("personal");
@@ -333,16 +298,6 @@ export function SettingsPage() {
       });
       return;
     }
-    if (incompleteGoal) {
-      setActiveSection("goals");
-      setNotice({
-        title: "Profile not saved",
-        message: "Enter both a savings goal name and a valid target amount.",
-        variant: "error",
-      });
-      return;
-    }
-
     setIsSaving(true);
     try {
       await api.put<AuthUser>("/profile/account", {
@@ -353,12 +308,7 @@ export function SettingsPage() {
         monthly_income: Number(monthlyIncome),
         currency,
         spending_categories: selectedCategories,
-        savings_goals: savingsGoals
-          .filter((goal) => goal.name.trim() && Number(goal.targetAmount) > 0)
-          .map((goal) => ({
-            name: goal.name.trim(),
-            target_amount: Number(goal.targetAmount),
-          })),
+        savings_goals: profile?.savings_goals ?? [],
       });
 
       if (user?.id && avatarPreview !== savedAvatar) {
@@ -640,6 +590,9 @@ export function SettingsPage() {
                                   </svg>
                                 ) : null}
                               </span>
+                              <span className={styles.categoryIcon} aria-hidden="true">
+                                <CategoryIcon category={category} />
+                              </span>
                               <span>{category}</span>
                             </label>
                           );
@@ -680,12 +633,6 @@ export function SettingsPage() {
                   </div>
                 ) : null}
 
-                {activeSection === "goals" ? (
-                  <SavingsGoalsEditor
-                    goals={savingsGoals}
-                    onChange={setSavingsGoals}
-                  />
-                ) : null}
               </Card>
             </div>
           ) : (

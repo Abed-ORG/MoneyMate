@@ -20,38 +20,13 @@
   pointer-events: auto;
 }
 
-.pageHeader {
+.actionBar {
   display: flex;
   grid-column: 1 / -1;
-  align-items: end;
-  justify-content: space-between;
-  gap: 0.9rem;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-lg);
-  background:
-    radial-gradient(circle at 92% 30%, rgba(var(--mm-accent-rgb), 0.055), transparent 18rem),
-    linear-gradient(135deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.94));
-  box-shadow: var(--mm-shadow-card);
-  padding: clamp(0.95rem, 2.2vw, 1.25rem);
-}
-
-.pageHeader h2,
-.pageHeader p {
-  margin: 0;
-}
-
-.pageHeader h2 {
-  margin-top: 0.35rem;
-  color: var(--mm-text);
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  letter-spacing: 0;
-}
-
-.pageHeader p {
-  margin-top: 0.55rem;
-  color: var(--mm-text-soft);
-  font-size: 0.92rem;
-  line-height: 1.45;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
 .kicker {
@@ -62,28 +37,14 @@
   text-transform: uppercase;
 }
 
-.headerActions {
-  display: grid;
-  justify-items: end;
-  gap: 0.55rem;
-}
-
-.primaryActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.utilityActions,
+.actionBar button,
 .filterActions {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 0.45rem;
-  justify-content: flex-end;
 }
 
-.headerActions svg,
+.actionBar svg,
 .filterActions svg,
 .importTemplateAction svg {
   width: 1rem;
@@ -335,16 +296,19 @@
 }
 
 .categoryIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   width: 1.9rem;
   height: 1.9rem;
   border: 1px solid rgba(248, 255, 249, 0.14);
   border-radius: 50%;
-  background: #fff;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
+    rgba(4, 30, 22, 0.9);
+  color: var(--mm-accent-soft);
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
+    inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
@@ -384,7 +348,7 @@
 .table th,
 .table td {
   border-bottom: 1px solid var(--mm-border);
-  padding: 0.55rem 0.6rem;
+  padding: 0.62rem 0.75rem;
   color: var(--mm-text-soft);
   text-align: left;
   white-space: nowrap;
@@ -396,11 +360,11 @@
 }
 
 .table th:nth-child(1) {
-  width: 4rem;
+  width: 4.25rem;
 }
 
 .table th:nth-child(2) {
-  width: 7.5rem;
+  width: 8rem;
 }
 
 .table th:nth-child(3) {
@@ -408,15 +372,15 @@
 }
 
 .table th:nth-child(4) {
-  width: 14%;
+  width: 22%;
 }
 
 .table th:nth-child(5) {
-  width: 24%;
+  width: auto;
 }
 
 .table th:nth-child(6) {
-  width: 8.5rem;
+  width: 8.25rem;
 }
 
 .table th:nth-child(7) {
@@ -472,17 +436,9 @@
   font-weight: 800;
 }
 
-.categoryIcon {
-  display: block;
-  width: 1.9rem;
-  height: 1.9rem;
-  border: 1px solid rgba(248, 255, 249, 0.14);
-  border-radius: 50%;
-  background: #fff;
-  object-fit: cover;
-  box-shadow:
-    0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
-    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
+.categoryIcon svg {
+  width: 55%;
+  height: 55%;
 }
 
 .table td.income {
@@ -955,22 +911,11 @@
     grid-template-columns: 1fr;
   }
 
-  .pageHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .headerActions {
-    justify-items: stretch;
-  }
-
-  .primaryActions,
-  .utilityActions {
+  .actionBar {
     justify-content: flex-start;
   }
 
-  .primaryActions button,
-  .utilityActions button {
+  .actionBar button {
     flex: 1 1 10rem;
   }
 }

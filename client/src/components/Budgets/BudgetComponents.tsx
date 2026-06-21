@@ -9,9 +9,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Button, Card, FormField, Input, Modal, Select } from "../index";
+import { Button, Card, CategoryIcon, FormField, Input, Modal, Select } from "../index";
 import { transactionCategories } from "../../constants/categories";
-import { getCategoryIcon } from "../../constants/categories";
 import type {
   BudgetAlert,
   BudgetCategory,
@@ -74,10 +73,6 @@ export function formatPercent(value: MoneyValue) {
 
 export function monthLabel(month: number, year: number) {
   return `${monthOptions[month - 1]?.label ?? "Month"} ${year}`;
-}
-
-function categoryIcon(summary: Pick<BudgetSummary, "category_name" | "category_icon">) {
-  return summary.category_icon || getCategoryIcon(summary.category_name);
 }
 
 function validateForm(form: BudgetFormState) {
@@ -143,8 +138,10 @@ export function MonthSelector({
 }
 
 export function BudgetSummaryCard({
+  historyItem,
   overview,
 }: {
+  historyItem?: BudgetHistoryMonth;
   overview: BudgetOverview;
 }) {
   const { currency, totals } = overview;
@@ -170,6 +167,20 @@ export function BudgetSummaryCard({
           </div>
         ))}
       </div>
+      {historyItem ? (
+        <div className={styles.adherenceStrip}>
+          <span className={`${styles.trend} ${styles[historyItem.trend]}`}>
+            <TrendIcon trend={historyItem.trend} />
+            {historyItem.trend === "improvement" ? "Improvement" : historyItem.trend === "decline" ? "Decline" : "No change"}
+          </span>
+          <p>{historyItem.trend_message}</p>
+          <dl>
+            <div><dt>Adherence</dt><dd>{formatPercent(historyItem.adherence_percentage)}</dd></div>
+            <div><dt>Within budget</dt><dd>{historyItem.categories_within_budget}</dd></div>
+            <div><dt>Over budget</dt><dd>{historyItem.categories_over_budget}</dd></div>
+          </dl>
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -206,7 +217,7 @@ export function BudgetCategoryCard({
     <article className={styles.budgetCard}>
       <header>
         <span className={styles.categoryIcon}>
-          <img src={categoryIcon(budget)} alt="" />
+          <CategoryIcon category={budget.category_name} />
         </span>
         <div>
           <h3>{budget.category_name}</h3>
@@ -377,7 +388,9 @@ export function BudgetComparisonTable({
             <tr key={budget.budget_id}>
               <td>
                 <span className={styles.tableCategory}>
-                  <img src={categoryIcon(budget)} alt="" />
+                  <span className={styles.tableCategoryIcon}>
+                    <CategoryIcon category={budget.category_name} />
+                  </span>
                   {budget.category_name}
                 </span>
               </td>
