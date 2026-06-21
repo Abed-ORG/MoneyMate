@@ -36,6 +36,15 @@ type FormState = {
 };
 
 type CsvRow = Record<string, string>;
+type AiReviewState = {
+  transaction: Transaction;
+  suggestion: {
+    category: string;
+    confidence: number;
+    provider: string;
+    rationale: string;
+  };
+} | null;
 
 const noteMaxLength = 160;
 const templateHeaders = ["date", "amount", "category", "vendor", "notes"];
@@ -229,26 +238,6 @@ function AddIcon() {
   );
 }
 
-function PencilIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="m4 20 4.2-1 10.9-10.9a2.2 2.2 0 0 0-3.1-3.1L5.1 15.9 4 20Z" />
-      <path d="m14.5 6.5 3 3" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M4 7h16" />
-      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
-      <path d="M18 7 17 19a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  );
-}
-
 function CloudUploadIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -295,7 +284,6 @@ export function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
   const [datePreset, setDatePreset] = useState("custom");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -303,11 +291,13 @@ export function TransactionsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
+  const [aiReview, setAiReview] = useState<AiReviewState>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<CsvRow[]>([]);
-  const [csvContent, setCsvContent] = useState("");
   const [csvErrors, setCsvErrors] = useState<TransactionImportError[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
@@ -416,7 +406,6 @@ export function TransactionsPage() {
   const resetImportState = () => {
     setCsvHeaders([]);
     setCsvRows([]);
-    setCsvContent("");
     setCsvErrors([]);
     setMapping({});
     if (fileInputRef.current) {
@@ -575,13 +564,11 @@ export function TransactionsPage() {
         vendor: parsed.headers.find((header) => /vendor|merchant|description/i.test(header)) ?? parsed.headers[3],
         notes: parsed.headers.find((header) => /note|memo|description/i.test(header)) ?? parsed.headers[4],
       };
-      setCsvContent(content);
       setCsvHeaders(parsed.headers);
       setCsvRows(parsed.rows);
       setMapping(guessed);
       setCsvErrors([]);
     } catch (err) {
-      setCsvContent("");
       setCsvHeaders([]);
       setCsvRows([]);
       setCsvErrors([{ row: 0, message: err instanceof Error ? err.message : "Malformed CSV file." }]);
@@ -589,11 +576,56 @@ export function TransactionsPage() {
   };
 
   const importCsv = async () => {
+    const errors: TransactionImportError[] = [];
+    const transactions = csvRows
+      .map((row, index) => {
+        const rowNumber = index + 2;
+        const dateValue = row[mapping.date] ?? "";
+        const amountValue = row[mapping.amount] ?? "";
+        const categoryValue = row[mapping.category] ?? "";
+        const vendorValue = row[mapping.vendor] ?? "";
+        const notesValue = row[mapping.notes] ?? "";
+
+        if (![dateValue, amountValue, categoryValue, vendorValue, notesValue].some((value) => value.trim())) {
+          return null;
+        }
+
+        const amount = Number(amountValue);
+        const date = new Date(`${dateValue.trim()}T12:00:00`);
+
+        if (!dateValue.trim() || Number.isNaN(date.getTime())) {
+          errors.push({ row: rowNumber, message: "Date is required." });
+          return null;
+        }
+        if (!Number.isFinite(amount) || amount === 0) {
+          errors.push({ row: rowNumber, message: "Amount must be a non-zero number." });
+          return null;
+        }
+        if (!categoryValue.trim()) {
+          errors.push({ row: rowNumber, message: "Category is required." });
+          return null;
+        }
+
+        return {
+          date: date.toISOString(),
+          amount,
+          category: categoryValue.trim(),
+          vendor: vendorValue.trim(),
+          notes: notesValue.trim(),
+        };
+      })
+      .filter((transaction): transaction is TransactionPayload => Boolean(transaction));
+
+    if (errors.length || !transactions.length) {
+      setCsvErrors(errors.length ? errors : [{ row: 0, message: "No valid transactions found." }]);
+      return;
+    }
+
     try {
-      const response = await transactionsApi.importCsv(csvContent, mapping);
+      const response = await transactionsApi.bulk(transactions);
       setCsvErrors(response.errors);
       setToast({
-        title: "Import finished",
+        title: "Upload finished",
         message: `Imported: ${response.imported}. Failed: ${response.failed}.`,
         variant: response.failed ? "warning" : "success",
       });
@@ -603,7 +635,60 @@ export function TransactionsPage() {
         await loadTransactions();
       }
     } catch (err) {
-      setToast({ title: "Import failed", message: getApiErrorMessage(err), variant: "error" });
+      setToast({ title: "Upload failed", message: getApiErrorMessage(err), variant: "error" });
+    }
+  };
+
+  const openActionMenu = (transaction: Transaction) => {
+    setSelectedId(transaction.id);
+    setActionMenuId((current) => (current === transaction.id ? null : transaction.id));
+  };
+
+  const openEditFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    openEdit(transaction);
+  };
+
+  const openHistoryFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    setHistoryTransaction(transaction);
+  };
+
+  const openDeleteFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    setSelectedId(transaction.id);
+    setIsDeleteOpen(true);
+  };
+
+  const openAiReviewFromMenu = async (transaction: Transaction) => {
+    setActionMenuId(null);
+    try {
+      const suggestion = await transactionsApi.suggest({
+        amount: Number(transaction.amount),
+        vendor: transaction.vendor,
+        notes: transaction.notes,
+      });
+      setAiReview({ transaction, suggestion });
+    } catch (err) {
+      setToast({ title: "AI suggestion failed", message: getApiErrorMessage(err), variant: "warning" });
+    }
+  };
+
+  const applyAiReview = async () => {
+    if (!aiReview) return;
+    try {
+      await transactionsApi.correctCategory(aiReview.transaction.id, {
+        category: aiReview.suggestion.category,
+      });
+      setToast({
+        title: "Category updated",
+        message: `AI category ${aiReview.suggestion.category} was applied.`,
+        variant: "success",
+      });
+      setAiReview(null);
+      await loadTransactions();
+    } catch (err) {
+      setToast({ title: "Could not apply category", message: getApiErrorMessage(err), variant: "error" });
     }
   };
 
@@ -671,9 +756,7 @@ export function TransactionsPage() {
   );
 
   return (
-    <section
-      className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""}`}
-    >
+    <section className={styles.page}>
       {toast ? (
         <div className={styles.toastDock}>
           <Toast {...toast} onClose={() => setToast(null)} />
@@ -851,14 +934,7 @@ export function TransactionsPage() {
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className={selectedId === transaction.id ? styles.selectedRow : ""}
-                      onClick={() => {
-                        setSelectedId(transaction.id);
-                        setIsDetailsCollapsed(false);
-                      }}
-                    >
+                    <tr key={transaction.id}>
                       <td>
                         <input
                           checked={selectedTransactionIds.includes(transaction.id)}
@@ -874,7 +950,7 @@ export function TransactionsPage() {
                           <span className={styles.categoryIcon}>
                             <CategoryIcon category={transaction.category} />
                           </span>
-                          {transaction.category || "Uncategorized"}
+                          <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
                         </span>
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
@@ -885,12 +961,28 @@ export function TransactionsPage() {
                       </td>
                       <td>
                         <div className={styles.rowActions}>
-                          <button className={styles.editIcon} type="button" aria-label="Edit transaction" onClick={(event) => { event.stopPropagation(); openEdit(transaction); }}>
-                            <PencilIcon />
+                          <button
+                            className={styles.dotsButton}
+                            type="button"
+                            aria-expanded={actionMenuId === transaction.id}
+                            aria-label="Open transaction actions"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openActionMenu(transaction);
+                            }}
+                          >
+                            <span />
+                            <span />
+                            <span />
                           </button>
-                          <button type="button" aria-label="Delete transaction" className={styles.deleteIcon} onClick={(event) => { event.stopPropagation(); setSelectedId(transaction.id); setIsDeleteOpen(true); }}>
-                            <TrashIcon />
-                          </button>
+                          {actionMenuId === transaction.id ? (
+                            <div className={styles.actionMenu}>
+                              <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
+                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
+                              <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
+                              <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -934,68 +1026,6 @@ export function TransactionsPage() {
         </section>
       </main>
 
-      <aside className={`${styles.details} ${selected && !isDetailsCollapsed ? styles.detailsOpen : ""}`}>
-        {selected && !isDetailsCollapsed ? (
-          <>
-            <section className={styles.selectedSummary}>
-              <span className={styles.summaryVendorMark}>{selected.vendor.slice(0, 1) || "$"}</span>
-              <div>
-                <span className={styles.badge}>{selected.category}</span>
-                <h2>{selected.vendor || "Unknown"}</h2>
-                <strong className={Number(selected.amount) < 0 ? styles.expense : styles.income}>
-                  {toMoney(selected.amount)}
-                </strong>
-              </div>
-            </section>
-
-            <section className={styles.detailCard}>
-              <header className={styles.detailsHeader}>
-                <h2>Transaction Details</h2>
-                <button
-                  type="button"
-                  aria-label="Close transaction details"
-                  onClick={() => {
-                    setIsDetailsCollapsed(true);
-                    setSelectedId(null);
-                  }}
-                >
-                  &times;
-                </button>
-              </header>
-              <dl className={styles.detailList}>
-                <div><dt>Date</dt><dd>{formatDate(selected.date, true)}</dd></div>
-                <div><dt>Vendor</dt><dd>{selected.vendor || "Unknown"}</dd></div>
-                <div><dt>Category</dt><dd><span className={styles.badge}>{selected.category}</span></dd></div>
-                <div><dt>Notes</dt><dd>{selected.notes || "-"}</dd></div>
-                <div><dt>Created</dt><dd>{formatDate(selected.created_at, true)}</dd></div>
-                <div><dt>Updated</dt><dd>{formatDate(selected.updated_at, true)}</dd></div>
-              </dl>
-              <section className={styles.aiPanel}>
-                <h3>AI Categorization</h3>
-                <strong>{selected.ai_categorization?.category ?? "Pending"}</strong>
-                <span>Confidence: {selected.ai_categorization?.confidence ?? 0}%</span>
-              </section>
-            </section>
-
-            <section className={styles.historyCard}>
-              <div className={styles.history}>
-                <h3>Edit History</h3>
-                {selected.history.length ? selected.history.map((item) => (
-                  <article key={item.id}>
-                    <time>{formatDate(item.timestamp, true)}</time>
-                    <p>{item.event}</p>
-                  </article>
-                )) : <p>No edit history available</p>}
-              </div>
-              <div className={styles.detailActions}>
-                <Button variant="secondary" onClick={() => openEdit(selected)}>Edit Transaction</Button>
-                <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>Delete Transaction</Button>
-              </div>
-            </section>
-          </>
-        ) : null}
-      </aside>
-
       <Modal isOpen={isAddOpen} title="Add Transaction" onClose={() => setIsAddOpen(false)}>
         {renderModalForm("add")}
       </Modal>
@@ -1003,17 +1033,48 @@ export function TransactionsPage() {
         {renderModalForm("edit")}
       </Modal>
       <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
-        <p className={styles.confirmText}>Delete this transaction? This action cannot be undone.</p>
+        <p className={styles.confirmText}>Are you sure you want to delete this transaction?</p>
         <div className={styles.modalActions}>
           <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
           <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
         </div>
       </Modal>
       <Modal
+        isOpen={Boolean(historyTransaction)}
+        title="Edit History"
+        onClose={() => setHistoryTransaction(null)}
+      >
+        <div className={styles.history}>
+          {historyTransaction?.history.length ? historyTransaction.history.map((item) => (
+            <article key={item.id}>
+              <time>{formatDate(item.timestamp, true)}</time>
+              <p>{item.event}</p>
+            </article>
+          )) : <p>No edit history available.</p>}
+        </div>
+      </Modal>
+      <Modal
+        isOpen={Boolean(aiReview)}
+        title="AI category suggestion"
+        onClose={() => setAiReview(null)}
+      >
+        <div className={styles.aiSuggestion}>
+          <p>
+            AI suggests <strong>{aiReview?.suggestion.category}</strong> for this transaction.
+          </p>
+          <span>Confidence: {aiReview?.suggestion.confidence ?? 0}%</span>
+          {aiReview?.suggestion.rationale ? <small>{aiReview.suggestion.rationale}</small> : null}
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="secondary" onClick={() => setAiReview(null)}>Ignore</Button>
+          <Button onClick={() => void applyAiReview()}>Apply</Button>
+        </div>
+      </Modal>
+      <Modal
         bodyClassName={styles.importModalBody}
         className={styles.importModal}
         isOpen={isImportOpen}
-        title="Import Transactions"
+        title="Upload Transactions"
         onClose={closeImportModal}
       >
         <div className={styles.importFlow}>
@@ -1071,7 +1132,7 @@ export function TransactionsPage() {
               </div>
               <div className={styles.modalActions}>
                 <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
-                <Button onClick={() => void importCsv()}>Import Transactions</Button>
+                <Button onClick={() => void importCsv()}>Upload Transactions</Button>
               </div>
             </>
           ) : null}

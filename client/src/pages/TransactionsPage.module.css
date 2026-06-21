@@ -1,14 +1,14 @@
 .page {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
   align-items: start;
   transition: grid-template-columns 220ms ease;
 }
 
 .withDetails {
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .toastDock {
@@ -73,10 +73,15 @@
 }
 
 .filters {
-  position: sticky;
-  top: 4.75rem;
+  position: fixed;
+  top: 6.25rem;
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 70;
   display: grid;
   gap: 0.7rem;
+  width: min(25rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 7.5rem);
+  overflow: auto;
   padding: 0.75rem;
 }
 
@@ -289,9 +294,9 @@
 }
 
 .categoryCell {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
+  display: inline-grid;
+  width: 100%;
+  place-items: center;
   min-width: 0;
 }
 
@@ -372,7 +377,12 @@
 }
 
 .table th:nth-child(4) {
-  width: 22%;
+  width: 6.5rem;
+  text-align: center;
+}
+
+.table td:nth-child(4) {
+  text-align: center;
 }
 
 .table th:nth-child(5) {
@@ -393,7 +403,7 @@
 }
 
 .table tbody tr {
-  cursor: pointer;
+  cursor: default;
   transition:
     background 160ms ease,
     box-shadow 160ms ease;
@@ -458,6 +468,7 @@
 }
 
 .rowActions {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -481,6 +492,83 @@
     border-color 160ms ease,
     box-shadow 160ms ease,
     transform 160ms ease;
+}
+
+.dotsButton {
+  gap: 0.18rem;
+}
+
+.dotsButton span {
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 25;
+  display: grid;
+  min-width: 13rem;
+  overflow: hidden;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(7, 25, 20, 0.98);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.34);
+  padding: 0.35rem;
+}
+
+.actionMenu button {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mm-text-soft);
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.actionMenu button:hover {
+  background: rgba(var(--mm-accent-rgb), 0.1);
+  color: var(--mm-accent-soft);
+  transform: none;
+}
+
+.actionMenu .dangerAction {
+  color: var(--color-error);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.aiSuggestion {
+  display: grid;
+  gap: 0.6rem;
+  color: var(--mm-text-soft);
+}
+
+.aiSuggestion p {
+  margin: 0;
+}
+
+.aiSuggestion strong {
+  color: var(--mm-accent-soft);
+}
+
+.aiSuggestion small {
+  color: var(--mm-text-muted);
 }
 
 .rowActions button:hover,
@@ -894,13 +982,13 @@
 
   .filters {
     position: fixed;
-    top: 4.75rem;
-    right: 0;
-    bottom: 0;
-    z-index: 35;
-    width: min(100%, 24rem);
-    overflow: auto;
-    border-radius: 1rem 0 0 1rem;
+    top: 5.5rem;
+    right: 1rem;
+    bottom: auto;
+    z-index: 70;
+    width: min(24rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 7rem);
+    border-radius: var(--mm-radius-lg);
     box-shadow: -0.8rem 0 2rem rgba(0, 0, 0, 0.25);
   }
 }

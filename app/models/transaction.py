@@ -6,6 +6,8 @@ from sqlalchemy import (
     Numeric,
     DateTime,
     Boolean,
+    JSON,
+    Text,
     func,
 )
 from sqlalchemy.orm import relationship
@@ -20,10 +22,23 @@ class Transaction(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     amount = Column(Numeric(14, 2), nullable=False)
     description = Column(String, nullable=True)
+    vendor = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
     occurred_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
     is_transfer = Column(Boolean, default=False)
     # direction/type: 'income' or 'expense' (nullable for legacy entries)
     type = Column(String, nullable=True)
+    ai_category = Column(String, nullable=True)
+    ai_confidence = Column(Integer, nullable=True)
+    ai_provider = Column(String, nullable=True)
+    ai_rationale = Column(Text, nullable=True)
+    history = Column(JSON, nullable=True)
 
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
