@@ -255,17 +255,25 @@ class InMemoryTransactionRepository:
             if transaction_ids and transaction.id not in transaction_ids:
                 continue
 
-            recategorized = transaction.model_copy()
-            recategorized.ai_categorization = self._ai_category(
+            ai_suggestion = self._ai_category(
                 user_id,
-                recategorized.vendor,
-                recategorized.notes,
-                recategorized.amount,
+                transaction.vendor,
+                transaction.notes,
+                transaction.amount,
             )
-            recategorized.history = [
-                *transaction.history,
-                make_history_event("Transaction recategorized with AI"),
-            ]
+            recategorized = transaction.model_copy(
+                update={
+                    "category": ai_suggestion.category,
+                    "ai_categorization": ai_suggestion,
+                    "history": [
+                        *transaction.history,
+                        make_history_event(
+                            "Transaction recategorized with AI"
+                            f" to {ai_suggestion.category}"
+                        ),
+                    ],
+                }
+            )
 
             self._transactions[index] = recategorized
             updated_items.append(deepcopy(recategorized))

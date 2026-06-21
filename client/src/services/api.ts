@@ -16,6 +16,10 @@ const API_BASE_URL = (
   ""
 ).replace(/\/$/, "");
 
+function buildRequestUrl(endpoint: string, baseUrl: string) {
+  return baseUrl ? `${baseUrl}${endpoint}` : endpoint;
+}
+
 function normalizeError(status: number, fallback: string, details?: unknown): ApiError {
   if (status >= 500) {
     return {
@@ -106,21 +110,37 @@ export async function apiRequest<T>(
 
   const body = isJsonBody(options.body) ? JSON.stringify(options.body) : options.body;
 
-  let response: Response;
+  let response: Response | undefined;
+  const requestUrls = [
+    buildRequestUrl(endpoint, API_BASE_URL),
+    ...(API_BASE_URL ? [endpoint] : []),
+  ];
+
+  let lastError: unknown;
   try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-      body,
-    });
+    for (const url of requestUrls) {
+      try {
+        response = await fetch(url, {
+          ...options,
+          headers,
+          body,
+        });
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!response) {
+      throw lastError ?? new Error("Unable to reach MoneyMate API.");
+    }
   } catch (error) {
-    const baseInfo = API_BASE_URL || "(no API base URL configured)";
+    const message = import.meta.env.PROD && !API_BASE_URL
+      ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
+      : `Could not reach the MoneyMate API at ${API_BASE_URL || "the current origin"}. Check that the backend is running and that the URL is correct.`;
     throw {
       status: 0,
-      message:
-        !API_BASE_URL
-          ? "MoneyMate frontend is not configured with an API URL. Set VITE_API_URL in client/.env (or in your hosting env) to your backend URL."
-          : `Could not reach the MoneyMate API at ${baseInfo}. Check that the backend is running and that the URL is correct.`,
+      message,
       details: error,
     } satisfies ApiError;
   }
