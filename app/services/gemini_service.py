@@ -13,7 +13,10 @@ GEMINI_ENDPOINT = (
 
 CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
     "Food & Dining": {
-        "description": "Restaurants, cafes, coffee shops, takeout, delivery, snacks, meals, drinks, and food subscriptions.",
+        "description": (
+            "Restaurants, cafes, coffee shops, takeout, delivery, "
+            "snacks, meals, drinks, and food subscriptions."
+        ),
         "keywords": [
             "restaurant",
             "cafe",
@@ -35,7 +38,10 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Transport": {
-        "description": "Rideshares, taxis, public transit, parking, tolls, fuel, car washes, and vehicle-related travel costs.",
+        "description": (
+            "Rideshares, taxis, public transit, parking, tolls, "
+            "fuel, car washes, and vehicle-related travel costs."
+        ),
         "keywords": [
             "uber",
             "lyft",
@@ -55,7 +61,11 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Housing": {
-        "description": "Rent, mortgage, lease payments, property costs, repairs, maintenance, furniture for the home, and housing fees.",
+        "description": (
+            "Rent, mortgage, lease payments, property costs, "
+            "repairs, maintenance, furniture for the home, "
+            "and housing fees."
+        ),
         "keywords": [
             "rent",
             "mortgage",
@@ -69,7 +79,10 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Groceries": {
-        "description": "Supermarkets, grocery stores, fresh food markets, household food staples, and pantry shopping.",
+        "description": (
+            "Supermarkets, grocery stores, fresh food markets, "
+            "household food staples, and pantry shopping."
+        ),
         "keywords": [
             "grocery",
             "groceries",
@@ -83,7 +96,10 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Entertainment": {
-        "description": "Streaming, movies, concerts, events, games, hobbies, subscriptions for fun, and tickets.",
+        "description": (
+            "Streaming, movies, concerts, events, games, hobbies, "
+            "subscriptions for fun, and tickets."
+        ),
         "keywords": [
             "netflix",
             "spotify",
@@ -97,7 +113,11 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Shopping": {
-        "description": "Retail purchases, clothing, electronics, online shopping, Amazon, general stores, and non-essential consumer buys.",
+        "description": (
+            "Retail purchases, clothing, electronics, "
+            "online shopping, Amazon, general stores, "
+            "and non-essential consumer buys."
+        ),
         "keywords": [
             "amazon",
             "store",
@@ -112,7 +132,11 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Healthcare": {
-        "description": "Doctor visits, pharmacies, prescriptions, dental, vision, therapy, medical devices, and health insurance copays.",
+        "description": (
+            "Doctor visits, pharmacies, prescriptions, dental, "
+            "vision, therapy, medical devices, "
+            "and health insurance copays."
+        ),
         "keywords": [
             "pharmacy",
             "doctor",
@@ -127,7 +151,11 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Utilities": {
-        "description": "Electricity, water, gas bills, internet, phone service, trash, streaming infrastructure, and recurring household bills.",
+        "description": (
+            "Electricity, water, gas bills, internet, phone service, "
+            "trash, streaming infrastructure, "
+            "and recurring household bills."
+        ),
         "keywords": [
             "electric",
             "water",
@@ -141,7 +169,10 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Education": {
-        "description": "Tuition, school fees, courses, books, supplies, certifications, and learning platforms.",
+        "description": (
+            "Tuition, school fees, courses, books, supplies, "
+            "certifications, and learning platforms."
+        ),
         "keywords": [
             "tuition",
             "school",
@@ -156,7 +187,11 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Travel": {
-        "description": "Flights, hotels, Airbnbs, vacation rentals, travel agencies, luggage, and travel booking expenses.",
+        "description": (
+            "Flights, hotels, Airbnbs, vacation rentals, "
+            "travel agencies, luggage, "
+            "and travel booking expenses."
+        ),
         "keywords": [
             "flight",
             "hotel",
@@ -170,7 +205,10 @@ CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
         ],
     },
     "Personal Care": {
-        "description": "Haircuts, salons, spa visits, grooming, cosmetics, toiletries, and self-care products or services.",
+        "description": (
+            "Haircuts, salons, spa visits, grooming, cosmetics, "
+            "toiletries, and self-care products or services."
+        ),
         "keywords": [
             "salon",
             "spa",
@@ -239,7 +277,8 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
         "Classify this personal finance transaction into exactly one "
         "category. Return strict JSON with keys category, confidence, "
         "rationale.\n"
-        "Important: never choose Other if any specific category is a reasonable fit.\n"
+        "Important: never choose Other if any specific "
+        "category is a reasonable fit.\n"
         "Use Other only when the merchant, notes, and amount are unrelated "
         "to every listed category.\n\n"
         f"Vendor: {request_data.vendor}\n"
