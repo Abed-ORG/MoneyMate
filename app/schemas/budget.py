@@ -23,7 +23,8 @@ class BudgetCategory(BaseModel):
 
 
 class BudgetBase(BaseModel):
-    category_id: int
+    category_id: int | None = None
+    category_name: str | None = Field(None, min_length=1, max_length=80)
     amount: Decimal = Field(..., gt=0, max_digits=14, decimal_places=2)
     month: int = Field(..., ge=1, le=12)
     year: int = Field(..., ge=1900, le=2200)
@@ -35,6 +36,16 @@ class BudgetBase(BaseModel):
             raise ValueError("Amount must be greater than zero.")
         return value
 
+    @field_validator("category_name")
+    @classmethod
+    def normalize_category_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("Category name is required.")
+        return normalized
+
 
 class BudgetCreate(BudgetBase):
     pass
@@ -42,6 +53,7 @@ class BudgetCreate(BudgetBase):
 
 class BudgetUpdate(BaseModel):
     category_id: int | None = None
+    category_name: str | None = Field(None, min_length=1, max_length=80)
     amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
     month: int | None = Field(None, ge=1, le=12)
     year: int | None = Field(None, ge=1900, le=2200)
@@ -52,6 +64,16 @@ class BudgetUpdate(BaseModel):
         if value is not None and value <= 0:
             raise ValueError("Amount must be greater than zero.")
         return value
+
+    @field_validator("category_name")
+    @classmethod
+    def normalize_category_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("Category name is required.")
+        return normalized
 
 
 class BudgetRead(BaseModel):

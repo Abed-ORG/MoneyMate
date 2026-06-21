@@ -25,7 +25,8 @@ export type Budget = {
 };
 
 export type BudgetPayload = {
-  category_id: number;
+  category_id?: number;
+  category_name?: string;
   amount: number;
   month: number;
   year: number;

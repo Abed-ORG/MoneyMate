@@ -25,6 +25,7 @@ import styles from "./BudgetComponents.module.css";
 
 type BudgetFormState = {
   categoryId: string;
+  categoryName: string;
   amount: string;
   month: number;
   year: number;
@@ -449,6 +450,7 @@ export function BudgetFormModal({
 }: BudgetFormModalProps) {
   const [form, setForm] = useState<BudgetFormState>({
     categoryId: "",
+    categoryName: "",
     amount: "",
     month,
     year,
@@ -474,6 +476,7 @@ export function BudgetFormModal({
   useEffect(() => {
     setForm({
       categoryId: initialBudget ? String(initialBudget.category_id) : "",
+      categoryName: initialBudget ? initialBudget.category_name : "",
       amount: initialBudget ? String(initialBudget.budgeted_amount) : "",
       month,
       year,
@@ -486,17 +489,24 @@ export function BudgetFormModal({
     const nextErrors = validateForm(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    if (form.categoryId.startsWith("pending:")) {
-      setErrors({ categoryId: "Categories are still loading. Please refresh and try again." });
-      return;
-    }
     setIsSubmitting(true);
     try {
+      const payload =
+        form.categoryId.startsWith("pending:")
+          ? {
+              category_name: form.categoryId.replace("pending:", ""),
+              amount: Number(form.amount),
+              month: form.month,
+              year: form.year,
+            }
+          : {
+              category_id: Number(form.categoryId),
+              amount: Number(form.amount),
+              month: form.month,
+              year: form.year,
+            };
       await onSubmit({
-        category_id: Number(form.categoryId),
-        amount: Number(form.amount),
-        month: form.month,
-        year: form.year,
+        ...payload,
       });
     } finally {
       setIsSubmitting(false);
