@@ -607,8 +607,8 @@
   display: grid;
   min-height: 42rem;
   align-items: center;
-  grid-template-columns: minmax(14rem, 0.9fr) minmax(21rem, 1fr) minmax(15rem, 0.9fr);
-  gap: clamp(1.5rem, 3vw, 3.5rem);
+  grid-template-columns: minmax(18rem, 1fr) minmax(22rem, 1.1fr);
+  gap: clamp(2rem, 4vw, 4rem);
   scroll-margin-top: 1rem;
   padding: 5rem 0 6rem;
 }
@@ -619,7 +619,7 @@
 }
 
 .aboutSideLeft {
-  padding-bottom: 4rem;
+  padding: 0;
 }
 
 .aboutSideLeft h2 {
@@ -627,7 +627,7 @@
 }
 
 .aboutSideRight {
-  padding-top: 5rem;
+  padding: 0;
 }
 
 .aboutSideRight h3 {
@@ -676,7 +676,7 @@
 .aboutCenter {
   position: relative;
   display: grid;
-  min-height: 24rem;
+  min-height: 28rem;
   width: 100%;
   justify-items: center;
   place-items: center;
@@ -774,11 +774,40 @@
 .footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 2rem;
   border-top: 1px solid rgba(var(--mm-accent-rgb), 0.06);
   scroll-margin-top: 1rem;
   padding: 2.4rem 0 3rem;
+}
+
+.contactSection {
+  width: min(100% - 5rem, 90rem);
+  margin: 0 auto;
+  padding: 1rem 0 3rem;
+}
+
+.contactCopy {
+  max-width: 42rem;
+}
+
+.contactCopy h2 {
+  margin: 0.2rem 0 1rem;
+  font-size: clamp(2.1rem, 3.2vw, 3rem);
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+}
+
+.contactCopy p {
+  margin: 0;
+  color: rgba(235, 246, 238, 0.74);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.contactCopy a {
+  color: var(--mm-accent-soft);
+  font-weight: 800;
 }
 
 .footer .brand {
@@ -991,6 +1020,17 @@
 
   .growthSculpture {
     width: min(100%, 22rem);
+  }
+
+  .contactSection,
+  .featureSection,
+  .aboutSection,
+  .footer {
+    width: min(100% - 2rem, 46rem);
+  }
+
+  .contactCopy {
+    max-width: none;
   }
 }
 

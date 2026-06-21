@@ -776,9 +776,7 @@ export function TransactionsPage() {
 
   return (
     <section
-      className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""} ${
-        !isFiltersOpen ? styles.filtersClosed : ""
-      }`}
+      className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""}`}
     >
       {toast ? (
         <div className={styles.toastDock}>
@@ -793,7 +791,7 @@ export function TransactionsPage() {
           <p>Review, filter, import, and categorize every money movement in one place.</p>
         </div>
         <div className={styles.headerActions}>
-          <div className={styles.addTransactionAction}>
+          <div className={styles.primaryActions}>
             <Button
               onClick={() => {
                 setForm(emptyForm);
@@ -803,6 +801,13 @@ export function TransactionsPage() {
             >
               <AddIcon />
               Add Transaction
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!transactions.length}
+              onClick={() => void recategorizeCurrentPage()}
+            >
+              Re-categorize Page
             </Button>
           </div>
           <div className={styles.utilityActions}>
@@ -814,115 +819,99 @@ export function TransactionsPage() {
               <DownloadIcon />
               Template
             </Button>
-            <Button
-              variant="secondary"
-              disabled={!transactions.length}
-              onClick={() => void recategorizeCurrentPage()}
-            >
-              Re-categorize Page
+            <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+              <FilterIcon />
             </Button>
           </div>
         </div>
       </header>
 
       {isFiltersOpen ? (
-      <aside className={styles.filters}>
-        <div className={styles.panelHeader}>
-          <h2>Filters</h2>
-          <button
-            aria-label="Close filters"
-            className={styles.iconBox}
-            onClick={() => setIsFiltersOpen(false)}
-            type="button"
-          >
-            <FilterIcon />
-          </button>
-        </div>
-        <Input
-          aria-label="Search transactions by vendor"
-          placeholder="Search transactions..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-        />
-        <FormField label="Category">
-          <Select
-            aria-label="Filter by category"
-            value={filters.category ?? ""}
-            options={categoryOptions}
-            onValueChange={(value) => updateFilter({ category: value || undefined })}
-          />
-        </FormField>
-        <FormField label="Date Range">
-          <Select
-            aria-label="Date range preset"
-            value={datePreset}
-            options={[
-              { value: "custom", label: "Custom range" },
-              { value: "7", label: "Last 7 days" },
-              { value: "30", label: "Last 30 days" },
-            ]}
-            onValueChange={(value) => applyDatePreset(value as "7" | "30" | "custom")}
-          />
-        </FormField>
-        <div className={styles.splitFields}>
-          <Input type="date" value={filters.dateFrom ?? ""} onChange={(event) => updateFilter({ dateFrom: event.target.value || undefined })} />
-          <Input type="date" value={filters.dateTo ?? ""} onChange={(event) => updateFilter({ dateTo: event.target.value || undefined })} />
-        </div>
-        <FormField label="Amount Range">
-          <div className={styles.splitFields}>
-            <Input placeholder="Min" value={filters.amountMin ?? ""} onChange={(event) => updateFilter({ amountMin: event.target.value || undefined })} />
-            <Input placeholder="Max" value={filters.amountMax ?? ""} onChange={(event) => updateFilter({ amountMax: event.target.value || undefined })} />
+        <aside className={styles.filters} aria-label="Transaction filters">
+          <div className={styles.panelHeader}>
+            <h2>Filters</h2>
+            <button
+              aria-label="Close filters"
+              className={styles.iconBox}
+              onClick={() => setIsFiltersOpen(false)}
+              type="button"
+            >
+              <FilterIcon />
+            </button>
           </div>
-        </FormField>
-        <FormField label="Sort By">
-          <Select
-            aria-label="Sort transactions"
-            value={`${filters.sortBy}:${filters.sortDir}`}
-            options={[
-              { value: "date:desc", label: "Newest First" },
-              { value: "date:asc", label: "Oldest First" },
-              { value: "amount:desc", label: "Amount High to Low" },
-              { value: "amount:asc", label: "Amount Low to High" },
-              { value: "category:asc", label: "Category A to Z" },
-            ]}
-            onValueChange={(value) => {
-              const [sortBy, sortDir] = value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
-              updateFilter({ sortBy, sortDir });
-            }}
+          <Input
+            aria-label="Search transactions by vendor"
+            placeholder="Search transactions..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
-        </FormField>
-        <div className={styles.filterActions}>
-          <Button variant="secondary" onClick={() => updateFilter({})}>
-            <FilterIcon />
-            Filter
-          </Button>
-          <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
-            Clear
-          </Button>
-        </div>
+          <FormField label="Category">
+            <Select
+              aria-label="Filter by category"
+              value={filters.category ?? ""}
+              options={categoryOptions}
+              onValueChange={(value) => updateFilter({ category: value || undefined })}
+            />
+          </FormField>
+          <FormField label="Date Range">
+            <Select
+              aria-label="Date range preset"
+              value={datePreset}
+              options={[
+                { value: "custom", label: "Custom range" },
+                { value: "7", label: "Last 7 days" },
+                { value: "30", label: "Last 30 days" },
+              ]}
+              onValueChange={(value) => applyDatePreset(value as "7" | "30" | "custom")}
+            />
+          </FormField>
+          <div className={styles.splitFields}>
+            <Input type="date" value={filters.dateFrom ?? ""} onChange={(event) => updateFilter({ dateFrom: event.target.value || undefined })} />
+            <Input type="date" value={filters.dateTo ?? ""} onChange={(event) => updateFilter({ dateTo: event.target.value || undefined })} />
+          </div>
+          <FormField label="Amount Range">
+            <div className={styles.splitFields}>
+              <Input placeholder="Min" value={filters.amountMin ?? ""} onChange={(event) => updateFilter({ amountMin: event.target.value || undefined })} />
+              <Input placeholder="Max" value={filters.amountMax ?? ""} onChange={(event) => updateFilter({ amountMax: event.target.value || undefined })} />
+            </div>
+          </FormField>
+          <FormField label="Sort By">
+            <Select
+              aria-label="Sort transactions"
+              value={`${filters.sortBy}:${filters.sortDir}`}
+              options={[
+                { value: "date:desc", label: "Newest First" },
+                { value: "date:asc", label: "Oldest First" },
+                { value: "amount:desc", label: "Amount High to Low" },
+                { value: "amount:asc", label: "Amount Low to High" },
+                { value: "category:asc", label: "Category A to Z" },
+              ]}
+              onValueChange={(value) => {
+                const [sortBy, sortDir] = value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
+                updateFilter({ sortBy, sortDir });
+              }}
+            />
+          </FormField>
+          <div className={styles.filterActions}>
+            <Button variant="secondary" onClick={() => updateFilter({})}>
+              Reset Filters
+            </Button>
+            <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
+              Clear
+            </Button>
+          </div>
 
-        <section className={styles.stats}>
-          <h3>Quick Stats</h3>
-          <strong>{total}</strong>
-          <span>Transactions</span>
-          <strong className={styles.expense}>{toMoney(expenses)}</strong>
-          <span>Total Expenses</span>
-          <strong className={styles.income}>{toMoney(income)}</strong>
-          <span>Total Income</span>
-        </section>
-      </aside>
-      ) : (
-        <aside className={styles.filterRail} aria-label="Transaction filters">
-          <button
-            aria-label="Open filters"
-            className={styles.filterRailButton}
-            onClick={() => setIsFiltersOpen(true)}
-            type="button"
-          >
-            <FilterIcon />
-          </button>
+          <section className={styles.stats}>
+            <h3>Quick Stats</h3>
+            <strong>{total}</strong>
+            <span>Transactions</span>
+            <strong className={styles.expense}>{toMoney(expenses)}</strong>
+            <span>Total Expenses</span>
+            <strong className={styles.income}>{toMoney(income)}</strong>
+            <span>Total Income</span>
+          </section>
         </aside>
-      )}
+      ) : null}
 
       <main className={styles.content}>
         <section className={styles.tablePanel}>
@@ -949,10 +938,6 @@ export function TransactionsPage() {
                   onClick={() => void recategorizeSelected()}
                 >
                   Re-categorize Selected
-                </Button>
-                <Button variant="secondary" onClick={() => setIsFiltersOpen((current) => !current)}>
-                  <FilterIcon />
-                  Filters
                 </Button>
               </div>
             </div>
