@@ -267,7 +267,8 @@ class InMemoryTransactionRepository:
             recategorized.history = [
                 *transaction.history,
                 make_history_event(
-                    f"Transaction recategorized with AI to {recategorized.category}"
+                    "Transaction recategorized with AI"
+                    f" to {recategorized.category}"
                 ),
             ]
 
