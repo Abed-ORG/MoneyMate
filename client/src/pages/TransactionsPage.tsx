@@ -1052,7 +1052,6 @@ export function TransactionsPage() {
         {selected && !isDetailsCollapsed ? (
           <>
             <section className={styles.selectedSummary}>
-              <span className={styles.summaryVendorMark}>{selected.vendor.slice(0, 1) || "$"}</span>
               <div>
                 <span className={styles.badge}>{selected.category}</span>
                 <h2>{selected.vendor || "Unknown"}</h2>
