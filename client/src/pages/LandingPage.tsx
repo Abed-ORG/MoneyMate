@@ -220,17 +220,6 @@ export function LandingPage() {
       </section>
 
       <section className={styles.aboutSection} id="about">
-        <div className={`${styles.aboutSide} ${styles.aboutSideLeft}`}>
-          <p className={styles.sectionLabel}>About MoneyMate</p>
-          <h2>
-            Your financial life, made <span>clearer.</span>
-          </h2>
-          <p className={styles.aboutDescription}>
-            MoneyMate is a personal finance platform built to help you
-            understand, manage, and improve your spending habits.
-          </p>
-        </div>
-
         <div className={styles.aboutCenter} aria-hidden="true">
           <span className={styles.aboutOrbital} />
           <span className={styles.aboutOrbitalInner} />
@@ -241,11 +230,13 @@ export function LandingPage() {
         </div>
 
         <div className={`${styles.aboutSide} ${styles.aboutSideRight}`}>
-          <p className={styles.sectionLabel}>One clear overview</p>
-          <h3>See the whole picture. Make the next move.</h3>
+          <p className={styles.sectionLabel}>About MoneyMate</p>
+          <h2>
+            Your financial life, made <span>clearer.</span>
+          </h2>
           <p className={styles.aboutDescription}>
-            Income, expenses, budgets, and financial goals come together in one
-            visual space, making money tracking simple and stress-free.
+            MoneyMate is a personal finance platform built to help you
+            understand, manage, and improve your spending habits.
           </p>
           <div className={styles.aboutHighlights}>
             <span>Understand where your money goes</span>
@@ -292,20 +283,27 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className={styles.footer} id="contact">
+      <section className={styles.contactSection} id="contact">
+        <div className={styles.contactCopy}>
+          <p className={styles.sectionLabel}>Contact</p>
+          <h2>Need a hand? Let’s talk.</h2>
+          <p>
+            If you have any questions, don&apos;t hesitate. Email us at{" "}
+            <a href="mailto:moneymate.app.mail@gmail.com">
+              moneymate.app.mail@gmail.com
+            </a>
+            .
+          </p>
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
         <Link className={styles.brand} to="/" aria-label="MoneyMate home">
           <img src="/moneymate-logo.png" alt="" />
           <span>
             Money<span>Mate</span>
           </span>
         </Link>
-        <p>
-          Questions? Email us at{' '}
-          <a href="mailto:moneymate.app.mail@gmail.com">
-            moneymate.app.mail@gmail.com
-          </a>
-          .
-        </p>
       </footer>
     </main>
   );
