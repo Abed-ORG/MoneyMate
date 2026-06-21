@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { Button, Card, FormField, Input, Modal, Select } from "../index";
+import { transactionCategories } from "../../constants/categories";
 import { getCategoryIcon } from "../../constants/categories";
 import type {
   BudgetAlert,
@@ -24,6 +25,7 @@ import styles from "./BudgetComponents.module.css";
 
 type BudgetFormState = {
   categoryId: string;
+  categoryName: string;
   amount: string;
   month: number;
   year: number;
@@ -448,23 +450,33 @@ export function BudgetFormModal({
 }: BudgetFormModalProps) {
   const [form, setForm] = useState<BudgetFormState>({
     categoryId: "",
+    categoryName: "",
     amount: "",
     month,
     year,
   });
   const [errors, setErrors] = useState<BudgetFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const categoryOptions = useMemo(
-    () => [
+  const categoryOptions = useMemo(() => {
+    const realCategories = categories.map((category) => ({
+      value: String(category.id),
+      label: category.name,
+    }));
+    if (realCategories.length) {
+      return [{ value: "", label: "Select category" }, ...realCategories];
+    }
+    return [
       { value: "", label: "Select category" },
-      ...categories.map((category) => ({ value: String(category.id), label: category.name })),
-    ],
-    [categories],
-  );
+      ...transactionCategories
+        .filter((name) => name !== "Income")
+        .map((name) => ({ value: `pending:${name}`, label: name })),
+    ];
+  }, [categories]);
 
   useEffect(() => {
     setForm({
       categoryId: initialBudget ? String(initialBudget.category_id) : "",
+      categoryName: initialBudget ? initialBudget.category_name : "",
       amount: initialBudget ? String(initialBudget.budgeted_amount) : "",
       month,
       year,
@@ -479,11 +491,22 @@ export function BudgetFormModal({
     if (Object.keys(nextErrors).length) return;
     setIsSubmitting(true);
     try {
+      const payload =
+        form.categoryId.startsWith("pending:")
+          ? {
+              category_name: form.categoryId.replace("pending:", ""),
+              amount: Number(form.amount),
+              month: form.month,
+              year: form.year,
+            }
+          : {
+              category_id: Number(form.categoryId),
+              amount: Number(form.amount),
+              month: form.month,
+              year: form.year,
+            };
       await onSubmit({
-        category_id: Number(form.categoryId),
-        amount: Number(form.amount),
-        month: form.month,
-        year: form.year,
+        ...payload,
       });
     } finally {
       setIsSubmitting(false);
@@ -502,6 +525,16 @@ export function BudgetFormModal({
             onValueChange={(value) => setForm((current) => ({ ...current, categoryId: value }))}
           />
         </FormField>
+        {!categories.length ? (
+          <p className={styles.emptyText}>
+            Budget categories are loading. This picker needs real backend category IDs before you can create a budget.
+          </p>
+        ) : null}
+        {!categories.length ? (
+          <p className={styles.emptyText}>
+            If the list stays empty after a refresh, the /budgets/categories API is not returning the expected data for your session yet.
+          </p>
+        ) : null}
         <div className={styles.formSplit}>
           <FormField label="Month" error={errors.month}>
             <Select

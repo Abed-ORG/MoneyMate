@@ -363,3 +363,30 @@ def test_budget_history_and_threshold_boundaries(monkeypatch):
     finally:
         app.dependency_overrides.clear()
         session.close()
+
+
+def test_budget_create_can_resolve_category_name_fallback(monkeypatch):
+    client, session = make_client(monkeypatch)
+    try:
+        _, headers = create_account(
+            session,
+            client,
+            "fallback@example.com",
+            [],
+        )
+
+        created = client.post(
+            "/budgets",
+            headers=headers,
+            json={
+                "category_name": "Food & Dining",
+                "amount": 150,
+                "month": 6,
+                "year": 2026,
+            },
+        )
+        assert created.status_code == 201
+        assert created.json()["category_name"] == "Food & Dining"
+    finally:
+        app.dependency_overrides.clear()
+        session.close()

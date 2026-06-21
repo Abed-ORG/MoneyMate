@@ -52,6 +52,7 @@ export function BudgetsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetSummary | null>(null);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
@@ -60,16 +61,41 @@ export function BudgetsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [categoryResponse, overviewResponse, historyResponse] = await Promise.all([
+      const [categoryResult, overviewResult, historyResult] = await Promise.allSettled([
         budgetsApi.categories(),
         budgetsApi.overview(month, year),
         budgetsApi.history(),
       ]);
-      setCategories(categoryResponse);
-      setOverview(overviewResponse);
-      setHistory(historyResponse.months);
-    } catch (err) {
-      setError(getApiErrorMessage(err));
+
+      if (categoryResult.status === "fulfilled") {
+        setCategories(categoryResult.value);
+        setCategoriesLoaded(true);
+      } else {
+        setCategories([]);
+        setCategoriesLoaded(false);
+      }
+
+      if (overviewResult.status === "fulfilled") {
+        setOverview(overviewResult.value);
+      } else {
+        setOverview(null);
+      }
+
+      if (historyResult.status === "fulfilled") {
+        setHistory(historyResult.value.months);
+      } else {
+        setHistory([]);
+      }
+
+      const failedSections = [
+        categoryResult.status === "rejected" ? `categories: ${getApiErrorMessage(categoryResult.reason)}` : null,
+        overviewResult.status === "rejected" ? `overview: ${getApiErrorMessage(overviewResult.reason)}` : null,
+        historyResult.status === "rejected" ? `history: ${getApiErrorMessage(historyResult.reason)}` : null,
+      ].filter((value): value is string => Boolean(value));
+
+      if (failedSections.length) {
+        setError(`Budget data loaded partially. Failed to load ${failedSections.join("; ")}.`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +201,6 @@ export function BudgetsPage() {
   };
 
   const hasBudgets = Boolean(overview?.budgets.length);
-
   return (
     <section className={styles.page}>
       {toast ? (
