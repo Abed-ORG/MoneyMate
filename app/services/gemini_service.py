@@ -11,6 +11,180 @@ GEMINI_ENDPOINT = (
     "gemini-1.5-flash:generateContent"
 )
 
+CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
+    "Food & Dining": {
+        "description": "Restaurants, cafes, coffee shops, takeout, delivery, snacks, meals, drinks, and food subscriptions.",
+        "keywords": [
+            "restaurant",
+            "cafe",
+            "coffee",
+            "starbucks",
+            "dining",
+            "meal",
+            "lunch",
+            "dinner",
+            "breakfast",
+            "takeout",
+            "delivery",
+            "ubereats",
+            "doordash",
+            "grubhub",
+            "drink",
+            "latte",
+            "smoothie",
+        ],
+    },
+    "Transport": {
+        "description": "Rideshares, taxis, public transit, parking, tolls, fuel, car washes, and vehicle-related travel costs.",
+        "keywords": [
+            "uber",
+            "lyft",
+            "taxi",
+            "bus",
+            "train",
+            "metro",
+            "subway",
+            "parking",
+            "toll",
+            "fuel",
+            "gas",
+            "shell",
+            "chevron",
+            "exxon",
+            "ride",
+        ],
+    },
+    "Housing": {
+        "description": "Rent, mortgage, lease payments, property costs, repairs, maintenance, furniture for the home, and housing fees.",
+        "keywords": [
+            "rent",
+            "mortgage",
+            "lease",
+            "apartment",
+            "condo",
+            "hoa",
+            "property",
+            "maintenance",
+            "repair",
+        ],
+    },
+    "Groceries": {
+        "description": "Supermarkets, grocery stores, fresh food markets, household food staples, and pantry shopping.",
+        "keywords": [
+            "grocery",
+            "groceries",
+            "supermarket",
+            "market",
+            "whole foods",
+            "aldi",
+            "walmart",
+            "costco",
+            "safeway",
+        ],
+    },
+    "Entertainment": {
+        "description": "Streaming, movies, concerts, events, games, hobbies, subscriptions for fun, and tickets.",
+        "keywords": [
+            "netflix",
+            "spotify",
+            "movie",
+            "cinema",
+            "concert",
+            "game",
+            "ticket",
+            "theater",
+            "show",
+        ],
+    },
+    "Shopping": {
+        "description": "Retail purchases, clothing, electronics, online shopping, Amazon, general stores, and non-essential consumer buys.",
+        "keywords": [
+            "amazon",
+            "store",
+            "shop",
+            "mall",
+            "retail",
+            "target",
+            "best buy",
+            "walmart",
+            "clothing",
+            "shoes",
+        ],
+    },
+    "Healthcare": {
+        "description": "Doctor visits, pharmacies, prescriptions, dental, vision, therapy, medical devices, and health insurance copays.",
+        "keywords": [
+            "pharmacy",
+            "doctor",
+            "medical",
+            "hospital",
+            "clinic",
+            "dental",
+            "vision",
+            "prescription",
+            "therapy",
+            "health",
+        ],
+    },
+    "Utilities": {
+        "description": "Electricity, water, gas bills, internet, phone service, trash, streaming infrastructure, and recurring household bills.",
+        "keywords": [
+            "electric",
+            "water",
+            "internet",
+            "utility",
+            "phone",
+            "wifi",
+            "cable",
+            "trash",
+            "sewer",
+        ],
+    },
+    "Education": {
+        "description": "Tuition, school fees, courses, books, supplies, certifications, and learning platforms.",
+        "keywords": [
+            "tuition",
+            "school",
+            "course",
+            "book",
+            "books",
+            "class",
+            "education",
+            "udemy",
+            "coursera",
+            "school supplies",
+        ],
+    },
+    "Travel": {
+        "description": "Flights, hotels, Airbnbs, vacation rentals, travel agencies, luggage, and travel booking expenses.",
+        "keywords": [
+            "flight",
+            "hotel",
+            "airbnb",
+            "booking",
+            "travel",
+            "trip",
+            "vacation",
+            "luggage",
+            "airline",
+        ],
+    },
+    "Personal Care": {
+        "description": "Haircuts, salons, spa visits, grooming, cosmetics, toiletries, and self-care products or services.",
+        "keywords": [
+            "salon",
+            "spa",
+            "haircut",
+            "barber",
+            "beauty",
+            "grooming",
+            "toiletries",
+            "cosmetics",
+            "skincare",
+        ],
+    },
+}
+
 
 @dataclass
 class GeminiRequest:
@@ -25,17 +199,8 @@ def _fallback_suggestion(
     vendor: str, notes: str, amount: str
 ) -> AiCategorization:
     text = f"{vendor} {notes}".lower()
-    rules = [
-        ("Food & Dining", ("coffee", "restaurant", "meal", "food", "dining")),
-        ("Transport", ("uber", "taxi", "bus", "fuel", "gas", "ride")),
-        ("Groceries", ("grocery", "market", "supermarket", "whole foods")),
-        ("Shopping", ("amazon", "store", "shop", "mall")),
-        ("Entertainment", ("netflix", "spotify", "movie", "ticket", "cinema")),
-        ("Housing", ("rent", "mortgage", "lease")),
-        ("Utilities", ("electric", "water", "internet", "utility")),
-        ("Income", ("salary", "payroll", "invoice", "refund")),
-    ]
-    for category, keywords in rules:
+    for category, details in CATEGORY_CONTEXT.items():
+        keywords = details["keywords"]
         if any(keyword in text for keyword in keywords):
             return AiCategorization(
                 category=category,
@@ -65,14 +230,24 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
             request_data.amount,
         )
 
+    category_guidance = "\n".join(
+        f"- {name}: {details['description']}"
+        for name, details in CATEGORY_CONTEXT.items()
+        if name in request_data.category_names
+    )
     prompt = (
         "Classify this personal finance transaction into exactly one "
         "category. Return strict JSON with keys category, confidence, "
-        "rationale.\n\n"
+        "rationale.\n"
+        "Important: never choose Other if any specific category is a reasonable fit.\n"
+        "Use Other only when the merchant, notes, and amount are unrelated "
+        "to every listed category.\n\n"
         f"Vendor: {request_data.vendor}\n"
         f"Notes: {request_data.notes}\n"
         f"Amount: {request_data.amount}\n"
         f"Allowed categories: {', '.join(request_data.category_names)}\n"
+        "Category guidance:\n"
+        f"{category_guidance}\n"
         f"Past user corrections: "
         f"{', '.join(request_data.correction_history) or 'none'}\n"
     )
@@ -109,8 +284,19 @@ def suggest_category(request_data: GeminiRequest) -> AiCategorization:
         category = str(data.get("category", "Other")).strip() or "Other"
         confidence = int(data.get("confidence", 70))
         rationale = str(data.get("rationale", "")).strip()
+        fallback = _fallback_suggestion(
+            request_data.vendor,
+            request_data.notes,
+            request_data.amount,
+        )
         if category not in request_data.category_names:
-            category = "Other"
+            category = fallback.category
+            confidence = max(confidence, fallback.confidence)
+            rationale = rationale or fallback.rationale
+        elif category == "Other" and fallback.category != "Other":
+            category = fallback.category
+            confidence = max(confidence, fallback.confidence)
+            rationale = fallback.rationale
         return AiCategorization(
             category=category,
             confidence=max(0, min(100, confidence)),
