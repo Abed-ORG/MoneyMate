@@ -332,18 +332,58 @@
 .tableHeader {
   border-bottom: 1px solid var(--mm-border);
   padding: 0.75rem 0.9rem;
-}
-
-.bulkBar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 1rem;
   align-items: center;
-  margin: 0.65rem 0.9rem 0;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-md);
-  background: rgba(7, 25, 20, 0.55);
+}
+
+.tableSubtitle {
+  margin: 0.35rem 0 0;
+  color: var(--mm-text-muted);
+  font-size: 0.95rem;
+}
+
+.tableActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: end;
+}
+
+.tableActionButtons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.selectionSummary {
+  color: var(--mm-text-soft);
+  min-width: 10rem;
+  text-align: right;
+}
+
+.categoryCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.categoryIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid rgba(248, 255, 249, 0.14);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
+    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
 .bulkActions {
