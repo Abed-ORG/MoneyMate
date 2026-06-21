@@ -256,15 +256,19 @@ class InMemoryTransactionRepository:
                 continue
 
             recategorized = transaction.model_copy()
-            recategorized.ai_categorization = self._ai_category(
+            ai_suggestion = self._ai_category(
                 user_id,
                 recategorized.vendor,
                 recategorized.notes,
                 recategorized.amount,
             )
+            recategorized.category = ai_suggestion.category
+            recategorized.ai_categorization = ai_suggestion
             recategorized.history = [
                 *transaction.history,
-                make_history_event("Transaction recategorized with AI"),
+                make_history_event(
+                    f"Transaction recategorized with AI to {recategorized.category}"
+                ),
             ]
 
             self._transactions[index] = recategorized
