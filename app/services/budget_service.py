@@ -99,6 +99,26 @@ def category_meta(name: str) -> dict[str, str | None]:
     return CATEGORY_META.get(name, CATEGORY_META["Other"])
 
 
+def resolve_category(
+    db: Session,
+    user_id: int,
+    category_id: int | None,
+    category_name: str | None,
+) -> Category:
+    if category_id is not None:
+        return get_category(db, user_id, category_id)
+
+    if not category_name:
+        raise InvalidBudgetCategoryError
+
+    normalized_name = normalized_category(category_name)
+    for category in ensure_budget_categories(db, user_id):
+        if normalized_category(category.name) == normalized_name:
+            return category
+
+    raise InvalidBudgetCategoryError
+
+
 def get_progress_state(usage_percentage: Decimal) -> ProgressState:
     if usage_percentage < Decimal("50"):
         return "green"
@@ -248,15 +268,20 @@ def create_budget(
     user_id: int,
     payload: BudgetCreate,
 ) -> BudgetRead:
-    get_category(db, user_id, payload.category_id)
+    category = resolve_category(
+        db,
+        user_id,
+        payload.category_id,
+        payload.category_name,
+    )
     if find_duplicate_budget(
-        db, user_id, payload.category_id, payload.month, payload.year
+        db, user_id, category.id, payload.month, payload.year
     ):
         raise BudgetAlreadyExistsError
 
     budget = Budget(
         user_id=user_id,
-        category_id=payload.category_id,
+        category_id=category.id,
         amount=quantize_money(payload.amount),
         month=payload.month,
         year=payload.year,
@@ -317,11 +342,18 @@ def update_budget(
     budget = get_budget(db, user_id, budget_id)
     values = payload.model_dump(exclude_unset=True)
     next_category_id = values.get("category_id", budget.category_id)
+    next_category_name = values.get("category_name")
     next_month = values.get("month", budget.month)
     next_year = values.get("year", budget.year)
 
-    if "category_id" in values:
-        get_category(db, user_id, next_category_id)
+    if "category_id" in values or "category_name" in values:
+        category = resolve_category(
+            db,
+            user_id,
+            next_category_id,
+            next_category_name,
+        )
+        next_category_id = category.id
     if find_duplicate_budget(
         db,
         user_id,
@@ -333,11 +365,15 @@ def update_budget(
         raise BudgetAlreadyExistsError
 
     for field, value in values.items():
+        if field == "category_name":
+            continue
         setattr(
             budget,
             field,
             quantize_money(value) if field == "amount" else value,
         )
+    if "category_id" in values or "category_name" in values:
+        budget.category_id = next_category_id
     try:
         db.commit()
     except IntegrityError as exc:
