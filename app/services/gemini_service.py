@@ -260,7 +260,11 @@ def _fallback_suggestion(
 
     for alias, category in COMMON_ALIASES.items():
         alias_compact = re.sub(r"[^a-z0-9]+", "", alias.lower())
-        if alias in text or alias_compact == compact_text or alias_compact in compact_text:
+        if (
+            alias in text
+            or alias_compact == compact_text
+            or alias_compact in compact_text
+        ):
             return AiCategorization(
                 category=category,
                 confidence=96,
@@ -277,7 +281,10 @@ def _fallback_suggestion(
                 keyword in text
                 or keyword_compact in compact_text
                 or compact_text
-                and SequenceMatcher(None, compact_text, keyword_compact).ratio() >= 0.78
+                and (
+                    SequenceMatcher(None, compact_text, keyword_compact)
+                    .ratio() >= 0.78
+                )
             ):
                 matched_keyword = keyword
                 break
