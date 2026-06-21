@@ -455,26 +455,21 @@ export function BudgetFormModal({
   });
   const [errors, setErrors] = useState<BudgetFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const categoryOptions = useMemo(
-    () => {
-      const categoryMap = new Map(
-        categories.map((category) => [category.name, category]),
-      );
-      const fallbackCategories = transactionCategories
+  const categoryOptions = useMemo(() => {
+    const realCategories = categories.map((category) => ({
+      value: String(category.id),
+      label: category.name,
+    }));
+    if (realCategories.length) {
+      return [{ value: "", label: "Select category" }, ...realCategories];
+    }
+    return [
+      { value: "", label: "Select category" },
+      ...transactionCategories
         .filter((name) => name !== "Income")
-        .filter((name) => !categoryMap.has(name));
-      return [
-        { value: "", label: "Select category" },
-        ...categories.map((category) => ({ value: String(category.id), label: category.name })),
-        ...fallbackCategories.map((name) => ({
-          value: `fallback:${name}`,
-          label: name,
-          disabled: true,
-        })),
-      ];
-    },
-    [categories],
-  );
+        .map((name) => ({ value: `pending:${name}`, label: name })),
+    ];
+  }, [categories]);
 
   useEffect(() => {
     setForm({
@@ -491,6 +486,10 @@ export function BudgetFormModal({
     const nextErrors = validateForm(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
+    if (form.categoryId.startsWith("pending:")) {
+      setErrors({ categoryId: "Categories are still loading. Please refresh and try again." });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmit({
@@ -516,6 +515,16 @@ export function BudgetFormModal({
             onValueChange={(value) => setForm((current) => ({ ...current, categoryId: value }))}
           />
         </FormField>
+        {!categories.length ? (
+          <p className={styles.emptyText}>
+            Budget categories are loading. This picker needs real backend category IDs before you can create a budget.
+          </p>
+        ) : null}
+        {!categories.length ? (
+          <p className={styles.emptyText}>
+            If the list stays empty after a refresh, the /budgets/categories API is not returning the expected data for your session yet.
+          </p>
+        ) : null}
         <div className={styles.formSplit}>
           <FormField label="Month" error={errors.month}>
             <Select

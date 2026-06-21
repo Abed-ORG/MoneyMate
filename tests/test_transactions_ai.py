@@ -175,3 +175,43 @@ def test_heuristic_ai_matches_typos_and_aliases(monkeypatch):
     finally:
         app.dependency_overrides.clear()
         session.close()
+
+
+def test_bulk_recategorize_updates_transaction_category(monkeypatch):
+    client, session, headers = _make_client(monkeypatch)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    try:
+        created = client.post(
+            "/transactions",
+            headers=headers,
+            json={
+                "date": "2026-06-18T12:00:00Z",
+                "amount": -8.5,
+                "category": "Travel",
+                "vendor": "mcdo",
+                "notes": "food",
+            },
+        )
+        assert created.status_code == 201
+        transaction_id = created.json()["id"]
+        assert created.json()["category"] == "Travel"
+
+        recategorized = client.post(
+            "/transactions/bulk-recategorize",
+            headers=headers,
+            json={"transaction_ids": [transaction_id]},
+        )
+        assert recategorized.status_code == 200
+        assert recategorized.json()[0]["category"] == "Food & Dining"
+        assert (
+            recategorized.json()[0]["ai_categorization"]["category"]
+            == "Food & Dining"
+        )
+
+        refreshed = client.get("/transactions", headers=headers)
+        assert refreshed.status_code == 200
+        assert refreshed.json()["items"][0]["category"] == "Food & Dining"
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
