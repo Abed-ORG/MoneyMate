@@ -261,23 +261,17 @@
   white-space: nowrap;
 }
 
-.stickySave {
-  position: sticky;
-  top: 4.75rem;
-  z-index: 8;
+.savePanel {
   display: flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  justify-self: end;
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.14);
-  border-radius: var(--mm-radius-md);
-  background: rgba(1, 22, 17, 0.9);
-  padding: 0.45rem;
-  box-shadow:
-    0 0.8rem 2rem rgba(0, 0, 0, 0.24),
-    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.05);
-  backdrop-filter: blur(16px);
+  justify-content: flex-end;
+  width: min(100%, 70rem);
+  margin: 0 auto;
+  padding: 1rem 0 0.75rem;
+  border-top: 1px solid rgba(var(--mm-accent-rgb), 0.12);
+}
+
+.savePanel button {
+  min-width: 12rem;
 }
 
 .settingsLayout {
@@ -604,17 +598,6 @@
 
   .profileCard {
     border-radius: 1.15rem 1.15rem 0 0;
-  }
-
-  .stickySave {
-    position: fixed;
-    top: auto;
-    right: 1rem;
-    bottom: 0.75rem;
-    left: 1rem;
-    width: calc(100% - 2rem);
-    justify-self: stretch;
-    justify-content: flex-end;
   }
 
   .formGrid,

@@ -120,8 +120,15 @@ function SectionIcon({ name }: { name: SectionIconName }) {
     ),
     security: (
       <>
-        <path d="M12 3.5c2.7 2 5.4 2.6 7.5 3.2v5.1c0 4.4-2.7 7.2-7.5 9.2-4.8-2-7.5-4.8-7.5-9.2V6.7C6.6 6.1 9.3 5.5 12 3.5Z" />
-        <path d="M9.5 12.2 11.2 14l3.6-4" />
+        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+        <path d="M12 2v3" />
+        <path d="M12 19v3" />
+        <path d="M2 12h3" />
+        <path d="M19 12h3" />
+        <path d="M5.6 5.6 8 8" />
+        <path d="M16 16l2.4 2.4" />
+        <path d="M5.6 18.4 8 16" />
+        <path d="M16 8l2.4-2.4" />
       </>
     ),
   };
@@ -525,7 +532,7 @@ export function SettingsPage() {
         onSubmit={handleProfileSave}
       />
 
-      <div className={styles.stickySave}>
+      <div className={styles.savePanel}>
         <Button
           disabled={isSaving}
           form="profile-settings-form"
