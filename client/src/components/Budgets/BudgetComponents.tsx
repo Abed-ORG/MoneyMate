@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { Button, Card, FormField, Input, Modal, Select } from "../index";
+import { transactionCategories } from "../../constants/categories";
 import { getCategoryIcon } from "../../constants/categories";
 import type {
   BudgetAlert,
@@ -455,10 +456,23 @@ export function BudgetFormModal({
   const [errors, setErrors] = useState<BudgetFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const categoryOptions = useMemo(
-    () => [
-      { value: "", label: "Select category" },
-      ...categories.map((category) => ({ value: String(category.id), label: category.name })),
-    ],
+    () => {
+      const categoryMap = new Map(
+        categories.map((category) => [category.name, category]),
+      );
+      const fallbackCategories = transactionCategories
+        .filter((name) => name !== "Income")
+        .filter((name) => !categoryMap.has(name));
+      return [
+        { value: "", label: "Select category" },
+        ...categories.map((category) => ({ value: String(category.id), label: category.name })),
+        ...fallbackCategories.map((name) => ({
+          value: `fallback:${name}`,
+          label: name,
+          disabled: true,
+        })),
+      ];
+    },
     [categories],
   );
 
