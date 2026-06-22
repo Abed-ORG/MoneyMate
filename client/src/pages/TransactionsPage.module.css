@@ -71,6 +71,7 @@
 
 .filters {
   display: grid;
+  width: min(100%, 22rem);
   gap: 0.7rem;
   width: 100%;
 }
@@ -283,7 +284,7 @@
 
 .selectionSummary {
   color: var(--mm-text-soft);
-  min-width: 10rem;
+  font-size: 0.85rem;
   text-align: right;
 }
 
@@ -349,10 +350,14 @@
   scrollbar-width: none;
 }
 
+.tableWrap::-webkit-scrollbar {
+  display: none;
+}
+
 .table {
   width: 100%;
   min-width: 0;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
 }
 
@@ -379,7 +384,7 @@
 }
 
 .table th:nth-child(3) {
-  width: 18%;
+  width: auto;
 }
 
 .table th:nth-child(4) {
@@ -396,7 +401,7 @@
 }
 
 .table th:nth-child(6) {
-  width: 8.5rem;
+  width: 7rem;
 }
 
 .table th:nth-child(7) {
@@ -1133,7 +1138,11 @@
   .detailList dd {
     text-align: left;
   }
+<<<<<<< HEAD
 }
 
 
 
+=======
+}
+>>>>>>> 11a876f165c532db70bd01af857bdea338617eed
