@@ -3,17 +3,16 @@ import {
   type FormEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import {
   Button,
-  Card,
-  createEmptySavingsGoal,
+  CategoryIcon,
   FormField,
   Input,
-  SavingsGoalsEditor,
-  type SavingsGoalDraft,
+  Modal,
   Select,
   Toast,
 } from "../components";
@@ -46,10 +45,9 @@ type SettingsSection =
   | "personal"
   | "financial"
   | "categories"
-  | "goals"
   | "security";
 
-type SectionIconName = "profile" | "wallet" | "categories" | "goal" | "security";
+type SectionIconName = "profile" | "wallet" | "categories" | "security";
 
 const settingsSections: Array<{
   id: SettingsSection;
@@ -76,18 +74,46 @@ const settingsSections: Array<{
     icon: "categories",
   },
   {
-    id: "goals",
-    label: "Savings goals",
-    description: "Plan for important milestones",
-    icon: "goal",
-  },
-  {
     id: "security",
     label: "Security",
     description: "Update your account password",
     icon: "security",
   },
 ];
+
+const fallbackCurrencyCodes = [
+  "AED", "AFN", "ALL", "AMD", "ANG", "AOA", "ARS", "AUD", "AWG", "AZN",
+  "BAM", "BBD", "BDT", "BGN", "BHD", "BIF", "BMD", "BND", "BOB", "BRL",
+  "BSD", "BTN", "BWP", "BYN", "BZD", "CAD", "CDF", "CHF", "CLP", "CNY",
+  "COP", "CRC", "CUP", "CVE", "CZK", "DJF", "DKK", "DOP", "DZD", "EGP",
+  "ERN", "ETB", "EUR", "FJD", "FKP", "GBP", "GEL", "GHS", "GIP", "GMD",
+  "GNF", "GTQ", "GYD", "HKD", "HNL", "HTG", "HUF", "IDR", "ILS", "INR",
+  "IQD", "IRR", "ISK", "JMD", "JOD", "JPY", "KES", "KGS", "KHR", "KMF",
+  "KPW", "KRW", "KWD", "KYD", "KZT", "LAK", "LBP", "LKR", "LRD", "LSL",
+  "LYD", "MAD", "MDL", "MGA", "MKD", "MMK", "MNT", "MOP", "MRU", "MUR",
+  "MVR", "MWK", "MXN", "MYR", "MZN", "NAD", "NGN", "NIO", "NOK", "NPR",
+  "NZD", "OMR", "PAB", "PEN", "PGK", "PHP", "PKR", "PLN", "PYG", "QAR",
+  "RON", "RSD", "RUB", "RWF", "SAR", "SBD", "SCR", "SDG", "SEK", "SGD",
+  "SHP", "SLE", "SOS", "SRD", "SSP", "STN", "SYP", "SZL", "THB", "TJS",
+  "TMT", "TND", "TOP", "TRY", "TTD", "TWD", "TZS", "UAH", "UGX", "USD",
+  "UYU", "UZS", "VES", "VND", "VUV", "WST", "XAF", "XCD", "XOF", "XPF",
+  "YER", "ZAR", "ZMW", "ZWL",
+];
+
+function buildCurrencyOptions() {
+  const intlWithCurrencies = Intl as typeof Intl & {
+    supportedValuesOf?: (key: "currency") => string[];
+  };
+  const codes = intlWithCurrencies.supportedValuesOf?.("currency") ?? fallbackCurrencyCodes;
+  const displayNames = new Intl.DisplayNames(["en"], { type: "currency" });
+
+  return Array.from(new Set(codes))
+    .sort()
+    .map((code) => {
+      const name = displayNames.of(code) ?? code;
+      return { value: code, label: `${code} - ${name}` };
+    });
+}
 
 function SectionIcon({ name }: { name: SectionIconName }) {
   const paths: Record<SectionIconName, ReactNode> = {
@@ -109,13 +135,6 @@ function SectionIcon({ name }: { name: SectionIconName }) {
         <rect x="14" y="4" width="6" height="6" rx="1.5" />
         <rect x="4" y="14" width="6" height="6" rx="1.5" />
         <path d="m14.5 17 1.7 1.7 3.5-4" />
-      </>
-    ),
-    goal: (
-      <>
-        <circle cx="11" cy="13" r="7" />
-        <circle cx="11" cy="13" r="3" />
-        <path d="m13 11 7-7M16 4h4v4" />
       </>
     ),
     security: (
@@ -171,10 +190,10 @@ export function SettingsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#91d46a");
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoalDraft[]>([
-    createEmptySavingsGoal(),
-  ]);
+  const [newCategoryColor, setNewCategoryColor] = useState("#AAFC75");
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -199,15 +218,6 @@ export function SettingsPage() {
         new Set((profile?.spending_categories ?? []).map(normalizeCategory)),
       ),
     );
-    setSavingsGoals(
-      profile?.savings_goals.length
-        ? profile.savings_goals.map((goal) => ({
-            ...createEmptySavingsGoal(),
-            name: goal.name,
-            targetAmount: String(goal.target_amount),
-          }))
-        : [createEmptySavingsGoal()],
-    );
   }, [profile]);
 
   useEffect(() => {
@@ -223,29 +233,46 @@ export function SettingsPage() {
   };
 
   const addCustomCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    const created = await transactionsApi.createCategory({
-      name: newCategoryName.trim(),
-      color: newCategoryColor,
-      is_default: false,
-    });
-    setCustomCategories((current) => [...current, created]);
+    if (!newCategoryName.trim()) return false;
+    if (editingCategory) {
+      const updated = await transactionsApi.updateCategory(editingCategory.id, {
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        is_default: editingCategory.is_default,
+      });
+      setCustomCategories((current) => current.map((category) => (category.id === updated.id ? updated : category)));
+    } else {
+      const created = await transactionsApi.createCategory({
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        is_default: false,
+      });
+      setCustomCategories((current) => [...current, created]);
+    }
     setNewCategoryName("");
-    setNewCategoryColor("#91d46a");
+    setNewCategoryColor("#AAFC75");
+    setEditingCategory(null);
+    return true;
   };
 
-  const updateCustomCategory = async (category: Category) => {
-    const updated = await transactionsApi.updateCategory(category.id, {
-      name: category.name,
-      color: category.color,
-      is_default: category.is_default,
-    });
-    setCustomCategories((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+  const openCustomizeCategory = (category?: Category) => {
+    setEditingCategory(category ?? null);
+    setNewCategoryName(category?.name ?? "");
+    setNewCategoryColor(category?.color ?? "#AAFC75");
+    setIsCustomizeOpen(true);
+  };
+
+  const closeCustomizeCategory = () => {
+    setIsCustomizeOpen(false);
+    setEditingCategory(null);
+    setNewCategoryName("");
+    setNewCategoryColor("#AAFC75");
   };
 
   const deleteCustomCategory = async (id: string) => {
     await transactionsApi.deleteCategory(id);
     setCustomCategories((current) => current.filter((item) => item.id !== id));
+    setCategoryToDelete(null);
   };
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -294,13 +321,6 @@ export function SettingsPage() {
 
   const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const incompleteGoal = savingsGoals.find((goal) => {
-      const hasName = Boolean(goal.name.trim());
-      const hasAmount = Boolean(goal.targetAmount.trim());
-      const amount = Number(goal.targetAmount);
-      const validAmount = Number.isFinite(amount) && amount > 0;
-      return (hasName || hasAmount) && (!hasName || !validAmount);
-    });
 
     if (!fullName.trim() || !email.trim()) {
       setActiveSection("personal");
@@ -333,16 +353,6 @@ export function SettingsPage() {
       });
       return;
     }
-    if (incompleteGoal) {
-      setActiveSection("goals");
-      setNotice({
-        title: "Profile not saved",
-        message: "Enter both a savings goal name and a valid target amount.",
-        variant: "error",
-      });
-      return;
-    }
-
     setIsSaving(true);
     try {
       await api.put<AuthUser>("/profile/account", {
@@ -353,12 +363,7 @@ export function SettingsPage() {
         monthly_income: Number(monthlyIncome),
         currency,
         spending_categories: selectedCategories,
-        savings_goals: savingsGoals
-          .filter((goal) => goal.name.trim() && Number(goal.targetAmount) > 0)
-          .map((goal) => ({
-            name: goal.name.trim(),
-            target_amount: Number(goal.targetAmount),
-          })),
+        savings_goals: profile?.savings_goals ?? [],
       });
 
       if (user?.id && avatarPreview !== savedAvatar) {
@@ -429,6 +434,9 @@ export function SettingsPage() {
   const activeSectionDetails = settingsSections.find(
     (section) => section.id === activeSection,
   );
+  const editableCategories = customCategories.filter((category) => !category.is_default);
+  const currencyOptions = useMemo(buildCurrencyOptions, []);
+  const showProfileSave = activeSection !== "security";
 
   return (
     <div className={styles.page}>
@@ -519,7 +527,6 @@ export function SettingsPage() {
               <SectionIcon name={section.icon} />
               <span>
                 <strong>{section.label}</strong>
-                <small>{section.description}</small>
               </span>
             </button>
           ))}
@@ -532,27 +539,27 @@ export function SettingsPage() {
         onSubmit={handleProfileSave}
       />
 
-      <div className={styles.savePanel}>
-        <Button
-          disabled={isSaving}
-          form="profile-settings-form"
-          type="submit"
-        >
-          {isSaving ? "Saving..." : "Save changes"}
-        </Button>
-      </div>
-
       <div className={styles.settingsLayout}>
         <div className={styles.sectionContent}>
           {activeSection !== "security" ? (
             <div className={styles.profileForm}>
-              <Card className={styles.sectionCard}>
+              <section className={styles.sectionCard}>
                 <div className={styles.sectionHeading}>
                   <SectionIcon name={activeSectionDetails?.icon ?? "profile"} />
                   <div>
                     <h2>{activeSectionDetails?.label}</h2>
                     <p>{activeSectionDetails?.description}</p>
                   </div>
+                  {showProfileSave ? (
+                    <Button
+                      className={styles.sectionSaveButton}
+                      disabled={isSaving}
+                      form="profile-settings-form"
+                      type="submit"
+                    >
+                      {isSaving ? "Saving..." : "Save changes"}
+                    </Button>
+                  ) : null}
                 </div>
 
                 {activeSection === "personal" ? (
@@ -604,15 +611,12 @@ export function SettingsPage() {
                       <Select
                         id="settings-currency"
                         name="currency"
+                        options={currencyOptions}
+                        searchable
+                        searchPlaceholder="Search currency..."
                         onChange={(event) => setCurrency(event.target.value)}
                         value={currency}
-                      >
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="LBP">LBP - Lebanese Pound</option>
-                        <option value="AED">AED - UAE Dirham</option>
-                      </Select>
+                      />
                     </FormField>
                   </div>
                 ) : null}
@@ -640,56 +644,48 @@ export function SettingsPage() {
                                   </svg>
                                 ) : null}
                               </span>
+                              <span className={styles.categoryIcon} aria-hidden="true">
+                                <CategoryIcon category={category} />
+                              </span>
                               <span>{category}</span>
                             </label>
                           );
                         })}
                       </div>
                     </fieldset>
-                    <Card className={styles.customCategoryCard}>
-                      <h3>Custom categories</h3>
-                      <div className={styles.formGrid}>
-                        <FormField label="Name">
-                          <Input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} />
-                        </FormField>
-                        <FormField label="Color">
-                          <Input type="color" value={newCategoryColor} onChange={(event) => setNewCategoryColor(event.target.value)} />
-                        </FormField>
-                      </div>
-                      <Button type="button" onClick={() => void addCustomCategory()}>Add Category</Button>
+                    <div className={styles.customCategoryControls}>
+                      <Button type="button" onClick={() => openCustomizeCategory()}>
+                        Customize
+                      </Button>
+                    </div>
+                    {editableCategories.length ? (
                       <div className={styles.customCategoryList}>
-                        {customCategories.map((category) => (
+                        {editableCategories.map((category) => (
                           <div key={category.id} className={styles.customCategoryRow}>
-                            <Input
-                              value={category.name}
-                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, name: event.target.value } : item))}
+                            <span
+                              className={styles.categoryColor}
+                              style={{ background: category.color, boxShadow: `0 0 0.75rem ${category.color}55` }}
                             />
-                            <Input
-                              type="color"
-                              value={category.color}
-                              onChange={(event) => setCustomCategories((current) => current.map((item) => item.id === category.id ? { ...item, color: event.target.value } : item))}
-                            />
-                            <Button type="button" variant="secondary" onClick={() => void updateCustomCategory(category)}>Save</Button>
-                            {!category.is_default ? (
-                              <Button type="button" variant="danger" onClick={() => void deleteCustomCategory(category.id)}>Delete</Button>
-                            ) : null}
+                            <strong>{category.name}</strong>
+                            <div className={styles.customCategoryActions}>
+                              <Button type="button" variant="secondary" onClick={() => openCustomizeCategory(category)}>
+                                Edit
+                              </Button>
+                              <Button type="button" variant="danger" onClick={() => setCategoryToDelete(category)}>
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    </Card>
+                    ) : null}
                   </div>
                 ) : null}
 
-                {activeSection === "goals" ? (
-                  <SavingsGoalsEditor
-                    goals={savingsGoals}
-                    onChange={setSavingsGoals}
-                  />
-                ) : null}
-              </Card>
+              </section>
             </div>
           ) : (
-            <Card className={styles.sectionCard}>
+            <section className={styles.sectionCard}>
               <div className={styles.sectionHeading}>
                 <SectionIcon name="security" />
                 <div>
@@ -733,10 +729,79 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
+            </section>
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={isCustomizeOpen}
+        title={editingCategory ? "Edit category" : "Customize category"}
+        onClose={closeCustomizeCategory}
+      >
+        <div className={styles.categoryModalBody}>
+          <FormField label="Name">
+            <Input
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+            />
+          </FormField>
+          <FormField label="Color">
+            <Input
+              type="color"
+              value={newCategoryColor}
+              onChange={(event) => setNewCategoryColor(event.target.value)}
+            />
+          </FormField>
+          <div className={styles.modalActions}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeCustomizeCategory}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                if (await addCustomCategory()) {
+                  setIsCustomizeOpen(false);
+                }
+              }}
+            >
+              {editingCategory ? "Save changes" : "Save"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(categoryToDelete)}
+        title="Delete category"
+        onClose={() => setCategoryToDelete(null)}
+      >
+        <div className={styles.categoryModalBody}>
+          <p>
+            Are you sure you want to delete {categoryToDelete?.name}? This cannot be undone.
+          </p>
+          <div className={styles.modalActions}>
+            <Button type="button" variant="secondary" onClick={() => setCategoryToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                if (categoryToDelete) {
+                  void deleteCustomCategory(categoryToDelete.id);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

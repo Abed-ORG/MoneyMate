@@ -7,8 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.budget import Budget
+from app.models.account import Account
 from app.models.category import Category
 from app.models.financial_profile import FinancialProfile
+from app.models.transaction import Transaction
 from app.repositories.transaction_repository import transaction_repository
 from app.schemas.budget import (
     BudgetAlert,
@@ -390,11 +392,34 @@ def delete_budget(db: Session, user_id: int, budget_id: int) -> None:
 
 
 def spending_by_category(
+    db: Session,
     user_id: int,
     month: int,
     year: int,
 ) -> dict[str, Decimal]:
     totals: dict[str, Decimal] = {}
+    transactions = (
+        db.query(Transaction)
+        .join(Account)
+        .outerjoin(Category)
+        .filter(Account.user_id == user_id)
+        .all()
+    )
+    for transaction in transactions:
+        transaction_date = transaction.occurred_at
+        if not transaction_date:
+            continue
+        if transaction_date.month != month or transaction_date.year != year:
+            continue
+        amount = Decimal(str(transaction.amount))
+        if amount >= 0:
+            continue
+        category_name = (
+            transaction.category.name if transaction.category else "Other"
+        )
+        key = normalized_category(category_name)
+        totals[key] = totals.get(key, Decimal("0")) + abs(amount)
+
     for transaction in transaction_repository.list_by_user(str(user_id)):
         transaction_date = transaction.date
         if transaction_date.month != month or transaction_date.year != year:
@@ -404,6 +429,7 @@ def spending_by_category(
             continue
         key = normalized_category(transaction.category)
         totals[key] = totals.get(key, Decimal("0")) + abs(amount)
+
     return {key: quantize_money(value) for key, value in totals.items()}
 
 
@@ -458,7 +484,7 @@ def calculate_monthly_overview(
         .order_by(Category.name.asc())
         .all()
     )
-    spend_map = spending_by_category(user_id, month, year)
+    spend_map = spending_by_category(db, user_id, month, year)
     summaries: list[BudgetCategorySummary] = []
 
     for budget in budgets:

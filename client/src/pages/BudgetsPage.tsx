@@ -6,7 +6,6 @@ import {
   BudgetComparisonChart,
   BudgetComparisonTable,
   BudgetFormModal,
-  BudgetHistoryList,
   BudgetSummaryCard,
   DeleteConfirmationModal,
   MonthSelector,
@@ -30,6 +29,25 @@ type ToastState = {
   variant: "success" | "error" | "warning" | "info";
 };
 
+function ListIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M8 6h12M8 12h12M8 18h12" />
+      <path d="M4 6h.01M4 12h.01M4 18h.01" />
+    </svg>
+  );
+}
+
+function VisualizeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M5 20V10" />
+      <path d="M12 20V4" />
+      <path d="M19 20v-7" />
+    </svg>
+  );
+}
+
 function currentMonthState() {
   const now = new Date();
   return {
@@ -52,10 +70,11 @@ export function BudgetsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetSummary | null>(null);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [viewMode, setViewMode] = useState<"visualize" | "list">("visualize");
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
+  const selectedHistory = history.find((item) => item.month === month && item.year === year);
 
   const loadBudgetData = useCallback(async () => {
     setIsLoading(true);
@@ -69,10 +88,8 @@ export function BudgetsPage() {
 
       if (categoryResult.status === "fulfilled") {
         setCategories(categoryResult.value);
-        setCategoriesLoaded(true);
       } else {
         setCategories([]);
-        setCategoriesLoaded(false);
       }
 
       if (overviewResult.status === "fulfilled") {
@@ -209,19 +226,10 @@ export function BudgetsPage() {
         </div>
       ) : null}
 
-      <header className={styles.hero}>
-        <div>
-          <span className={styles.kicker}>Planning</span>
-          <h2>Budget Management</h2>
-          <p>
-            Set category limits, compare actual spending, and track month-over-month adherence.
-          </p>
-        </div>
-        <div className={styles.heroControls}>
-          <MonthSelector month={month} year={year} onChange={selectMonth} />
-          <Button onClick={openCreate}>+ Create Budget</Button>
-        </div>
-      </header>
+      <div className={styles.controlsBar}>
+        <MonthSelector month={month} year={year} onChange={selectMonth} />
+        <Button onClick={openCreate}>+ Create Budget</Button>
+      </div>
 
       {isLoading ? <div className={styles.state}>Loading budget data...</div> : null}
       {error ? (
@@ -233,10 +241,7 @@ export function BudgetsPage() {
 
       {!isLoading && !error && overview ? (
         <>
-          <section className={styles.overviewGrid}>
-            <BudgetSummaryCard overview={overview} />
-            <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
-          </section>
+          <BudgetSummaryCard historyItem={selectedHistory} overview={overview} />
 
           {!hasBudgets ? (
             <section className={styles.emptyState}>
@@ -249,58 +254,55 @@ export function BudgetsPage() {
             </section>
           ) : (
             <>
-              <section className={styles.workspaceGrid}>
-                <div className={`${styles.panel} ${styles.categoryPanel}`}>
-                  <div className={styles.panelHeader}>
-                    <div>
-                      <span className={styles.kicker}>Progress</span>
-                      <h2>Category budgets</h2>
-                    </div>
-                    <span>{overview.budgets.length} categories</span>
-                  </div>
-                  <div className={styles.budgetList}>
-                    {overview.budgets.map((budget) => (
-                      <BudgetCategoryCard
-                        budget={budget}
-                        currency={currency}
-                        key={budget.budget_id}
-                        onDelete={setDeletingBudget}
-                        onEdit={openEdit}
-                      />
-                    ))}
-                  </div>
+              <div className={styles.viewHeader}>
+                <div>
+                  <span className={styles.kicker}>
+                    {viewMode === "visualize" ? "Comparison" : "Budgets"}
+                  </span>
+                  <h2>
+                    {viewMode === "visualize" ? "Budgeted versus actual" : "Category budgets"}
+                  </h2>
                 </div>
+                <Button
+                  onClick={() => setViewMode((current) => (current === "visualize" ? "list" : "visualize"))}
+                >
+                  {viewMode === "visualize" ? <ListIcon /> : <VisualizeIcon />}
+                  {viewMode === "visualize" ? "List" : "Visualize"}
+                </Button>
+              </div>
 
-                <div className={`${styles.panel} ${styles.comparisonPanel}`}>
-                  <div className={styles.panelHeader}>
-                    <div>
-                      <span className={styles.kicker}>Comparison</span>
-                      <h2>Budgeted versus actual</h2>
-                    </div>
-                  </div>
+              {viewMode === "visualize" ? (
+                <section className={`${styles.panel} ${styles.comparisonPanel}`}>
                   <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
                   <BudgetComparisonTable budgets={overview.budgets} currency={currency} />
-                </div>
-              </section>
+                </section>
+              ) : (
+                <section className={styles.workspaceGrid}>
+                  <div className={`${styles.panel} ${styles.categoryPanel}`}>
+                    <div className={styles.panelHeader}>
+                      <div>
+                        <h2>Category budgets</h2>
+                      </div>
+                      <span>{overview.budgets.length} categories</span>
+                    </div>
+                    <div className={styles.budgetList}>
+                      {overview.budgets.map((budget) => (
+                        <BudgetCategoryCard
+                          budget={budget}
+                          currency={currency}
+                          key={budget.budget_id}
+                          onDelete={setDeletingBudget}
+                          onEdit={openEdit}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
+                </section>
+              )}
             </>
           )}
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <div>
-                <span className={styles.kicker}>History</span>
-                <h2>Month-over-month adherence</h2>
-              </div>
-              <p>
-                Adherence is the percentage of budgeted categories that stayed at or below 100%.
-              </p>
-            </div>
-            <BudgetHistoryList
-              currency={currency}
-              history={history}
-              onSelectMonth={selectMonth}
-            />
-          </section>
         </>
       ) : null}
 

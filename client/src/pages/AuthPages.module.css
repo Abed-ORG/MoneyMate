@@ -1,6 +1,6 @@
 .authPage {
   --auth-forest: var(--mm-accent);
-  --auth-forest-dark: #102a23;
+  --auth-forest-dark: #102A23;
   --auth-forest-soft: var(--mm-accent-soft);
   height: 100dvh;
   display: grid;
@@ -8,7 +8,7 @@
   overflow: hidden;
   background:
     radial-gradient(circle at 50% -15%, rgba(var(--mm-accent-rgb), 0.04), transparent 30rem),
-    linear-gradient(135deg, #102a23, #071914 50%, #102a23);
+    linear-gradient(135deg, #102A23, #071914 50%, #102A23);
   padding: 1rem;
 }
 
@@ -22,7 +22,9 @@
   grid-template-columns: minmax(0, 2fr) 0fr minmax(0, 2fr);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--mm-radius-lg);
-  background: linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
+  background:
+    radial-gradient(circle at 50% 14%, rgba(var(--mm-accent-rgb), 0.045), transparent 31rem),
+    linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 1.8rem 3rem rgba(0, 0, 0, 0.34);
@@ -82,9 +84,8 @@
   min-width: 0;
   grid-row: 1;
   place-items: center;
-  background:
-    radial-gradient(circle at 50% 16%, rgba(var(--mm-accent-rgb), 0.04), transparent 28rem),
-    linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
+  justify-items: center;
+  background: transparent;
   border: 0;
   box-shadow: none;
   padding: clamp(1.5rem, 3.2vw, 3.5rem);
@@ -125,6 +126,7 @@
 .authForm {
   display: grid;
   width: min(100%, 36rem);
+  justify-self: center;
   gap: 1rem;
 }
 
@@ -248,8 +250,8 @@
   margin-top: 0.7rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.42);
   border-radius: var(--mm-radius-sm);
-  background: linear-gradient(180deg, #aafc75, #8fe263);
-  color: #102a23;
+  background: linear-gradient(180deg, #AAFC75, #AAFC75);
+  color: #102A23;
   box-shadow:
     0 0 0.35rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 1.8rem rgba(8, 22, 24, 0.28);
@@ -263,7 +265,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: linear-gradient(180deg, #b8ff88, #aafc75);
+  background: linear-gradient(180deg, #AAFC75, #AAFC75);
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.13),
     0 0 2rem rgba(8, 22, 24, 0.32);
@@ -357,11 +359,14 @@
   place-items: center;
   overflow: hidden;
   border: 0;
-  border-radius: var(--mm-radius-lg) 0 0 var(--mm-radius-lg);
-  background: linear-gradient(145deg, rgba(16, 42, 35, 0.94), rgba(7, 25, 20, 0.98));
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at 58% 24%, rgba(var(--mm-accent-rgb), 0.06), transparent 28rem),
+    linear-gradient(145deg, rgba(19, 51, 42, 0.94), rgba(7, 25, 20, 0.98));
   box-shadow:
-    0 0 1.2rem rgba(0, 0, 0, 0.42),
-    inset 0 0 2rem rgba(var(--mm-accent-rgb), 0.035);
+    0 1.2rem 3rem rgba(0, 0, 0, 0.28),
+    0 0 1.5rem rgba(var(--mm-accent-rgb), 0.09),
+    inset 0 0 2rem rgba(var(--mm-accent-rgb), 0.04);
   transition: transform 560ms cubic-bezier(0.78, 0, 0.2, 1);
 }
 
@@ -374,6 +379,7 @@
 }
 
 .creditCard {
+  position: relative;
   display: grid;
   width: 100%;
   height: 100%;

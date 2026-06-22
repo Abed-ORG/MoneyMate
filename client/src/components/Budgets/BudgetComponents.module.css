@@ -8,13 +8,15 @@
 
 .monthSelector,
 .summaryMetrics,
+.adherenceStrip dl,
 .formSplit {
   display: grid;
   gap: 0.8rem;
 }
 
 .monthSelector {
-  grid-template-columns: minmax(9rem, 1fr) minmax(7rem, 0.75fr);
+  grid-template-columns: repeat(2, minmax(7.5rem, 1fr));
+  min-width: min(100%, 19rem);
 }
 
 .summaryCard,
@@ -31,8 +33,10 @@
 
 .summaryCard {
   display: grid;
-  gap: 1.2rem;
-  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  grid-template-columns: auto minmax(0, 1fr) minmax(18rem, 0.8fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
 }
 
 .summaryCard h2,
@@ -44,10 +48,12 @@
 }
 
 .summaryMetrics {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
 }
 
 .summaryMetrics div,
+.adherenceStrip dl div,
 .budgetStats div,
 .alertItem dl div,
 .historyItem dl div {
@@ -57,10 +63,12 @@
 
 .summaryMetrics div {
   border-left: 1px solid var(--mm-border);
-  padding-left: 0.9rem;
+  padding-left: 0.65rem;
 }
 
 .summaryMetrics span,
+.adherenceStrip dt,
+.adherenceStrip p,
 .budgetStats dt,
 .alertItem dt,
 .historyItem dt,
@@ -71,7 +79,33 @@
 
 .summaryMetrics strong {
   color: var(--mm-text);
-  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  font-size: clamp(0.96rem, 1.25vw, 1.12rem);
+}
+
+.adherenceStrip {
+  display: grid;
+  gap: 0.35rem;
+  border-top: 0;
+  border-left: 1px solid var(--mm-border);
+  padding-left: 0.75rem;
+  padding-top: 0;
+}
+
+.adherenceStrip p {
+  display: none;
+  margin: 0;
+}
+
+.adherenceStrip dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.adherenceStrip dd {
+  margin: 0;
+  color: var(--mm-text);
+  font-weight: 800;
 }
 
 .panel {
@@ -94,15 +128,18 @@
 }
 
 .categoryIcon,
-.tableCategory img {
+.tableCategoryIcon {
   display: inline-grid;
   place-items: center;
-  overflow: hidden;
   border: 1px solid rgba(248, 255, 249, 0.14);
   border-radius: 50%;
-  background: #fff;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
+    rgba(4, 30, 22, 0.9);
+  color: var(--mm-accent-soft);
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
+    inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
@@ -111,11 +148,10 @@
   height: 2.8rem;
 }
 
-.categoryIcon img,
-.tableCategory img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.categoryIcon svg,
+.tableCategoryIcon svg {
+  width: 55%;
+  height: 55%;
 }
 
 .cardActions {
@@ -310,7 +346,7 @@
   gap: 0.55rem;
 }
 
-.tableCategory img {
+.tableCategoryIcon {
   width: 2rem;
   height: 2rem;
 }
@@ -344,7 +380,19 @@
 }
 
 @media (max-width: 980px) {
+  .summaryCard {
+    grid-template-columns: 1fr;
+  }
+
+  .adherenceStrip {
+    border-top: 1px solid var(--mm-border);
+    border-left: 0;
+    padding-top: 0.55rem;
+    padding-left: 0;
+  }
+
   .summaryMetrics,
+  .adherenceStrip dl,
   .budgetStats,
   .alertItem dl,
   .historyItem dl {
@@ -367,6 +415,7 @@
   }
 
   .summaryMetrics,
+  .adherenceStrip dl,
   .budgetStats,
   .alertItem dl,
   .historyItem dl {

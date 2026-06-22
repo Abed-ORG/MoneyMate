@@ -2,11 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
-from app.auth.utils import decode_access_token
-from app.dependencies import bearer_scheme, get_db
+from app.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.schemas.transaction import (
     BulkRecategorizeRequest,
@@ -46,35 +44,6 @@ from app.services.transaction_service import (
 router = APIRouter()
 
 
-def get_transaction_user_id(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
-) -> str:
-    credentials_error = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Your session is invalid or has expired. Please log in again.",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    if not credentials:
-        raise credentials_error
-
-    payload = decode_access_token(credentials.credentials)
-    subject = payload.get("sub") if payload else None
-    if not subject:
-        raise credentials_error
-
-    try:
-        user_id = int(subject)
-    except (TypeError, ValueError):
-        raise credentials_error
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise credentials_error
-
-    return str(user.id)
-
-
 @router.get("", response_model=TransactionListResponse)
 def read_transactions(
     page: int = Query(1, ge=1),
@@ -87,10 +56,12 @@ def read_transactions(
     date_to: datetime | None = None,
     amount_min: Decimal | None = None,
     amount_max: Decimal | None = None,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     return list_transactions(
-        user_id=user_id,
+        db=db,
+        user_id=current_user.id,
         page=page,
         page_size=page_size,
         sort_by=sort_by,
@@ -111,16 +82,18 @@ def read_transactions(
 )
 def add_transaction(
     payload: TransactionCreate,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return create_transaction(user_id, payload)
+    return create_transaction(db, current_user.id, payload)
 
 
 @router.get("/categories", response_model=list[Category])
 def read_categories(
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return list_categories(user_id)
+    return list_categories(db, current_user.id)
 
 
 @router.post(
@@ -128,18 +101,20 @@ def read_categories(
 )
 def add_category(
     payload: CategoryCreate,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return create_category(user_id, payload)
+    return create_category(db, current_user.id, payload)
 
 
 @router.patch("/categories/{category_id}", response_model=Category)
 def edit_category(
     category_id: str,
     payload: CategoryUpdate,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    category = update_category(user_id, category_id, payload)
+    category = update_category(db, current_user.id, category_id, payload)
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -153,9 +128,10 @@ def edit_category(
 )
 def remove_category(
     category_id: str,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    if not delete_category(user_id, category_id):
+    if not delete_category(db, current_user.id, category_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found.",
@@ -166,10 +142,11 @@ def remove_category(
 def edit_transaction(
     transaction_id: str,
     payload: TransactionUpdate,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     try:
-        return update_transaction(user_id, transaction_id, payload)
+        return update_transaction(db, current_user.id, transaction_id, payload)
     except TransactionNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -180,10 +157,11 @@ def edit_transaction(
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_transaction(
     transaction_id: str,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     try:
-        delete_transaction(user_id, transaction_id)
+        delete_transaction(db, current_user.id, transaction_id)
     except TransactionNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -194,26 +172,30 @@ def remove_transaction(
 @router.post("/bulk", response_model=TransactionImportResponse)
 def bulk_import_transactions(
     payload: TransactionBulkRequest,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return bulk_create_transactions(user_id, payload)
+    return bulk_create_transactions(db, current_user.id, payload)
 
 
 @router.post("/import", response_model=TransactionImportResponse)
 def upload_csv_transactions(
     payload: TransactionImportRequest,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return import_transactions(user_id, payload)
+    return import_transactions(db, current_user.id, payload)
 
 
 @router.post("/suggest", response_model=AiCategorization)
 def suggest_category(
     payload: TransactionSuggestionRequest,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     return suggest_transaction_category(
-        user_id,
+        db,
+        current_user.id,
         payload.vendor,
         payload.notes,
         payload.amount,
@@ -224,10 +206,16 @@ def suggest_category(
 def correct_transaction(
     transaction_id: str,
     payload: TransactionCorrectionRequest,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     try:
-        return correct_transaction_category(user_id, transaction_id, payload)
+        return correct_transaction_category(
+            db,
+            current_user.id,
+            transaction_id,
+            payload,
+        )
     except TransactionNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -238,6 +226,7 @@ def correct_transaction(
 @router.post("/bulk-recategorize", response_model=list[Transaction])
 def bulk_recategorize(
     payload: BulkRecategorizeRequest,
-    user_id: str = Depends(get_transaction_user_id),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return bulk_recategorize_transactions(user_id, payload)
+    return bulk_recategorize_transactions(db, current_user.id, payload)

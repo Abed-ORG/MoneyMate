@@ -1,5 +1,5 @@
 :root {
-  --mm-bg: #102a23;
+  --mm-bg: #102A23;
   --mm-bg-rgb: 16, 42, 35;
   --mm-bg-deep: #071914;
   --mm-bg-raised: #15352c;
@@ -8,9 +8,9 @@
   --mm-surface-soft: rgba(170, 252, 117, 0.07);
   --mm-border: rgba(220, 239, 219, 0.16);
   --mm-border-strong: rgba(220, 239, 219, 0.28);
-  --mm-accent: #aafc75;
+  --mm-accent: #AAFC75;
   --mm-accent-rgb: 170, 252, 117;
-  --mm-accent-soft: #91d46a;
+  --mm-accent-soft: #AAFC75;
   --mm-accent-deep: #5f9f47;
   --mm-text: #f2f7f0;
   --mm-text-soft: rgba(242, 247, 240, 0.74);

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
+  CategoryIcon,
   FormField,
   Input,
   Modal,
@@ -8,10 +9,7 @@ import {
   Toast,
   type SelectOption,
 } from "../components";
-import {
-  normalizeCategory,
-  transactionCategories,
-} from "../constants/categories";
+import { transactionCategories } from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import type {
@@ -38,6 +36,15 @@ type FormState = {
 };
 
 type CsvRow = Record<string, string>;
+type AiReviewState = {
+  transaction: Transaction;
+  suggestion: {
+    category: string;
+    confidence: number;
+    provider: string;
+    rationale: string;
+  };
+} | null;
 
 const noteMaxLength = 160;
 const templateHeaders = ["date", "amount", "category", "vendor", "notes"];
@@ -74,108 +81,6 @@ function formatDate(value: string, includeTime = false) {
     year: "numeric",
     ...(includeTime ? { hour: "numeric", minute: "2-digit" } : {}),
   }).format(date);
-}
-
-const categoryIconMap: Record<string, JSX.Element> = {
-  "Food & Dining": (
-    <>
-      <path d="M8 4h1v16H8V4Zm6 0h1v16h-1V4Z" />
-      <path d="M12 4h1v16h-1V4Z" />
-    </>
-  ),
-  Transport: (
-    <>
-      <path d="M4 15h16v3H4v-3Z" />
-      <path d="M6 12V8h12v4" />
-      <circle cx="7" cy="19" r="1.5" />
-      <circle cx="17" cy="19" r="1.5" />
-    </>
-  ),
-  Housing: (
-    <>
-      <path d="M3 12 12 4l9 8v8H3v-8Z" />
-      <path d="M9 21v-6h6v6" />
-    </>
-  ),
-  Groceries: (
-    <>
-      <path d="M8 8h8l-1 10H9L8 8Z" />
-      <path d="M6 8h12" />
-      <path d="M10 4h4v4h-4z" />
-    </>
-  ),
-  Entertainment: (
-    <>
-      <path d="M6 8h12v8H6z" />
-      <path d="M9 11.5 13 14l-4 2.5V11.5Z" />
-    </>
-  ),
-  Shopping: (
-    <>
-      <path d="M6 8h12l-1 10H7L6 8Z" />
-      <path d="M9 8V5a3 3 0 0 1 6 0v3" />
-    </>
-  ),
-  Healthcare: (
-    <>
-      <path d="M12 7v10" />
-      <path d="M7 12h10" />
-      <path d="M12 5c-4 0-7 3-7 7 0 4 3 7 7 7s7-3 7-7c0-4-3-7-7-7Z" />
-    </>
-  ),
-  Utilities: (
-    <>
-      <path d="M13 5.5V3h-2v2.5" />
-      <path d="M12 22V9" />
-      <path d="M8 13h8" />
-      <path d="M6 18h12" />
-    </>
-  ),
-  Education: (
-    <>
-      <path d="M4 8l8 4 8-4-8-4-8 4Z" />
-      <path d="M12 12v8" />
-      <path d="M5 14v4" />
-      <path d="M19 14v4" />
-    </>
-  ),
-  Travel: (
-    <>
-      <path d="M4 10l16 4-6 3-2 4-2-4-6-3Z" />
-      <path d="M12 6v4" />
-      <path d="M10 4h4" />
-    </>
-  ),
-  "Personal Care": (
-    <>
-      <path d="M12 4c-1.5 2-6 6-6 8 0 3 2 5 6 5s6-2 6-5c0-2-4.5-6-6-8Z" />
-      <path d="M12 10.5v4" />
-    </>
-  ),
-  Other: (
-    <>
-      <rect x="4" y="4" width="6" height="6" rx="1" />
-      <rect x="14" y="4" width="6" height="6" rx="1" />
-      <rect x="4" y="14" width="6" height="6" rx="1" />
-      <rect x="14" y="14" width="6" height="6" rx="1" />
-    </>
-  ),
-  Income: (
-    <>
-      <path d="M12 4v16" />
-      <path d="M8 12l4-4 4 4" />
-      <path d="M8 20h8" />
-    </>
-  ),
-};
-
-function CategoryIconSvg({ category }: { category: string }) {
-  const normalized = normalizeCategory(category);
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      {categoryIconMap[normalized] ?? categoryIconMap.Other}
-    </svg>
-  );
 }
 
 function transactionToForm(transaction: Transaction): FormState {
@@ -333,26 +238,6 @@ function AddIcon() {
   );
 }
 
-function PencilIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="m4 20 4.2-1 10.9-10.9a2.2 2.2 0 0 0-3.1-3.1L5.1 15.9 4 20Z" />
-      <path d="m14.5 6.5 3 3" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M4 7h16" />
-      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
-      <path d="M18 7 17 19a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  );
-}
-
 function CloudUploadIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -399,7 +284,6 @@ export function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
   const [datePreset, setDatePreset] = useState("custom");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -407,16 +291,20 @@ export function TransactionsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
+  const [aiReview, setAiReview] = useState<AiReviewState>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<CsvRow[]>([]);
-  const [csvContent, setCsvContent] = useState("");
   const [csvErrors, setCsvErrors] = useState<TransactionImportError[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   const selected = useMemo(
     () => transactions.find((transaction) => transaction.id === selectedId) ?? null,
@@ -434,6 +322,22 @@ export function TransactionsPage() {
       ).sort(),
     [categories],
   );
+  const categoryByName = useMemo(
+    () => new Map(categories.map((category) => [category.name, category])),
+    [categories],
+  );
+  const categoryIconStyle = (category: string): CSSProperties | undefined => {
+    const color = categoryByName.get(category)?.color;
+    if (!color) {
+      return undefined;
+    }
+    return {
+      backgroundColor: color,
+      borderColor: `${color}66`,
+      boxShadow: `0 0 0.85rem ${color}33`,
+      color,
+    };
+  };
 
   const categoryOptions = useMemo(
     () => [
@@ -488,6 +392,22 @@ export function TransactionsPage() {
   }, []);
 
   useEffect(() => {
+    if (!actionMenuId) {
+      return undefined;
+    }
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (actionMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setActionMenuId(null);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [actionMenuId]);
+
+  useEffect(() => {
     const timeout = window.setTimeout(() => {
       setFilters((current) => ({
         ...current,
@@ -520,7 +440,6 @@ export function TransactionsPage() {
   const resetImportState = () => {
     setCsvHeaders([]);
     setCsvRows([]);
-    setCsvContent("");
     setCsvErrors([]);
     setMapping({});
     if (fileInputRef.current) {
@@ -679,13 +598,11 @@ export function TransactionsPage() {
         vendor: parsed.headers.find((header) => /vendor|merchant|description/i.test(header)) ?? parsed.headers[3],
         notes: parsed.headers.find((header) => /note|memo|description/i.test(header)) ?? parsed.headers[4],
       };
-      setCsvContent(content);
       setCsvHeaders(parsed.headers);
       setCsvRows(parsed.rows);
       setMapping(guessed);
       setCsvErrors([]);
     } catch (err) {
-      setCsvContent("");
       setCsvHeaders([]);
       setCsvRows([]);
       setCsvErrors([{ row: 0, message: err instanceof Error ? err.message : "Malformed CSV file." }]);
@@ -693,11 +610,56 @@ export function TransactionsPage() {
   };
 
   const importCsv = async () => {
+    const errors: TransactionImportError[] = [];
+    const transactions = csvRows
+      .map((row, index) => {
+        const rowNumber = index + 2;
+        const dateValue = row[mapping.date] ?? "";
+        const amountValue = row[mapping.amount] ?? "";
+        const categoryValue = row[mapping.category] ?? "";
+        const vendorValue = row[mapping.vendor] ?? "";
+        const notesValue = row[mapping.notes] ?? "";
+
+        if (![dateValue, amountValue, categoryValue, vendorValue, notesValue].some((value) => value.trim())) {
+          return null;
+        }
+
+        const amount = Number(amountValue);
+        const date = new Date(`${dateValue.trim()}T12:00:00`);
+
+        if (!dateValue.trim() || Number.isNaN(date.getTime())) {
+          errors.push({ row: rowNumber, message: "Date is required." });
+          return null;
+        }
+        if (!Number.isFinite(amount) || amount === 0) {
+          errors.push({ row: rowNumber, message: "Amount must be a non-zero number." });
+          return null;
+        }
+        if (!categoryValue.trim()) {
+          errors.push({ row: rowNumber, message: "Category is required." });
+          return null;
+        }
+
+        return {
+          date: date.toISOString(),
+          amount,
+          category: categoryValue.trim(),
+          vendor: vendorValue.trim(),
+          notes: notesValue.trim(),
+        };
+      })
+      .filter((transaction): transaction is TransactionPayload => Boolean(transaction));
+
+    if (errors.length || !transactions.length) {
+      setCsvErrors(errors.length ? errors : [{ row: 0, message: "No valid transactions found." }]);
+      return;
+    }
+
     try {
-      const response = await transactionsApi.importCsv(csvContent, mapping);
+      const response = await transactionsApi.bulk(transactions);
       setCsvErrors(response.errors);
       setToast({
-        title: "Import finished",
+        title: "Upload finished",
         message: `Imported: ${response.imported}. Failed: ${response.failed}.`,
         variant: response.failed ? "warning" : "success",
       });
@@ -707,7 +669,60 @@ export function TransactionsPage() {
         await loadTransactions();
       }
     } catch (err) {
-      setToast({ title: "Import failed", message: getApiErrorMessage(err), variant: "error" });
+      setToast({ title: "Upload failed", message: getApiErrorMessage(err), variant: "error" });
+    }
+  };
+
+  const openActionMenu = (transaction: Transaction) => {
+    setSelectedId(transaction.id);
+    setActionMenuId((current) => (current === transaction.id ? null : transaction.id));
+  };
+
+  const openEditFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    openEdit(transaction);
+  };
+
+  const openHistoryFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    setHistoryTransaction(transaction);
+  };
+
+  const openDeleteFromMenu = (transaction: Transaction) => {
+    setActionMenuId(null);
+    setSelectedId(transaction.id);
+    setIsDeleteOpen(true);
+  };
+
+  const openAiReviewFromMenu = async (transaction: Transaction) => {
+    setActionMenuId(null);
+    try {
+      const suggestion = await transactionsApi.suggest({
+        amount: Number(transaction.amount),
+        vendor: transaction.vendor,
+        notes: transaction.notes,
+      });
+      setAiReview({ transaction, suggestion });
+    } catch (err) {
+      setToast({ title: "AI suggestion failed", message: getApiErrorMessage(err), variant: "warning" });
+    }
+  };
+
+  const applyAiReview = async () => {
+    if (!aiReview) return;
+    try {
+      await transactionsApi.correctCategory(aiReview.transaction.id, {
+        category: aiReview.suggestion.category,
+      });
+      setToast({
+        title: "Category updated",
+        message: `AI category ${aiReview.suggestion.category} was applied.`,
+        variant: "success",
+      });
+      setAiReview(null);
+      await loadTransactions();
+    } catch (err) {
+      setToast({ title: "Could not apply category", message: getApiErrorMessage(err), variant: "error" });
     }
   };
 
@@ -775,70 +790,54 @@ export function TransactionsPage() {
   );
 
   return (
-    <section
-      className={`${styles.page} ${selected && !isDetailsCollapsed ? styles.withDetails : ""}`}
-    >
+    <section className={styles.page}>
       {toast ? (
         <div className={styles.toastDock}>
           <Toast {...toast} onClose={() => setToast(null)} />
         </div>
       ) : null}
 
-      <header className={styles.pageHeader}>
-        <div>
-          <span className={styles.kicker}>Ledger</span>
-          <h2>Transactions</h2>
-          <p>Review, filter, import, and categorize every money movement in one place.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <div className={styles.primaryActions}>
-            <Button
-              onClick={() => {
-                setForm(emptyForm);
-                setFormErrors({});
-                setIsAddOpen(true);
-              }}
-            >
-              <AddIcon />
-              Add Transaction
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!transactions.length}
-              onClick={() => void recategorizeCurrentPage()}
-            >
-              Re-categorize Page
-            </Button>
-          </div>
-          <div className={styles.utilityActions}>
-            <Button variant="secondary" onClick={openImportModal}>
-              <CloudUploadIcon />
-              Import
-            </Button>
-            <Button variant="secondary" onClick={downloadExcelTemplate}>
-              <DownloadIcon />
-              Template
-            </Button>
-            <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
-              <FilterIcon />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <div className={styles.actionBar}>
+        <Button
+          onClick={() => {
+            setForm(emptyForm);
+            setFormErrors({});
+            setIsAddOpen(true);
+          }}
+        >
+          <AddIcon />
+          Add Transaction
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={!transactions.length}
+          onClick={() => void recategorizeCurrentPage()}
+        >
+          Re-categorize Page
+        </Button>
+        <Button variant="secondary" onClick={openImportModal}>
+          <CloudUploadIcon />
+          Upload
+        </Button>
+        <Button variant="secondary" onClick={downloadExcelTemplate}>
+          <DownloadIcon />
+          CSV Template
+        </Button>
+        <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+          <FilterIcon />
+          Filters
+        </Button>
+        <Button variant="secondary" onClick={() => setIsSummaryOpen(true)}>
+          Summary
+        </Button>
+      </div>
 
-      {isFiltersOpen ? (
-        <aside className={styles.filters} aria-label="Transaction filters">
-          <div className={styles.panelHeader}>
-            <h2>Filters</h2>
-            <button
-              aria-label="Close filters"
-              className={styles.iconBox}
-              onClick={() => setIsFiltersOpen(false)}
-              type="button"
-            >
-              <FilterIcon />
-            </button>
-          </div>
+      <Modal
+        bodyClassName={styles.filters}
+        isOpen={isFiltersOpen}
+        title="Filters"
+        onClose={() => setIsFiltersOpen(false)}
+      >
           <Input
             aria-label="Search transactions by vendor"
             placeholder="Search transactions..."
@@ -893,25 +892,28 @@ export function TransactionsPage() {
             />
           </FormField>
           <div className={styles.filterActions}>
-            <Button variant="secondary" onClick={() => updateFilter({})}>
+            <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
               Reset Filters
             </Button>
-            <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
-              Clear
-            </Button>
           </div>
+      </Modal>
 
-          <section className={styles.stats}>
-            <h3>Quick Stats</h3>
-            <strong>{total}</strong>
-            <span>Transactions</span>
-            <strong className={styles.expense}>{toMoney(expenses)}</strong>
-            <span>Total Expenses</span>
-            <strong className={styles.income}>{toMoney(income)}</strong>
-            <span>Total Income</span>
-          </section>
-        </aside>
-      ) : null}
+      <Modal
+        bodyClassName={styles.summaryModal}
+        isOpen={isSummaryOpen}
+        title="Summary"
+        onClose={() => setIsSummaryOpen(false)}
+      >
+        <section className={styles.stats}>
+          <h3>Quick Stats</h3>
+          <strong>{total}</strong>
+          <span>Transactions</span>
+          <strong className={styles.expense}>{toMoney(expenses)}</strong>
+          <span>Total Expenses</span>
+          <strong className={styles.income}>{toMoney(income)}</strong>
+          <span>Total Income</span>
+        </section>
+      </Modal>
 
       <main className={styles.content}>
         <section className={styles.tablePanel}>
@@ -960,19 +962,12 @@ export function TransactionsPage() {
                     <th>Category</th>
                     <th>Notes</th>
                     <th>Amount</th>
-                    <th>Actions</th>
+                    <th aria-label="Transaction actions" />
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className={selectedId === transaction.id ? styles.selectedRow : ""}
-                      onClick={() => {
-                        setSelectedId(transaction.id);
-                        setIsDetailsCollapsed(false);
-                      }}
-                    >
+                    <tr key={transaction.id}>
                       <td>
                         <input
                           checked={selectedTransactionIds.includes(transaction.id)}
@@ -985,10 +980,17 @@ export function TransactionsPage() {
                       <td>{transaction.vendor || "Unknown vendor"}</td>
                       <td>
                         <span className={styles.categoryCell}>
-                          <span className={styles.categoryIcon}>
-                            <CategoryIconSvg category={transaction.category} />
-                          </span>
-                          {transaction.category || "Uncategorized"}
+                          {categoryByName.get(transaction.category)?.is_default === false ? (
+                            <span
+                              className={styles.customCategoryDot}
+                              style={categoryIconStyle(transaction.category)}
+                            />
+                          ) : (
+                            <span className={styles.categoryIcon}>
+                              <CategoryIcon category={transaction.category} />
+                            </span>
+                          )}
+                          <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
                         </span>
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
@@ -998,13 +1000,34 @@ export function TransactionsPage() {
                         {toMoney(transaction.amount)}
                       </td>
                       <td>
-                        <div className={styles.rowActions}>
-                          <button className={styles.editIcon} type="button" aria-label="Edit transaction" onClick={(event) => { event.stopPropagation(); openEdit(transaction); }}>
-                            <PencilIcon />
+                        <div
+                          className={styles.rowActions}
+                          ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
+                        >
+                          <button
+                            className={styles.dotsButton}
+                            type="button"
+                            aria-expanded={actionMenuId === transaction.id}
+                            aria-label="Open transaction actions"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openActionMenu(transaction);
+                            }}
+                          >
+                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                              <circle cx="12" cy="5" r="1.8" />
+                              <circle cx="12" cy="12" r="1.8" />
+                              <circle cx="12" cy="19" r="1.8" />
+                            </svg>
                           </button>
-                          <button type="button" aria-label="Delete transaction" className={styles.deleteIcon} onClick={(event) => { event.stopPropagation(); setSelectedId(transaction.id); setIsDeleteOpen(true); }}>
-                            <TrashIcon />
-                          </button>
+                          {actionMenuId === transaction.id ? (
+                            <div className={styles.actionMenu}>
+                              <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
+                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
+                              <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
+                              <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -1048,67 +1071,6 @@ export function TransactionsPage() {
         </section>
       </main>
 
-      <aside className={`${styles.details} ${selected && !isDetailsCollapsed ? styles.detailsOpen : ""}`}>
-        {selected && !isDetailsCollapsed ? (
-          <>
-            <section className={styles.selectedSummary}>
-              <div>
-                <span className={styles.badge}>{selected.category}</span>
-                <h2>{selected.vendor || "Unknown"}</h2>
-                <strong className={Number(selected.amount) < 0 ? styles.expense : styles.income}>
-                  {toMoney(selected.amount)}
-                </strong>
-              </div>
-            </section>
-
-            <section className={styles.detailCard}>
-              <header className={styles.detailsHeader}>
-                <h2>Transaction Details</h2>
-                <button
-                  type="button"
-                  aria-label="Close transaction details"
-                  onClick={() => {
-                    setIsDetailsCollapsed(true);
-                    setSelectedId(null);
-                  }}
-                >
-                  &times;
-                </button>
-              </header>
-              <dl className={styles.detailList}>
-                <div><dt>Date</dt><dd>{formatDate(selected.date, true)}</dd></div>
-                <div><dt>Vendor</dt><dd>{selected.vendor || "Unknown"}</dd></div>
-                <div><dt>Category</dt><dd><span className={styles.badge}>{selected.category}</span></dd></div>
-                <div><dt>Notes</dt><dd>{selected.notes || "-"}</dd></div>
-                <div><dt>Created</dt><dd>{formatDate(selected.created_at, true)}</dd></div>
-                <div><dt>Updated</dt><dd>{formatDate(selected.updated_at, true)}</dd></div>
-              </dl>
-              <section className={styles.aiPanel}>
-                <h3>AI Categorization</h3>
-                <strong>{selected.ai_categorization?.category ?? "Pending"}</strong>
-                <span>Confidence: {selected.ai_categorization?.confidence ?? 0}%</span>
-              </section>
-            </section>
-
-            <section className={styles.historyCard}>
-              <div className={styles.history}>
-                <h3>Edit History</h3>
-                {selected.history.length ? selected.history.map((item) => (
-                  <article key={item.id}>
-                    <time>{formatDate(item.timestamp, true)}</time>
-                    <p>{item.event}</p>
-                  </article>
-                )) : <p>No edit history available</p>}
-              </div>
-              <div className={styles.detailActions}>
-                <Button variant="secondary" onClick={() => openEdit(selected)}>Edit Transaction</Button>
-                <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>Delete Transaction</Button>
-              </div>
-            </section>
-          </>
-        ) : null}
-      </aside>
-
       <Modal isOpen={isAddOpen} title="Add Transaction" onClose={() => setIsAddOpen(false)}>
         {renderModalForm("add")}
       </Modal>
@@ -1116,17 +1078,48 @@ export function TransactionsPage() {
         {renderModalForm("edit")}
       </Modal>
       <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
-        <p className={styles.confirmText}>Delete this transaction? This action cannot be undone.</p>
+        <p className={styles.confirmText}>Are you sure you want to delete this transaction?</p>
         <div className={styles.modalActions}>
           <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
           <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
         </div>
       </Modal>
       <Modal
+        isOpen={Boolean(historyTransaction)}
+        title="Edit History"
+        onClose={() => setHistoryTransaction(null)}
+      >
+        <div className={styles.history}>
+          {historyTransaction?.history.length ? historyTransaction.history.map((item) => (
+            <article key={item.id}>
+              <time>{formatDate(item.timestamp, true)}</time>
+              <p>{item.event}</p>
+            </article>
+          )) : <p>No edit history available.</p>}
+        </div>
+      </Modal>
+      <Modal
+        isOpen={Boolean(aiReview)}
+        title="AI category suggestion"
+        onClose={() => setAiReview(null)}
+      >
+        <div className={styles.aiSuggestion}>
+          <p>
+            AI suggests <strong>{aiReview?.suggestion.category}</strong> for this transaction.
+          </p>
+          <span>Confidence: {aiReview?.suggestion.confidence ?? 0}%</span>
+          {aiReview?.suggestion.rationale ? <small>{aiReview.suggestion.rationale}</small> : null}
+        </div>
+        <div className={styles.modalActions}>
+          <Button variant="secondary" onClick={() => setAiReview(null)}>Ignore</Button>
+          <Button onClick={() => void applyAiReview()}>Apply</Button>
+        </div>
+      </Modal>
+      <Modal
         bodyClassName={styles.importModalBody}
         className={styles.importModal}
         isOpen={isImportOpen}
-        title="Import Transactions"
+        title="Upload Transactions"
         onClose={closeImportModal}
       >
         <div className={styles.importFlow}>
@@ -1184,7 +1177,7 @@ export function TransactionsPage() {
               </div>
               <div className={styles.modalActions}>
                 <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
-                <Button onClick={() => void importCsv()}>Import Transactions</Button>
+                <Button onClick={() => void importCsv()}>Upload Transactions</Button>
               </div>
             </>
           ) : null}

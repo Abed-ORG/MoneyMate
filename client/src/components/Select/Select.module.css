@@ -118,6 +118,28 @@
   background: rgba(var(--mm-accent-rgb), 0.48);
 }
 
+.searchWrap {
+  margin-bottom: 0.25rem;
+  background: #071914;
+  padding-bottom: 0.25rem;
+}
+
+.searchInput {
+  width: 100%;
+  min-height: 2rem;
+  border: 1px solid var(--mm-border);
+  border-radius: 0.45rem;
+  background: rgba(16, 42, 35, 0.86);
+  color: var(--mm-text);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.searchInput:focus {
+  border-color: rgba(var(--mm-accent-rgb), 0.46);
+  outline: none;
+}
+
 .selectOption {
   display: flex;
   width: 100%;
@@ -132,6 +154,12 @@
   cursor: pointer;
   padding: 0.45rem 0.58rem;
   text-align: left;
+}
+
+.emptyOption {
+  color: var(--mm-text-muted);
+  padding: 0.55rem 0.6rem;
+  text-align: center;
 }
 
 .selectOption:hover:not(:disabled),

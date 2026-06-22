@@ -38,6 +38,8 @@ type SelectProps = {
   onValueChange?: (value: string) => void;
   options?: SelectOption[];
   required?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   value?: string;
 };
 
@@ -75,6 +77,8 @@ export function Select({
   onValueChange,
   options: optionsProp,
   required,
+  searchable = false,
+  searchPlaceholder = "Search...",
   value,
 }: SelectProps) {
   const options = getOptions(children, optionsProp);
@@ -82,22 +86,33 @@ export function Select({
     String(value ?? defaultValue ?? options[0]?.value ?? ""),
   );
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const nativeSelectRef = useRef<HTMLSelectElement | null>(null);
   const listboxId = useId();
   const currentValue = value == null ? internalValue : String(value);
   const selectedOption =
     options.find((option) => option.value === currentValue) ?? options[0];
+  const filteredOptions = searchable && searchTerm.trim()
+    ? options.filter((option) => {
+      const query = searchTerm.trim().toLowerCase();
+      return (
+        option.label.toLowerCase().includes(query) ||
+        option.value.toLowerCase().includes(query)
+      );
+    })
+    : options;
 
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("mousedown", closeOnOutsideClick, true);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick, true);
   }, []);
 
   const selectValue = (nextValue: string) => {
@@ -115,6 +130,7 @@ export function Select({
       } as Parameters<ChangeEventHandler<HTMLSelectElement>>[0]);
     }
     setIsOpen(false);
+    setSearchTerm("");
   };
 
   return (
@@ -151,7 +167,13 @@ export function Select({
         className={styles.selectTrigger}
         disabled={disabled}
         id={id}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => setIsOpen((current) => {
+          const next = !current;
+          if (!next) {
+            setSearchTerm("");
+          }
+          return next;
+        })}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             setIsOpen(false);
@@ -180,7 +202,24 @@ export function Select({
           id={listboxId}
           role="listbox"
         >
-          {options.map((option) => (
+          {searchable ? (
+            <div className={styles.searchWrap}>
+              <input
+                autoFocus
+                className={styles.searchInput}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }
+                }}
+                placeholder={searchPlaceholder}
+                value={searchTerm}
+              />
+            </div>
+          ) : null}
+          {filteredOptions.map((option) => (
             <button
               aria-selected={option.value === currentValue}
               className={`${styles.selectOption} ${
@@ -200,6 +239,9 @@ export function Select({
               ) : null}
             </button>
           ))}
+          {filteredOptions.length === 0 ? (
+            <div className={styles.emptyOption}>No results</div>
+          ) : null}
         </div>
       ) : null}
     </div>

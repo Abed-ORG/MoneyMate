@@ -1,16 +1,19 @@
 .page {
   display: grid;
-  width: min(100%, 70rem);
-  gap: 0.85rem;
+  width: min(100%, 74rem);
+  grid-template-columns: minmax(17rem, 26rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem;
   margin: 0 auto;
   padding-bottom: 1rem;
 }
 
 .profileOverview {
   display: grid;
-  grid-template-columns: minmax(0, 26rem) minmax(17rem, 1fr);
-  align-items: stretch;
-  gap: 0;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-items: start;
+  gap: 0.95rem;
 }
 
 .profileCardWrap {
@@ -29,7 +32,7 @@
   overflow: hidden;
   grid-template-rows: auto 1fr auto;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.18);
-  border-radius: var(--mm-radius-lg) 0 0 var(--mm-radius-lg);
+  border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 12% 8%, rgba(var(--mm-accent-rgb), 0.08), transparent 16rem),
     radial-gradient(circle at 92% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 14rem),
@@ -175,6 +178,8 @@
   background: #05271d;
   color: var(--mm-accent-soft);
   cursor: pointer;
+  line-height: 0;
+  padding: 0;
   box-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.16);
   transition:
     background 160ms ease,
@@ -190,6 +195,7 @@
 
 .avatarEdit svg {
   width: 1rem;
+  height: 1rem;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -261,37 +267,23 @@
   white-space: nowrap;
 }
 
-.savePanel {
-  display: flex;
-  justify-content: flex-end;
-  width: min(100%, 70rem);
-  margin: 0 auto;
-  padding: 1rem 0 0.75rem;
-  border-top: 1px solid rgba(var(--mm-accent-rgb), 0.12);
-}
-
-.savePanel button {
-  min-width: 12rem;
-}
-
 .settingsLayout {
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
 }
 
 .sectionNav {
   display: grid;
-  min-height: 100%;
+  width: min(100%, 24rem);
   align-content: stretch;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.12);
-  margin-left: -1px;
-  border-radius: 0 var(--mm-radius-lg) var(--mm-radius-lg) 0;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(var(--mm-accent-rgb), 0.04), transparent 13rem),
-    linear-gradient(145deg, rgba(3, 35, 26, 0.82), rgba(0, 17, 13, 0.9));
-  padding: 0.55rem;
-  box-shadow: var(--mm-shadow-card);
+  border: 0;
+  margin-left: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
 .sectionNavItem {
@@ -304,7 +296,7 @@
   background: rgba(0, 17, 13, 0.42);
   color: var(--mm-text-muted);
   cursor: pointer;
-  padding: 0.55rem;
+  padding: 0.65rem 0.7rem;
   text-align: left;
   transition:
     background 160ms ease,
@@ -317,7 +309,7 @@
 .sectionNavItem:hover {
   border-color: rgba(var(--mm-accent-rgb), 0.18);
   color: var(--mm-text-soft);
-  transform: translateX(2px);
+  transform: translateY(-1px);
 }
 
 .sectionNavItemActive {
@@ -338,20 +330,12 @@
   min-width: 0;
 }
 
-.sectionNavItem strong,
-.sectionNavItem small {
+.sectionNavItem strong {
   display: block;
 }
 
 .sectionNavItem strong {
   font-size: 0.8rem;
-}
-
-.sectionNavItem small {
-  margin-top: 0.2rem;
-  color: var(--mm-text-muted);
-  font-size: 0.7rem;
-  line-height: 1.35;
 }
 
 .sectionContent,
@@ -361,16 +345,28 @@
 
 .sectionCard {
   display: grid;
-  min-height: 16rem;
-  gap: 0.95rem;
-  border-color: rgba(var(--mm-accent-rgb), 0.1);
-  padding: clamp(0.85rem, 2vw, 1.15rem);
+  gap: 1rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .sectionHeading {
   display: flex;
-  align-items: flex-start;
+  max-width: 38rem;
+  align-items: center;
   gap: 0.65rem;
+}
+
+.sectionHeading > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionSaveButton {
+  min-width: 8.75rem;
+  margin-left: auto;
 }
 
 .sectionHeading h2,
@@ -386,9 +382,9 @@
 }
 
 .sectionHeading p {
-  margin-top: 0.3rem;
+  margin-top: 0.15rem;
   color: var(--mm-text-muted);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -417,8 +413,9 @@
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
+  max-width: 38rem;
 }
 
 .photoNote {
@@ -451,44 +448,71 @@
 
 .categoriesSection {
   display: grid;
-  gap: 0.75rem;
+  max-width: 38rem;
+  gap: 0.85rem;
 }
 
 .categories {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
-.customCategoryCard {
-  display: grid;
-  gap: 0.7rem;
+.customCategoryControls {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .customCategoryList {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.45rem;
 }
 
 .customCategoryRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 7rem auto auto;
-  gap: 0.5rem;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.09);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(0, 17, 13, 0.42);
+  padding: 0.5rem;
+}
+
+.customCategoryActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.45rem;
+}
+
+.customCategoryRow strong {
+  flex: 1;
+  min-width: 0;
+  color: var(--mm-text-soft);
+  font-size: 0.85rem;
+}
+
+.categoryColor {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(248, 255, 249, 0.16);
+  border-radius: 50%;
+  box-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.08);
 }
 
 .category {
   display: flex;
-  min-height: 2.45rem;
+  min-height: 2.15rem;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.09);
   border-radius: var(--mm-radius-sm);
   background: rgba(0, 17, 13, 0.52);
   color: var(--mm-text-muted);
   cursor: pointer;
-  padding: 0.55rem 0.65rem;
-  font-size: 0.82rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.78rem;
   font-weight: 700;
   transition:
     background 160ms ease,
@@ -515,13 +539,32 @@
 
 .categoryCheck {
   display: grid;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.05rem;
+  height: 1.05rem;
   flex: 0 0 auto;
   place-items: center;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.16);
   border-radius: 0.4rem;
   background: rgba(0, 17, 13, 0.58);
+}
+
+.categoryIcon {
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.14);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.18), transparent 54%),
+    rgba(4, 30, 22, 0.88);
+  color: var(--mm-accent-soft);
+}
+
+.categoryIcon svg {
+  width: 58%;
+  height: 58%;
 }
 
 .category:has(input:checked) .categoryCheck {
@@ -542,9 +585,27 @@
 
 .passwordForm {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 38rem;
   align-items: end;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+.categoryModalBody {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.categoryModalBody p {
+  margin: 0;
+  color: var(--mm-text-soft);
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
 .securityActions {
@@ -561,33 +622,40 @@
 }
 
 @media (max-width: 920px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
   .profileOverview {
+    grid-column: 1;
+    grid-row: auto;
     grid-template-columns: 1fr;
   }
 
   .profileCard {
     width: 100%;
     justify-self: center;
-    border-radius: 1.45rem 1.45rem 0 0;
+    border-radius: var(--mm-radius-lg);
   }
 
   .sectionNav {
-    margin-top: -1px;
+    width: 100%;
+    margin-top: 0;
     margin-left: 0;
-    grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
+    grid-template-columns: repeat(4, minmax(8.5rem, 1fr));
     grid-template-rows: 1fr;
-    border-radius: 0 0 1.45rem 1.45rem;
+    border-radius: 0;
     overflow-x: auto;
-    padding-bottom: 0.35rem;
     scrollbar-color: rgba(var(--mm-accent-rgb), 0.24) transparent;
+  }
+
+  .settingsLayout {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .sectionNavItem {
     min-width: 9.5rem;
-  }
-
-  .sectionNavItem small {
-    display: none;
   }
 }
 
@@ -597,7 +665,7 @@
   }
 
   .profileCard {
-    border-radius: 1.15rem 1.15rem 0 0;
+    border-radius: var(--mm-radius-lg);
   }
 
   .formGrid,
@@ -645,14 +713,6 @@
 
   .cardDetails {
     gap: 0.55rem;
-  }
-
-  .stickySave {
-    gap: 0.5rem;
-  }
-
-  .stickySave button {
-    width: 100%;
   }
 
   .categories {
