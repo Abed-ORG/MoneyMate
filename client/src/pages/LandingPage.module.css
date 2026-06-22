@@ -767,21 +767,93 @@
 .growthSculpture {
   position: relative;
   z-index: 1;
-  width: min(72%, 18rem);
-  max-width: 18rem;
-  transform: rotateX(4deg) rotateY(-10deg) rotateZ(-2deg);
+  width: min(108%, 34rem);
+  max-width: 34rem;
+  transform: rotateX(4deg) rotateY(-9deg) rotateZ(-2deg);
   transform-style: preserve-3d;
   animation: sculptureFloat 6s ease-in-out infinite;
 }
 
-.growthSculpture img {
+.growthSvg {
   display: block;
   width: 100%;
   height: auto;
   filter:
-    drop-shadow(1rem 1.6rem 1.6rem rgba(0, 0, 0, 0.44))
-    drop-shadow(0 0 0.8rem rgba(var(--mm-accent-rgb), 0.09));
+    drop-shadow(1.2rem 1.8rem 1.5rem rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 1rem rgba(var(--mm-accent-rgb), 0.18))
+    drop-shadow(0 0 2.4rem rgba(var(--mm-accent-rgb), 0.08));
   transform: translateZ(2rem);
+  overflow: visible;
+}
+
+.growthGlow {
+  opacity: 0.98;
+}
+
+.growthGround {
+  fill: rgba(0, 0, 0, 0.4);
+  filter: blur(1rem);
+}
+
+.growthBar,
+.growthArrow,
+.growthPie {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.growthBar {
+  opacity: 0;
+  transform: translateY(7.5rem) scaleY(0.18);
+  transition:
+    opacity 520ms ease,
+    transform 780ms cubic-bezier(0.2, 0.95, 0.22, 1);
+  transition-delay: var(--growth-delay, 0ms);
+}
+
+.growthArrow {
+  opacity: 0;
+  transform: translate(-3rem, 2.5rem) rotate(-5deg);
+  transition:
+    opacity 420ms ease 460ms,
+    transform 980ms cubic-bezier(0.18, 0.92, 0.24, 1) 460ms;
+}
+
+.growthArrowDepth,
+.growthArrowFace {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: left bottom;
+}
+
+.growthArrowDepth,
+.growthArrowFace {
+  transform: translate(-2.4rem, 2.1rem) scale(0.9);
+  transition:
+    opacity 460ms ease 560ms,
+    transform 920ms cubic-bezier(0.18, 0.92, 0.24, 1) 560ms;
+}
+
+.growthPie {
+  opacity: 0;
+  transform: translate(4.5rem, -1rem) rotate(58deg) scale(0.84);
+  transform-origin: 72% 68%;
+  transition:
+    opacity 360ms ease 1220ms,
+    transform 880ms cubic-bezier(0.2, 1.1, 0.2, 1) 1220ms;
+}
+
+.growthSculptureVisible .growthBar,
+.growthSculptureVisible .growthArrow,
+.growthSculptureVisible .growthPie {
+  opacity: 1;
+  transform: translate(0, 0) rotate(0) scale(1);
+}
+
+.growthSculptureVisible .growthArrowDepth,
+.growthSculptureVisible .growthArrowFace {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
 }
 
 .growthSculpture::after {
@@ -790,7 +862,7 @@
   bottom: 6%;
   left: 8%;
   z-index: -1;
-  height: 4rem;
+  height: 5rem;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   box-shadow:

@@ -1,4 +1,10 @@
-import type { MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import styles from "./LandingPage.module.css";
 
@@ -93,7 +99,172 @@ function FeatureIcon({ type }: { type: string }) {
   );
 }
 
+function GrowthSculpture() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.growthSvg}
+      viewBox="0 0 1024 1024"
+      focusable="false"
+    >
+      <defs>
+        <radialGradient id="growthGlow" cx="50%" cy="44%" r="56%">
+          <stop offset="0%" stopColor="#b8fff1" stopOpacity="0.62" />
+          <stop offset="38%" stopColor="#49c5b6" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#050d0d" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="growthFace" x1="22%" y1="9%" x2="83%" y2="92%">
+          <stop offset="0%" stopColor="#9ff7e2" />
+          <stop offset="26%" stopColor="#4ad6c3" />
+          <stop offset="60%" stopColor="#00a99d" />
+          <stop offset="100%" stopColor="#00695f" />
+        </linearGradient>
+        <linearGradient id="growthDark" x1="8%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#00a895" />
+          <stop offset="58%" stopColor="#007f75" />
+          <stop offset="100%" stopColor="#004c45" />
+        </linearGradient>
+        <linearGradient id="growthHighlight" x1="8%" y1="0%" x2="86%" y2="88%">
+          <stop offset="0%" stopColor="#d8fff2" stopOpacity="0.92" />
+          <stop offset="48%" stopColor="#8ff5dd" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#003f3a" stopOpacity="0.2" />
+        </linearGradient>
+        <filter id="growthShadow" x="-20%" y="-20%" width="150%" height="150%">
+          <feDropShadow dx="18" dy="22" stdDeviation="18" floodColor="#00100e" floodOpacity="0.72" />
+          <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="#49c5b6" floodOpacity="0.22" />
+        </filter>
+      </defs>
+
+      <ellipse className={styles.growthGlow} cx="496" cy="500" rx="436" ry="436" fill="url(#growthGlow)" />
+      <ellipse className={styles.growthGround} cx="482" cy="833" rx="386" ry="62" />
+
+      {[0, 1, 2, 3].map((bar) => {
+        const bars = [
+          { x: 172, y: 606, width: 116, height: 195, rx: 26, delay: "0ms" },
+          { x: 320, y: 505, width: 116, height: 296, rx: 26, delay: "120ms" },
+          { x: 470, y: 402, width: 126, height: 399, rx: 28, delay: "240ms" },
+          { x: 622, y: 282, width: 128, height: 519, rx: 28, delay: "360ms" },
+        ];
+        const item = bars[bar];
+        return (
+          <g
+            className={styles.growthBar}
+            key={bar}
+            style={{ "--growth-delay": item.delay } as CSSProperties}
+          >
+            <rect
+              x={item.x + 18}
+              y={item.y + 16}
+              width={item.width}
+              height={item.height}
+              rx={item.rx}
+              fill="#00443f"
+              opacity="0.55"
+            />
+            <rect
+              x={item.x}
+              y={item.y}
+              width={item.width}
+              height={item.height}
+              rx={item.rx}
+              fill="url(#growthFace)"
+              stroke="#5df5db"
+              strokeWidth="6"
+            />
+            <path
+              d={`M${item.x + 20} ${item.y + 22}h${item.width * 0.44}`}
+              stroke="#d9fff2"
+              strokeOpacity="0.72"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M${item.x + item.width - 18} ${item.y + 36}v${item.height - 72}`}
+              stroke="#003a35"
+              strokeOpacity="0.46"
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+          </g>
+        );
+      })}
+
+      <g className={styles.growthArrow} filter="url(#growthShadow)">
+        <path
+          className={styles.growthArrowDepth}
+          d="M133 628C254 573 393 456 512 315C571 245 628 181 676 133L852 57L801 274L741 213C668 286 608 351 547 432C441 572 298 682 150 748C129 757 105 747 96 726C88 707 99 682 120 673C251 613 380 498 483 361C542 283 604 206 657 151Z"
+          fill="#003a35"
+          opacity="0.82"
+        />
+        <path
+          className={styles.growthArrowFace}
+          d="M121 609C249 550 381 435 496 300C555 231 611 168 660 119L835 42L786 255L728 194C656 267 594 336 529 414C421 559 286 659 136 724C116 733 93 724 85 704C77 684 87 662 107 653C239 596 363 485 468 346C527 268 587 192 642 137Z"
+          fill="url(#growthFace)"
+          stroke="#6df4df"
+          strokeWidth="7"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      <g className={styles.growthPie} filter="url(#growthShadow)">
+        <circle cx="704" cy="706" r="176" fill="#003c38" opacity="0.78" transform="translate(18 18)" />
+        <circle cx="704" cy="706" r="176" fill="url(#growthDark)" stroke="#75f5df" strokeWidth="8" />
+        <path
+          d="M704 706 817 571A176 176 0 0 1 876 743Z"
+          fill="#8df5df"
+          stroke="#75f5df"
+          strokeWidth="8"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M704 706 869 766A176 176 0 0 1 797 855Z"
+          fill="#21c7b8"
+          stroke="#75f5df"
+          strokeWidth="8"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M704 706 817 571M704 706 876 743M704 706 869 766M704 706 797 855"
+          fill="none"
+          stroke="#050d0d"
+          strokeOpacity="0.5"
+          strokeWidth="7"
+          strokeLinecap="round"
+        />
+        <path
+          d="M585 578A172 172 0 0 1 724 536"
+          fill="none"
+          stroke="#d5fff2"
+          strokeOpacity="0.62"
+          strokeWidth="7"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
 export function LandingPage() {
+  const [isGrowthVisible, setIsGrowthVisible] = useState(false);
+  const growthRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = growthRef.current;
+    if (!element) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsGrowthVisible(entry.isIntersecting);
+      },
+      { threshold: 0.42 },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const scrollToSection = (
     event: MouseEvent<HTMLAnchorElement>,
     sectionId: string,
@@ -224,8 +395,13 @@ export function LandingPage() {
           <span className={styles.aboutOrbital} />
           <span className={styles.aboutOrbitalInner} />
           <span className={styles.aboutFloor} />
-          <div className={styles.growthSculpture}>
-            <img src="/moneymate-growth-3d.png" alt="" />
+          <div
+            className={`${styles.growthSculpture} ${
+              isGrowthVisible ? styles.growthSculptureVisible : ""
+            }`}
+            ref={growthRef}
+          >
+            <GrowthSculpture />
           </div>
         </div>
 
