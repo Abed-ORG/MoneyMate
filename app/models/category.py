@@ -16,4 +16,3 @@ class Category(Base):
     parent = relationship("Category", remote_side=[id], backref="children")
     transactions = relationship("Transaction", back_populates="category")
     budgets = relationship("Budget", back_populates="category")
-

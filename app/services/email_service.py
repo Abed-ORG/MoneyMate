@@ -241,4 +241,3 @@ def send_password_reset_email(user: User, token: str) -> None:
         text,
         html,
     )
-

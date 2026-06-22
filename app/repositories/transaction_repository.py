@@ -328,4 +328,3 @@ class InMemoryTransactionRepository:
 
 
 transaction_repository = InMemoryTransactionRepository()
-

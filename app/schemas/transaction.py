@@ -166,4 +166,3 @@ class TransactionImportResponse(BaseModel):
 
 SortField = Literal["date", "amount", "category"]
 SortDirection = Literal["asc", "desc"]
-
