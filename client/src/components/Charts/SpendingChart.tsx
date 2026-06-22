@@ -48,7 +48,7 @@ export function SpendingChart() {
               color: "#f2f7f0",
             }}
             cursor={{ fill: "rgba(170, 252, 117, 0.055)" }}
-            labelStyle={{ color: "#91d46a", fontWeight: 800 }}
+            labelStyle={{ color: "#AAFC75", fontWeight: 800 }}
             formatter={(value, name) => {
               const amount = typeof value === "number" ? value : Number(value ?? 0);
 
@@ -59,7 +59,7 @@ export function SpendingChart() {
             }}
           />
           <Bar dataKey="budget" fill="rgba(170, 252, 117, 0.16)" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="spent" fill="#91d46a" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="spent" fill="#AAFC75" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

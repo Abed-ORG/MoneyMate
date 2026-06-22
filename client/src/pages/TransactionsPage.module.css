@@ -353,9 +353,9 @@
 .table th,
 .table td {
   border-bottom: 1px solid var(--mm-border);
-  padding: 0.62rem 0.75rem;
+  padding: 0.6rem 0.55rem;
   color: var(--mm-text-soft);
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -365,11 +365,11 @@
 }
 
 .table th:nth-child(1) {
-  width: 4.25rem;
+  width: 4.5rem;
 }
 
 .table th:nth-child(2) {
-  width: 8rem;
+  width: 8.5rem;
 }
 
 .table th:nth-child(3) {
@@ -377,7 +377,7 @@
 }
 
 .table th:nth-child(4) {
-  width: 6.5rem;
+  width: 7rem;
   text-align: center;
 }
 
@@ -390,11 +390,11 @@
 }
 
 .table th:nth-child(6) {
-  width: 8.25rem;
+  width: 8.5rem;
 }
 
 .table th:nth-child(7) {
-  width: 6.25rem;
+  width: 4.5rem;
 }
 
 .table th:last-child,
@@ -494,8 +494,18 @@
     transform 160ms ease;
 }
 
-.dotsButton {
+.rowActions .dotsButton {
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.rowActions .dotsButton:hover {
+  border: 0;
   background: rgba(var(--mm-accent-rgb), 0.08);
+  box-shadow: none;
 }
 
 .dotsButton svg {
@@ -518,7 +528,7 @@
   background: rgba(7, 25, 20, 0.98);
   box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.34);
   padding: 0.35rem;
-  transform: translateY(-0.35rem);
+  transform: translateY(-0.25rem);
 }
 
 .actionMenu button {
@@ -662,8 +672,8 @@
 }
 
 .details {
-  position: sticky;
-  top: 4.75rem;
+  position: relative;
+  top: auto;
   display: grid;
   gap: 1rem;
   max-height: calc(100vh - 5.75rem);
@@ -735,7 +745,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle at 35% 30%, rgba(var(--mm-accent-rgb), 0.32), transparent 38%),
-    #102a23;
+    #102A23;
   color: var(--mm-text);
   font-size: 1.55rem;
   font-weight: 900;

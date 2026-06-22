@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CategoryIcon,
@@ -303,6 +303,7 @@ export function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   const selected = useMemo(
     () => transactions.find((transaction) => transaction.id === selectedId) ?? null,
@@ -320,6 +321,21 @@ export function TransactionsPage() {
       ).sort(),
     [categories],
   );
+  const categoryColorByName = useMemo(
+    () => new Map(categories.map((category) => [category.name, category.color])),
+    [categories],
+  );
+  const categoryIconStyle = (category: string): CSSProperties | undefined => {
+    const color = categoryColorByName.get(category);
+    if (!color) {
+      return undefined;
+    }
+    return {
+      borderColor: `${color}66`,
+      boxShadow: `0 0 0.85rem ${color}33`,
+      color,
+    };
+  };
 
   const categoryOptions = useMemo(
     () => [
@@ -372,6 +388,22 @@ export function TransactionsPage() {
   useEffect(() => {
     void transactionsApi.categories().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    if (!actionMenuId) {
+      return undefined;
+    }
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (actionMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setActionMenuId(null);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [actionMenuId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -926,7 +958,7 @@ export function TransactionsPage() {
                     <th>Category</th>
                     <th>Notes</th>
                     <th>Amount</th>
-                    <th>Actions</th>
+                    <th aria-label="Transaction actions" />
                   </tr>
                 </thead>
                 <tbody>
@@ -944,7 +976,7 @@ export function TransactionsPage() {
                       <td>{transaction.vendor || "Unknown vendor"}</td>
                       <td>
                         <span className={styles.categoryCell}>
-                          <span className={styles.categoryIcon}>
+                          <span className={styles.categoryIcon} style={categoryIconStyle(transaction.category)}>
                             <CategoryIcon category={transaction.category} />
                           </span>
                           <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
@@ -957,7 +989,10 @@ export function TransactionsPage() {
                         {toMoney(transaction.amount)}
                       </td>
                       <td>
-                        <div className={styles.rowActions}>
+                        <div
+                          className={styles.rowActions}
+                          ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
+                        >
                           <button
                             className={styles.dotsButton}
                             type="button"

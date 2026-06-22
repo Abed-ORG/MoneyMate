@@ -1,12 +1,12 @@
 .landing {
-  --neon: #91d46a;
-  --neon-soft: #8ebf77;
+  --neon: #AAFC75;
+  --neon-soft: #AAFC75;
   min-height: 100vh;
   overflow: clip;
   background:
     radial-gradient(circle at 72% 44%, rgba(var(--mm-accent-rgb), 0.055), transparent 28rem),
     radial-gradient(circle at 20% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 34rem),
-    linear-gradient(135deg, #102a23 0%, #0b211b 55%, #071914 100%);
+    linear-gradient(135deg, #102A23 0%, #0b211b 55%, #071914 100%);
   color: var(--mm-text);
 }
 
@@ -91,8 +91,8 @@
   min-width: 8rem;
   padding: 0.85rem 1.25rem;
   border: 1px solid rgba(126, 221, 182, 0.15);
-  background: linear-gradient(135deg, #aafc75, #8fe263);
-  color: #102a23;
+  background: linear-gradient(135deg, #AAFC75, #AAFC75);
+  color: #102A23;
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12),
     0 0 1.8rem rgba(8, 20, 21, 0.35);
@@ -101,7 +101,7 @@
 .signupButton:hover,
 .primaryCta:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #b8ff88, #aafc75);
+  background: linear-gradient(135deg, #AAFC75, #AAFC75);
   box-shadow:
     0 0 1rem rgba(var(--mm-accent-rgb), 0.18),
     0 0 2rem rgba(8, 20, 21, 0.32);

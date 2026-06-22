@@ -155,8 +155,9 @@ export function SettingsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#91d46a");
+  const [newCategoryColor, setNewCategoryColor] = useState("#AAFC75");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
@@ -198,15 +199,39 @@ export function SettingsPage() {
 
   const addCustomCategory = async () => {
     if (!newCategoryName.trim()) return false;
-    const created = await transactionsApi.createCategory({
-      name: newCategoryName.trim(),
-      color: newCategoryColor,
-      is_default: false,
-    });
-    setCustomCategories((current) => [...current, created]);
+    if (editingCategory) {
+      const updated = await transactionsApi.updateCategory(editingCategory.id, {
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        is_default: editingCategory.is_default,
+      });
+      setCustomCategories((current) => current.map((category) => (category.id === updated.id ? updated : category)));
+    } else {
+      const created = await transactionsApi.createCategory({
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        is_default: false,
+      });
+      setCustomCategories((current) => [...current, created]);
+    }
     setNewCategoryName("");
-    setNewCategoryColor("#91d46a");
+    setNewCategoryColor("#AAFC75");
+    setEditingCategory(null);
     return true;
+  };
+
+  const openCustomizeCategory = (category?: Category) => {
+    setEditingCategory(category ?? null);
+    setNewCategoryName(category?.name ?? "");
+    setNewCategoryColor(category?.color ?? "#AAFC75");
+    setIsCustomizeOpen(true);
+  };
+
+  const closeCustomizeCategory = () => {
+    setIsCustomizeOpen(false);
+    setEditingCategory(null);
+    setNewCategoryName("");
+    setNewCategoryColor("#AAFC75");
   };
 
   const deleteCustomCategory = async (id: string) => {
@@ -595,7 +620,7 @@ export function SettingsPage() {
                       </div>
                     </fieldset>
                     <div className={styles.customCategoryControls}>
-                      <Button type="button" onClick={() => setIsCustomizeOpen(true)}>
+                      <Button type="button" onClick={() => openCustomizeCategory()}>
                         Customize
                       </Button>
                     </div>
@@ -603,11 +628,19 @@ export function SettingsPage() {
                       <div className={styles.customCategoryList}>
                         {editableCategories.map((category) => (
                           <div key={category.id} className={styles.customCategoryRow}>
-                            <span className={styles.categoryColor} style={{ background: category.color }} />
+                            <span
+                              className={styles.categoryColor}
+                              style={{ background: category.color, boxShadow: `0 0 0.75rem ${category.color}55` }}
+                            />
                             <strong>{category.name}</strong>
-                            <Button type="button" variant="danger" onClick={() => setCategoryToDelete(category)}>
-                              Delete
-                            </Button>
+                            <div className={styles.customCategoryActions}>
+                              <Button type="button" variant="secondary" onClick={() => openCustomizeCategory(category)}>
+                                Edit
+                              </Button>
+                              <Button type="button" variant="danger" onClick={() => setCategoryToDelete(category)}>
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -669,12 +702,8 @@ export function SettingsPage() {
 
       <Modal
         isOpen={isCustomizeOpen}
-        title="Customize category"
-        onClose={() => {
-          setIsCustomizeOpen(false);
-          setNewCategoryName("");
-          setNewCategoryColor("#91d46a");
-        }}
+        title={editingCategory ? "Edit category" : "Customize category"}
+        onClose={closeCustomizeCategory}
       >
         <div className={styles.categoryModalBody}>
           <FormField label="Name">
@@ -694,11 +723,7 @@ export function SettingsPage() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => {
-                setIsCustomizeOpen(false);
-                setNewCategoryName("");
-                setNewCategoryColor("#91d46a");
-              }}
+              onClick={closeCustomizeCategory}
             >
               Cancel
             </Button>
@@ -710,7 +735,7 @@ export function SettingsPage() {
                 }
               }}
             >
-              Save
+              {editingCategory ? "Save changes" : "Save"}
             </Button>
           </div>
         </div>

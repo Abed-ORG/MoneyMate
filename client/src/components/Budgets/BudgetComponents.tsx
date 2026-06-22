@@ -156,7 +156,6 @@ export function BudgetSummaryCard({
     <Card className={styles.summaryCard}>
       <div>
         <span className={styles.kicker}>Monthly overview</span>
-        <h2>{monthLabel(overview.month, overview.year)}</h2>
       </div>
       <div className={styles.summaryMetrics}>
         {items.map((item) => (
