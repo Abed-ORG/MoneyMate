@@ -115,7 +115,7 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: #020504 !important;
+  color: var(--mm-bg-deep) !important;
   box-shadow: var(--mm-shadow-glow);
 }
 

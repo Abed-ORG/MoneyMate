@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at 72% 44%, rgba(var(--mm-accent-rgb), 0.055), transparent 28rem),
     radial-gradient(circle at 20% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 34rem),
-    linear-gradient(135deg, #020504 0%, #050908 55%, #000000 100%);
+    var(--mm-body-background);
   color: var(--mm-text);
 }
 
@@ -122,7 +122,7 @@
   padding: 0.85rem 1.25rem;
   border: 1px solid rgba(73, 197, 182, 0.15);
   background: linear-gradient(135deg, #49c5b6, #7fe1d4);
-  color: #020504;
+  color: var(--mm-bg-deep);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12),
     0 0 1.8rem rgba(8, 20, 21, 0.35);
@@ -525,7 +525,7 @@
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 10% 10%, rgba(var(--mm-accent-rgb), 0.05), transparent 12rem),
-    linear-gradient(145deg, rgba(5, 15, 13, 0.9), rgba(3, 8, 7, 0.92));
+    var(--mm-card-background);
   padding: 0.9rem;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.025),

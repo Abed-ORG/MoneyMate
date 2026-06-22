@@ -36,7 +36,7 @@
   background:
     radial-gradient(circle at 12% 8%, rgba(var(--mm-accent-rgb), 0.08), transparent 16rem),
     radial-gradient(circle at 92% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 14rem),
-    linear-gradient(145deg, #0b1714, #000000 58%, #010403);
+    linear-gradient(145deg, #062b55, #000814 58%, #00142b);
   padding: clamp(0.9rem, 2.2vw, 1.25rem);
   box-shadow:
     0 0 1.4rem rgba(var(--mm-accent-rgb), 0.055),
@@ -189,7 +189,7 @@
 
 .avatarEdit:hover {
   background: var(--mm-accent);
-  color: #020504;
+  color: var(--mm-bg-deep);
   transform: translateY(-1px);
 }
 
@@ -573,7 +573,7 @@
 .category:has(input:checked) .categoryCheck {
   border-color: var(--mm-accent-soft);
   background: var(--mm-accent);
-  color: #020504;
+  color: var(--mm-bg-deep);
   box-shadow: 0 0 0.5rem rgba(var(--mm-accent-rgb), 0.18);
 }
 

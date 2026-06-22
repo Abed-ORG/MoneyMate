@@ -1,10 +1,10 @@
 :root {
-  --mm-bg: #020504;
-  --mm-bg-rgb: 2, 5, 4;
-  --mm-bg-deep: #000000;
-  --mm-bg-raised: #0b1714;
-  --mm-surface: rgba(8, 17, 15, 0.94);
-  --mm-surface-strong: rgba(3, 8, 7, 0.96);
+  --mm-bg: #0a0a0a;
+  --mm-bg-rgb: 10, 10, 10;
+  --mm-bg-deep: #030303;
+  --mm-bg-raised: #191919;
+  --mm-surface: rgba(25, 25, 25, 0.94);
+  --mm-surface-strong: rgba(12, 12, 12, 0.96);
   --mm-surface-soft: rgba(73, 197, 182, 0.08);
   --mm-border: rgba(210, 255, 248, 0.13);
   --mm-border-strong: rgba(73, 197, 182, 0.34);
@@ -27,27 +27,27 @@
   --mm-body-background:
     radial-gradient(circle at 82% 5%, rgba(var(--mm-accent-rgb), 0.12), transparent 28rem),
     radial-gradient(circle at 8% 90%, rgba(var(--mm-accent-rgb), 0.08), transparent 26rem),
-    linear-gradient(135deg, var(--mm-bg) 0%, #050908 55%, var(--mm-bg-deep) 100%);
+    linear-gradient(135deg, var(--mm-bg) 0%, #191919 58%, var(--mm-bg-deep) 100%);
   --mm-shell-background:
     radial-gradient(circle at 80% 14%, rgba(var(--mm-accent-rgb), 0.13), transparent 30rem),
     radial-gradient(circle at 8% 92%, rgba(var(--mm-accent-rgb), 0.08), transparent 34rem),
-    linear-gradient(135deg, var(--mm-bg) 0%, #050908 52%, var(--mm-bg-deep) 100%);
+    linear-gradient(135deg, var(--mm-bg) 0%, #191919 54%, var(--mm-bg-deep) 100%);
   --mm-sidebar-background:
     radial-gradient(circle at 30% 0%, rgba(var(--mm-accent-rgb), 0.08), transparent 18rem),
-    linear-gradient(180deg, rgba(4, 9, 8, 0.98), rgba(0, 0, 0, 0.98));
-  --mm-header-background: rgba(3, 8, 7, 0.82);
+    linear-gradient(180deg, rgba(25, 25, 25, 0.98), rgba(3, 3, 3, 0.98));
+  --mm-header-background: rgba(12, 12, 12, 0.82);
   --mm-card-background:
     radial-gradient(circle at 8% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 14rem),
-    linear-gradient(145deg, rgba(8, 17, 15, 0.94), rgba(0, 0, 0, 0.9));
+    linear-gradient(145deg, rgba(25, 25, 25, 0.94), rgba(3, 3, 3, 0.9));
   --mm-control-background:
-    linear-gradient(145deg, rgba(8, 17, 15, 0.96), rgba(0, 0, 0, 0.98));
+    linear-gradient(145deg, rgba(25, 25, 25, 0.96), rgba(3, 3, 3, 0.98));
   --mm-control-hover-background:
-    linear-gradient(145deg, rgba(12, 34, 29, 0.98), rgba(3, 8, 7, 0.98));
+    linear-gradient(145deg, rgba(34, 34, 34, 0.98), rgba(12, 12, 12, 0.98));
   --mm-menu-background:
     radial-gradient(circle at 15% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 10rem),
-    #010403;
-  --mm-input-background: rgba(0, 0, 0, 0.72);
-  --mm-input-focus-background: rgba(3, 8, 7, 0.92);
+    #030303;
+  --mm-input-background: rgba(3, 3, 3, 0.72);
+  --mm-input-focus-background: rgba(12, 12, 12, 0.92);
   --mm-logo-filter:
     drop-shadow(0 0 0.45rem rgba(var(--mm-accent-rgb), 0.72))
     drop-shadow(0 0 1.25rem rgba(var(--mm-accent-rgb), 0.34));
