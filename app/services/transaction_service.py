@@ -147,7 +147,7 @@ def category_to_schema(category: CategoryModel) -> Category:
         id=str(category.id),
         user_id=str(category.user_id),
         name=category.name,
-        color="#69f56a",
+        color=category.color or "#AAFC75",
         is_default=category.name in DEFAULT_CATEGORIES,
     )
 
@@ -423,6 +423,7 @@ def create_category(
     payload: CategoryCreate,
 ) -> Category:
     category = get_or_create_category(db, user_id, payload.name)
+    category.color = payload.color
     db.commit()
     db.refresh(category)
     return category_to_schema(category)
@@ -453,6 +454,8 @@ def update_category(
     values = payload.model_dump(exclude_unset=True)
     if "name" in values and values["name"]:
         category.name = values["name"]
+    if "color" in values and values["color"]:
+        category.color = values["color"]
     db.commit()
     db.refresh(category)
     return category_to_schema(category)

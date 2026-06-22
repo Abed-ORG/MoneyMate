@@ -56,7 +56,6 @@
   stroke-width: 1.9;
 }
 
-.filters,
 .tablePanel,
 .quickAdd,
 .importCard,
@@ -73,16 +72,9 @@
 }
 
 .filters {
-  position: fixed;
-  top: 6.25rem;
-  right: clamp(1rem, 3vw, 2rem);
-  z-index: 70;
   display: grid;
   gap: 0.7rem;
-  width: min(24rem, calc(100vw - 2rem));
-  max-height: min(34rem, calc(100vh - 7.5rem));
-  overflow: auto;
-  padding: 0.75rem;
+  width: 100%;
 }
 
 .panelHeader,
@@ -153,6 +145,10 @@
   gap: 0.2rem;
   margin-top: 0.25rem;
   padding: 0.75rem;
+}
+
+.summaryModal .stats {
+  margin-top: 0;
 }
 
 .stats strong {
@@ -449,6 +445,14 @@
 .categoryIcon svg {
   width: 55%;
   height: 55%;
+}
+
+.customCategoryDot {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(248, 255, 249, 0.14);
+  border-radius: 50%;
 }
 
 .table td.income {
@@ -991,17 +995,6 @@
     transform: translateX(0);
   }
 
-  .filters {
-    position: fixed;
-    top: 5.5rem;
-    right: 1rem;
-    bottom: auto;
-    z-index: 70;
-    width: min(24rem, calc(100vw - 2rem));
-    max-height: calc(100vh - 7rem);
-    border-radius: var(--mm-radius-lg);
-    box-shadow: -0.8rem 0 2rem rgba(0, 0, 0, 0.25);
-  }
 }
 
 @media (max-width: 840px) {

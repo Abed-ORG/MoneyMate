@@ -3,7 +3,7 @@
   width: min(100%, 74rem);
   grid-template-columns: minmax(17rem, 26rem) minmax(0, 1fr);
   align-items: start;
-  gap: 1.05rem;
+  gap: 1.25rem;
   margin: 0 auto;
   padding-bottom: 1rem;
 }
@@ -13,7 +13,7 @@
   grid-column: 1;
   grid-row: 1 / span 3;
   align-items: start;
-  gap: 0.75rem;
+  gap: 0.95rem;
 }
 
 .profileCardWrap {
@@ -267,21 +267,6 @@
   white-space: nowrap;
 }
 
-.savePanel {
-  display: flex;
-  grid-column: 2;
-  grid-row: 2;
-  justify-content: flex-end;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border-top: 0;
-}
-
-.savePanel button {
-  min-width: 12rem;
-}
-
 .settingsLayout {
   grid-column: 2;
   grid-row: 1;
@@ -360,7 +345,7 @@
 
 .sectionCard {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -369,8 +354,19 @@
 
 .sectionHeading {
   display: flex;
-  align-items: flex-start;
+  max-width: 38rem;
+  align-items: center;
   gap: 0.65rem;
+}
+
+.sectionHeading > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionSaveButton {
+  min-width: 8.75rem;
+  margin-left: auto;
 }
 
 .sectionHeading h2,
@@ -418,7 +414,7 @@
 .formGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: 0.85rem;
   max-width: 38rem;
 }
 
@@ -452,7 +448,8 @@
 
 .categoriesSection {
   display: grid;
-  gap: 0.7rem;
+  max-width: 38rem;
+  gap: 0.85rem;
 }
 
 .categories {
@@ -496,8 +493,8 @@
 }
 
 .categoryColor {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.35rem;
+  height: 1.35rem;
   flex: 0 0 auto;
   border: 1px solid rgba(248, 255, 249, 0.16);
   border-radius: 50%;
@@ -652,8 +649,7 @@
     scrollbar-color: rgba(var(--mm-accent-rgb), 0.24) transparent;
   }
 
-  .settingsLayout,
-  .savePanel {
+  .settingsLayout {
     grid-column: 1;
     grid-row: auto;
   }

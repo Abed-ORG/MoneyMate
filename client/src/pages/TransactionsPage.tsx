@@ -291,6 +291,7 @@ export function TransactionsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState>(null);
@@ -321,16 +322,17 @@ export function TransactionsPage() {
       ).sort(),
     [categories],
   );
-  const categoryColorByName = useMemo(
-    () => new Map(categories.map((category) => [category.name, category.color])),
+  const categoryByName = useMemo(
+    () => new Map(categories.map((category) => [category.name, category])),
     [categories],
   );
   const categoryIconStyle = (category: string): CSSProperties | undefined => {
-    const color = categoryColorByName.get(category);
+    const color = categoryByName.get(category)?.color;
     if (!color) {
       return undefined;
     }
     return {
+      backgroundColor: color,
       borderColor: `${color}66`,
       boxShadow: `0 0 0.85rem ${color}33`,
       color,
@@ -825,21 +827,17 @@ export function TransactionsPage() {
           <FilterIcon />
           Filters
         </Button>
+        <Button variant="secondary" onClick={() => setIsSummaryOpen(true)}>
+          Summary
+        </Button>
       </div>
 
-      {isFiltersOpen ? (
-        <aside className={styles.filters} aria-label="Transaction filters">
-          <div className={styles.panelHeader}>
-            <h2>Filters</h2>
-            <button
-              aria-label="Close filters"
-              className={styles.iconBox}
-              onClick={() => setIsFiltersOpen(false)}
-              type="button"
-            >
-              <FilterIcon />
-            </button>
-          </div>
+      <Modal
+        bodyClassName={styles.filters}
+        isOpen={isFiltersOpen}
+        title="Filters"
+        onClose={() => setIsFiltersOpen(false)}
+      >
           <Input
             aria-label="Search transactions by vendor"
             placeholder="Search transactions..."
@@ -898,18 +896,24 @@ export function TransactionsPage() {
               Reset Filters
             </Button>
           </div>
+      </Modal>
 
-          <section className={styles.stats}>
-            <h3>Quick Stats</h3>
-            <strong>{total}</strong>
-            <span>Transactions</span>
-            <strong className={styles.expense}>{toMoney(expenses)}</strong>
-            <span>Total Expenses</span>
-            <strong className={styles.income}>{toMoney(income)}</strong>
-            <span>Total Income</span>
-          </section>
-        </aside>
-      ) : null}
+      <Modal
+        bodyClassName={styles.summaryModal}
+        isOpen={isSummaryOpen}
+        title="Summary"
+        onClose={() => setIsSummaryOpen(false)}
+      >
+        <section className={styles.stats}>
+          <h3>Quick Stats</h3>
+          <strong>{total}</strong>
+          <span>Transactions</span>
+          <strong className={styles.expense}>{toMoney(expenses)}</strong>
+          <span>Total Expenses</span>
+          <strong className={styles.income}>{toMoney(income)}</strong>
+          <span>Total Income</span>
+        </section>
+      </Modal>
 
       <main className={styles.content}>
         <section className={styles.tablePanel}>
@@ -976,9 +980,16 @@ export function TransactionsPage() {
                       <td>{transaction.vendor || "Unknown vendor"}</td>
                       <td>
                         <span className={styles.categoryCell}>
-                          <span className={styles.categoryIcon} style={categoryIconStyle(transaction.category)}>
-                            <CategoryIcon category={transaction.category} />
-                          </span>
+                          {categoryByName.get(transaction.category)?.is_default === false ? (
+                            <span
+                              className={styles.customCategoryDot}
+                              style={categoryIconStyle(transaction.category)}
+                            />
+                          ) : (
+                            <span className={styles.categoryIcon}>
+                              <CategoryIcon category={transaction.category} />
+                            </span>
+                          )}
                           <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
                         </span>
                       </td>

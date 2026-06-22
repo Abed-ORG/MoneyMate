@@ -3,6 +3,7 @@ import {
   type FormEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -79,6 +80,40 @@ const settingsSections: Array<{
     icon: "security",
   },
 ];
+
+const fallbackCurrencyCodes = [
+  "AED", "AFN", "ALL", "AMD", "ANG", "AOA", "ARS", "AUD", "AWG", "AZN",
+  "BAM", "BBD", "BDT", "BGN", "BHD", "BIF", "BMD", "BND", "BOB", "BRL",
+  "BSD", "BTN", "BWP", "BYN", "BZD", "CAD", "CDF", "CHF", "CLP", "CNY",
+  "COP", "CRC", "CUP", "CVE", "CZK", "DJF", "DKK", "DOP", "DZD", "EGP",
+  "ERN", "ETB", "EUR", "FJD", "FKP", "GBP", "GEL", "GHS", "GIP", "GMD",
+  "GNF", "GTQ", "GYD", "HKD", "HNL", "HTG", "HUF", "IDR", "ILS", "INR",
+  "IQD", "IRR", "ISK", "JMD", "JOD", "JPY", "KES", "KGS", "KHR", "KMF",
+  "KPW", "KRW", "KWD", "KYD", "KZT", "LAK", "LBP", "LKR", "LRD", "LSL",
+  "LYD", "MAD", "MDL", "MGA", "MKD", "MMK", "MNT", "MOP", "MRU", "MUR",
+  "MVR", "MWK", "MXN", "MYR", "MZN", "NAD", "NGN", "NIO", "NOK", "NPR",
+  "NZD", "OMR", "PAB", "PEN", "PGK", "PHP", "PKR", "PLN", "PYG", "QAR",
+  "RON", "RSD", "RUB", "RWF", "SAR", "SBD", "SCR", "SDG", "SEK", "SGD",
+  "SHP", "SLE", "SOS", "SRD", "SSP", "STN", "SYP", "SZL", "THB", "TJS",
+  "TMT", "TND", "TOP", "TRY", "TTD", "TWD", "TZS", "UAH", "UGX", "USD",
+  "UYU", "UZS", "VES", "VND", "VUV", "WST", "XAF", "XCD", "XOF", "XPF",
+  "YER", "ZAR", "ZMW", "ZWL",
+];
+
+function buildCurrencyOptions() {
+  const intlWithCurrencies = Intl as typeof Intl & {
+    supportedValuesOf?: (key: "currency") => string[];
+  };
+  const codes = intlWithCurrencies.supportedValuesOf?.("currency") ?? fallbackCurrencyCodes;
+  const displayNames = new Intl.DisplayNames(["en"], { type: "currency" });
+
+  return Array.from(new Set(codes))
+    .sort()
+    .map((code) => {
+      const name = displayNames.of(code) ?? code;
+      return { value: code, label: `${code} - ${name}` };
+    });
+}
 
 function SectionIcon({ name }: { name: SectionIconName }) {
   const paths: Record<SectionIconName, ReactNode> = {
@@ -400,6 +435,8 @@ export function SettingsPage() {
     (section) => section.id === activeSection,
   );
   const editableCategories = customCategories.filter((category) => !category.is_default);
+  const currencyOptions = useMemo(buildCurrencyOptions, []);
+  const showProfileSave = activeSection !== "security";
 
   return (
     <div className={styles.page}>
@@ -502,16 +539,6 @@ export function SettingsPage() {
         onSubmit={handleProfileSave}
       />
 
-      <div className={styles.savePanel}>
-        <Button
-          disabled={isSaving}
-          form="profile-settings-form"
-          type="submit"
-        >
-          {isSaving ? "Saving..." : "Save changes"}
-        </Button>
-      </div>
-
       <div className={styles.settingsLayout}>
         <div className={styles.sectionContent}>
           {activeSection !== "security" ? (
@@ -523,6 +550,16 @@ export function SettingsPage() {
                     <h2>{activeSectionDetails?.label}</h2>
                     <p>{activeSectionDetails?.description}</p>
                   </div>
+                  {showProfileSave ? (
+                    <Button
+                      className={styles.sectionSaveButton}
+                      disabled={isSaving}
+                      form="profile-settings-form"
+                      type="submit"
+                    >
+                      {isSaving ? "Saving..." : "Save changes"}
+                    </Button>
+                  ) : null}
                 </div>
 
                 {activeSection === "personal" ? (
@@ -574,15 +611,12 @@ export function SettingsPage() {
                       <Select
                         id="settings-currency"
                         name="currency"
+                        options={currencyOptions}
+                        searchable
+                        searchPlaceholder="Search currency..."
                         onChange={(event) => setCurrency(event.target.value)}
                         value={currency}
-                      >
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="LBP">LBP - Lebanese Pound</option>
-                        <option value="AED">AED - UAE Dirham</option>
-                      </Select>
+                      />
                     </FormField>
                   </div>
                 ) : null}
