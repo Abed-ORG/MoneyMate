@@ -176,7 +176,7 @@ def _email_html(
             '<div style="max-width:560px;margin:auto;'
             'border:1px solid #166534;'
             'border-radius:18px;background:#001b14;padding:32px">',
-            '<p style="margin:0 0 24px;color:#69f56a;font-weight:700">'
+            '<p style="margin:0 0 24px;color:#49c5b6;font-weight:700">'
             "MoneyMate</p>",
             (
                 '<h1 style="margin:0 0 16px;color:#ffffff">'
@@ -190,7 +190,7 @@ def _email_html(
             '<p style="margin:28px 0">',
             (
                 f'<a href="{safe_url}" '
-                'style="display:inline-block;background:#69f56a;'
+                'style="display:inline-block;background:#49c5b6;'
                 'color:#00100d;padding:13px 22px;border-radius:10px;'
                 'text-decoration:none;font-weight:800">'
                 f"{escape(action_label)}"
@@ -241,3 +241,4 @@ def send_password_reset_email(user: User, token: str) -> None:
         text,
         html,
     )
+

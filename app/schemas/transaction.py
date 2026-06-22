@@ -94,7 +94,7 @@ class Transaction(TransactionBase):
 
 class CategoryBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=80)
-    color: str = Field("#AAFC75", min_length=4, max_length=16)
+    color: str = Field("#49c5b6", min_length=4, max_length=16)
     is_default: bool = False
 
     @field_validator("name")
@@ -166,3 +166,4 @@ class TransactionImportResponse(BaseModel):
 
 SortField = Literal["date", "amount", "category"]
 SortDirection = Literal["asc", "desc"]
+

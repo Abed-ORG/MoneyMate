@@ -1,13 +1,43 @@
 .landing {
-  --neon: #AAFC75;
-  --neon-soft: #AAFC75;
+  --neon: #49c5b6;
+  --neon-soft: #7fe1d4;
   min-height: 100vh;
   overflow: clip;
   background:
     radial-gradient(circle at 72% 44%, rgba(var(--mm-accent-rgb), 0.055), transparent 28rem),
     radial-gradient(circle at 20% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 34rem),
-    linear-gradient(135deg, #102A23 0%, #0b211b 55%, #071914 100%);
+    linear-gradient(135deg, #020504 0%, #050908 55%, #000000 100%);
   color: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .landing {
+  background: var(--mm-body-background);
+}
+
+:global(:root[data-theme="light"]) .featureHeading p,
+:global(:root[data-theme="light"]) .featureGrid p,
+:global(:root[data-theme="light"]) .aboutSection > p,
+:global(:root[data-theme="light"]) .aboutDescription,
+:global(:root[data-theme="light"]) .aboutHighlights span,
+:global(:root[data-theme="light"]) .contactCopy p,
+:global(:root[data-theme="light"]) .footer p {
+  color: var(--mm-text-soft);
+}
+
+:global(:root[data-theme="light"]) .featureGrid article {
+  background: var(--mm-card-background);
+  box-shadow: var(--mm-shadow-card);
+}
+
+:global(:root[data-theme="light"]) .featureArrow:hover {
+  color: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .growthSculpture::after {
+  background: rgba(16, 92, 102, 0.18);
+  box-shadow:
+    0 0 2rem rgba(16, 92, 102, 0.16),
+    0 0 2rem rgba(var(--mm-accent-rgb), 0.1);
 }
 
 .header {
@@ -36,7 +66,7 @@
   width: 3.35rem;
   height: 3.35rem;
   object-fit: contain;
-  filter: drop-shadow(0 0 0.45rem rgba(var(--mm-accent-rgb), 0.18));
+  filter: var(--mm-logo-filter);
 }
 
 .brand > span > span {
@@ -90,9 +120,9 @@
 .primaryCta {
   min-width: 8rem;
   padding: 0.85rem 1.25rem;
-  border: 1px solid rgba(126, 221, 182, 0.15);
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
-  color: #102A23;
+  border: 1px solid rgba(73, 197, 182, 0.15);
+  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
+  color: #020504;
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12),
     0 0 1.8rem rgba(8, 20, 21, 0.35);
@@ -101,7 +131,7 @@
 .signupButton:hover,
 .primaryCta:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
+  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
   box-shadow:
     0 0 1rem rgba(var(--mm-accent-rgb), 0.18),
     0 0 2rem rgba(8, 20, 21, 0.32);
@@ -118,7 +148,7 @@
 
 .secondaryCta:hover {
   transform: translateY(-1px);
-  border-color: rgba(126, 221, 182, 0.3);
+  border-color: rgba(73, 197, 182, 0.3);
   background: rgba(255, 255, 255, 0.08);
   color: #eef4f7;
 }
@@ -215,7 +245,7 @@
   height: 3.45rem;
   margin-left: -0.6rem;
   overflow: hidden;
-  border: 1px solid rgba(126, 221, 182, 0.4);
+  border: 1px solid rgba(73, 197, 182, 0.4);
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(var(--mm-accent-rgb), 0.06), rgba(0, 32, 24, 0.9));
   box-shadow: 0 0 0.9rem rgba(var(--mm-accent-rgb), 0.06);
@@ -495,7 +525,7 @@
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 10% 10%, rgba(var(--mm-accent-rgb), 0.05), transparent 12rem),
-    linear-gradient(145deg, rgba(3, 35, 26, 0.9), rgba(0, 17, 13, 0.92));
+    linear-gradient(145deg, rgba(5, 15, 13, 0.9), rgba(3, 8, 7, 0.92));
   padding: 0.9rem;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.025),
@@ -1101,3 +1131,6 @@
     flex-direction: column;
   }
 }
+
+
+

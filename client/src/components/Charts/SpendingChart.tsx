@@ -23,32 +23,32 @@ export function SpendingChart() {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={spendingData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
           <CartesianGrid
-            stroke="rgba(220, 239, 219, 0.12)"
+            stroke="rgba(73, 197, 182, 0.22)"
             strokeDasharray="4 4"
             vertical={false}
           />
           <XAxis
             axisLine={false}
             dataKey="category"
-            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
+            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
             tickLine={false}
           />
           <YAxis
             axisLine={false}
-            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
+            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
             tickFormatter={(value) => `$${value}`}
             tickLine={false}
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(9, 30, 24, 0.96)",
-              border: "1px solid rgba(170, 252, 117, 0.22)",
+              background: "var(--mm-surface-strong)",
+              border: "1px solid var(--mm-border-strong)",
               borderRadius: "12px",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-              color: "#f2f7f0",
+              color: "var(--mm-text)",
             }}
-            cursor={{ fill: "rgba(170, 252, 117, 0.055)" }}
-            labelStyle={{ color: "#AAFC75", fontWeight: 800 }}
+            cursor={{ fill: "rgba(73, 197, 182, 0.055)" }}
+            labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
             formatter={(value, name) => {
               const amount = typeof value === "number" ? value : Number(value ?? 0);
 
@@ -58,10 +58,12 @@ export function SpendingChart() {
               ];
             }}
           />
-          <Bar dataKey="budget" fill="rgba(170, 252, 117, 0.16)" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="spent" fill="#AAFC75" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="budget" fill="#17635c" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="spent" fill="#49c5b6" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
+
+

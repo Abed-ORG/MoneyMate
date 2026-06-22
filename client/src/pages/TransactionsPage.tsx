@@ -183,7 +183,7 @@ function downloadExcelTemplate() {
   <style>
     table { border-collapse: collapse; font-family: Arial, sans-serif; }
     th, td { border: 1px solid #d7dfd5; padding: 8px 10px; min-width: 130px; }
-    th { background: #102A23; color: #ffffff; }
+    th { background: #020504; color: #ffffff; }
   </style>
 </head>
 <body>
@@ -257,21 +257,21 @@ function FilterIcon() {
   );
 }
 
-function DownloadIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M12 4v10" />
-      <path d="m8 10 4 4 4-4" />
-      <path d="M5 20h14" />
-    </svg>
-  );
-}
-
 function SpreadsheetIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
       <path d="M6 3h9l3 3v15H6V3Z" />
       <path d="M15 3v4h4M8.5 11h7M8.5 15h7M11 9v9" />
+    </svg>
+  );
+}
+
+function SparklesIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z" />
+      <path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z" />
+      <path d="M5 13l.7 1.8L7.5 15.5l-1.8.7L5 18l-.7-1.8-1.8-.7 1.8-.7L5 13Z" />
     </svg>
   );
 }
@@ -361,6 +361,9 @@ export function TransactionsPage() {
     .filter((transaction) => Number(transaction.amount) > 0)
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
   const selectedCount = selectedTransactionIds.length;
+  const allVisibleSelected =
+    transactions.length > 0 &&
+    transactions.every((transaction) => selectedTransactionIds.includes(transaction.id));
 
   const loadTransactions = async () => {
     setIsLoading(true);
@@ -429,12 +432,16 @@ export function TransactionsPage() {
     );
   };
 
-  const selectVisibleTransactions = () => {
-    setSelectedTransactionIds(transactions.map((transaction) => transaction.id));
-  };
-
-  const clearTransactionSelection = () => {
-    setSelectedTransactionIds([]);
+  const toggleVisibleTransactionSelection = () => {
+    if (allVisibleSelected) {
+      setSelectedTransactionIds((current) =>
+        current.filter((id) => !transactions.some((transaction) => transaction.id === id)),
+      );
+      return;
+    }
+    setSelectedTransactionIds((current) =>
+      Array.from(new Set([...current, ...transactions.map((transaction) => transaction.id)])),
+    );
   };
 
   const resetImportState = () => {
@@ -543,21 +550,6 @@ export function TransactionsPage() {
     }
   };
 
-  const recategorizeCurrentPage = async () => {
-    if (!transactions.length) {
-      return;
-    }
-    await transactionsApi.bulkRecategorize({
-      transaction_ids: transactions.map((item) => item.id),
-    });
-    setToast({
-      title: "Page recategorized",
-      message: "AI suggestions were refreshed for the current page.",
-      variant: "success",
-    });
-    await loadTransactions();
-  };
-
   const recategorizeSelected = async () => {
     if (!selectedTransactionIds.length) {
       return;
@@ -570,7 +562,7 @@ export function TransactionsPage() {
       message: "AI suggestions were refreshed for the selected transactions.",
       variant: "success",
     });
-    clearTransactionSelection();
+    setSelectedTransactionIds([]);
     await loadTransactions();
   };
 
@@ -751,17 +743,6 @@ export function TransactionsPage() {
           onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
         />
       </FormField>
-      <FormField label="Category" error={formErrors.category}>
-        <Select
-          aria-label="Transaction category"
-          value={form.category}
-          options={formCategoryOptions}
-          onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
-        />
-      </FormField>
-      <Button type="button" variant="secondary" onClick={() => void applyAiSuggestion()}>
-        AI Suggest Category
-      </Button>
       <FormField label="Vendor">
         <Input
           placeholder="Vendor"
@@ -779,6 +760,25 @@ export function TransactionsPage() {
           value={form.notes}
           onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
         />
+      </FormField>
+      <FormField label="Category" error={formErrors.category}>
+        <div className={styles.categoryAiRow}>
+          <Select
+            aria-label="Transaction category"
+            value={form.category}
+            options={formCategoryOptions}
+            onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
+          />
+          <button
+            aria-label="Let AI choose the category"
+            className={styles.aiCategoryButton}
+            onClick={() => void applyAiSuggestion()}
+            title="Let AI choose the category"
+            type="button"
+          >
+            <SparklesIcon />
+          </button>
+        </div>
       </FormField>
       <div className={styles.modalActions}>
         <Button variant="secondary" onClick={() => (mode === "add" ? setIsAddOpen(false) : setIsEditOpen(false))}>
@@ -798,6 +798,17 @@ export function TransactionsPage() {
       ) : null}
 
       <div className={styles.actionBar}>
+        <Button variant="secondary" onClick={openImportModal}>
+          <CloudUploadIcon />
+          Upload Transactions
+        </Button>
+        <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+          <FilterIcon />
+          Filters
+        </Button>
+        <Button variant="secondary" onClick={() => setIsSummaryOpen(true)}>
+          Summary
+        </Button>
         <Button
           onClick={() => {
             setForm(emptyForm);
@@ -807,28 +818,6 @@ export function TransactionsPage() {
         >
           <AddIcon />
           Add Transaction
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={!transactions.length}
-          onClick={() => void recategorizeCurrentPage()}
-        >
-          Re-categorize Page
-        </Button>
-        <Button variant="secondary" onClick={openImportModal}>
-          <CloudUploadIcon />
-          Upload
-        </Button>
-        <Button variant="secondary" onClick={downloadExcelTemplate}>
-          <DownloadIcon />
-          CSV Template
-        </Button>
-        <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
-          <FilterIcon />
-          Filters
-        </Button>
-        <Button variant="secondary" onClick={() => setIsSummaryOpen(true)}>
-          Summary
         </Button>
       </div>
 
@@ -929,12 +918,6 @@ export function TransactionsPage() {
                 {selectedCount ? `${selectedCount} selected` : "No selection"}
               </span>
               <div className={styles.tableActionButtons}>
-                <Button variant="secondary" onClick={selectVisibleTransactions}>
-                  Select Page
-                </Button>
-                <Button variant="secondary" onClick={clearTransactionSelection}>
-                  Clear Selection
-                </Button>
                 <Button
                   disabled={!selectedCount}
                   onClick={() => void recategorizeSelected()}
@@ -956,7 +939,17 @@ export function TransactionsPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Select</th>
+                    <th>
+                      <label className={styles.selectAllLabel}>
+                        <input
+                          aria-label="Select all transactions on this page"
+                          checked={allVisibleSelected}
+                          onChange={toggleVisibleTransactionSelection}
+                          type="checkbox"
+                        />
+                        <span>Select</span>
+                      </label>
+                    </th>
                     <th>Date</th>
                     <th>Vendor</th>
                     <th>Category</th>
@@ -1196,3 +1189,4 @@ export function TransactionsPage() {
     </section>
   );
 }
+

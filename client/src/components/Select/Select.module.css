@@ -27,8 +27,7 @@
   gap: 0.75rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background:
-    linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
+  background: var(--mm-control-background);
   color: var(--mm-text);
   cursor: pointer;
   padding: 0.58rem 0.72rem 0.58rem 0.75rem;
@@ -41,8 +40,7 @@
 
 .selectTrigger:hover:not(:disabled) {
   border-color: var(--mm-border-strong);
-  background:
-    linear-gradient(145deg, rgba(23, 61, 50, 0.98), rgba(9, 30, 24, 0.98));
+  background: var(--mm-control-hover-background);
 }
 
 .selectTrigger:focus-visible {
@@ -89,9 +87,7 @@
   overflow-y: auto;
   border: 1px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-sm);
-  background:
-    radial-gradient(circle at 15% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 10rem),
-    #071914;
+  background: var(--mm-menu-background);
   box-shadow:
     0 1rem 2.2rem rgba(0, 0, 0, 0.42),
     0 0 1.25rem rgba(var(--mm-accent-rgb), 0.08);
@@ -120,7 +116,7 @@
 
 .searchWrap {
   margin-bottom: 0.25rem;
-  background: #071914;
+  background: transparent;
   padding-bottom: 0.25rem;
 }
 
@@ -129,7 +125,7 @@
   min-height: 2rem;
   border: 1px solid var(--mm-border);
   border-radius: 0.45rem;
-  background: rgba(16, 42, 35, 0.86);
+  background: var(--mm-input-background);
   color: var(--mm-text);
   padding: 0.4rem 0.55rem;
   font-size: 0.85rem;
@@ -183,3 +179,4 @@
   stroke-linejoin: round;
   stroke-width: 2;
 }
+

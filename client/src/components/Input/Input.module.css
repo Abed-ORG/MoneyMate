@@ -3,7 +3,7 @@
   min-height: 2.45rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background: rgba(7, 25, 20, 0.72);
+  background: var(--mm-input-background);
   color: var(--mm-text);
   padding: 0.58rem 0.75rem;
   transition:
@@ -17,7 +17,7 @@
 
 .input:focus {
   border-color: var(--mm-accent-soft);
-  background: rgba(9, 30, 24, 0.92);
+  background: var(--mm-input-focus-background);
   box-shadow:
     0 0 0 2px rgba(var(--mm-accent-rgb), 0.08),
     0 0 0.4rem rgba(var(--mm-accent-rgb), 0.08);
@@ -33,3 +33,4 @@
 .error {
   border-color: var(--color-error);
 }
+

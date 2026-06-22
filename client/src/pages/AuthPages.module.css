@@ -1,6 +1,6 @@
 .authPage {
   --auth-forest: var(--mm-accent);
-  --auth-forest-dark: #102A23;
+  --auth-forest-dark: #020504;
   --auth-forest-soft: var(--mm-accent-soft);
   height: 100dvh;
   display: grid;
@@ -8,7 +8,7 @@
   overflow: hidden;
   background:
     radial-gradient(circle at 50% -15%, rgba(var(--mm-accent-rgb), 0.04), transparent 30rem),
-    linear-gradient(135deg, #102A23, #071914 50%, #102A23);
+    linear-gradient(135deg, #020504, #000000 50%, #020504);
   padding: 1rem;
 }
 
@@ -24,7 +24,7 @@
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 50% 14%, rgba(var(--mm-accent-rgb), 0.045), transparent 31rem),
-    linear-gradient(145deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.98));
+    linear-gradient(145deg, rgba(8, 17, 15, 0.96), rgba(0, 0, 0, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 1.8rem 3rem rgba(0, 0, 0, 0.34);
@@ -39,7 +39,7 @@
   gap: 0.35rem;
   border: 1px solid var(--mm-border);
   border-radius: 999px;
-  background: rgba(7, 25, 20, 0.82);
+  background: rgba(3, 8, 7, 0.82);
   color: var(--mm-text);
   padding: 0.45rem 0.75rem 0.45rem 0.5rem;
   box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.24);
@@ -160,7 +160,7 @@
   min-height: 3.2rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background: rgba(7, 25, 20, 0.72);
+  background: rgba(3, 8, 7, 0.78);
   color: var(--mm-text);
   padding: 0 1.15rem;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
@@ -177,11 +177,60 @@
 
 .field input:focus {
   border-color: rgba(var(--mm-accent-rgb), 0.34);
-  background: rgba(9, 30, 24, 0.98);
+  background: rgba(3, 8, 7, 0.98);
   box-shadow:
     0 0 0 2px rgba(var(--mm-accent-rgb), 0.075),
     0 0 0.45rem rgba(var(--mm-accent-rgb), 0.08);
   outline: none;
+}
+
+:global(:root[data-theme="light"]) .authPage {
+  background: var(--mm-body-background);
+}
+
+:global(:root[data-theme="light"]) .authFrame,
+:global(:root[data-theme="light"]) .cardPanel {
+  background: var(--mm-card-background);
+}
+
+:global(:root[data-theme="light"]) .backLink,
+:global(:root[data-theme="light"]) .field input {
+  background: var(--mm-input-background);
+}
+
+:global(:root[data-theme="light"]) .field input:focus {
+  background: var(--mm-input-focus-background);
+}
+
+:global(:root[data-theme="light"]) .field input::placeholder {
+  color: rgba(5, 37, 33, 0.42);
+}
+
+:global(:root[data-theme="light"]) .creditCard {
+  color: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .cardTop strong,
+:global(:root[data-theme="light"]) .cardNumber,
+:global(:root[data-theme="light"]) .expiry,
+:global(:root[data-theme="light"]) .cardholder {
+  color: var(--mm-text);
+  text-shadow: 0 0 0.45rem rgba(var(--mm-accent-rgb), 0.18);
+}
+
+:global(:root[data-theme="light"]) .contactless {
+  stroke: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .cardBottom img {
+  filter: var(--mm-logo-filter);
+}
+
+:global(:root[data-theme="light"]) .cardPanel {
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.26);
+  background:
+    radial-gradient(circle at 58% 24%, rgba(var(--mm-accent-rgb), 0.16), transparent 28rem),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(232, 250, 254, 0.46));
 }
 
 .nameFields {
@@ -230,7 +279,7 @@
 }
 
 .eyeButton:hover {
-  background: rgba(22, 101, 52, 0.08);
+  background: rgba(var(--mm-accent-rgb), 0.08);
   color: var(--auth-forest);
 }
 
@@ -248,8 +297,8 @@
   margin-top: 0.7rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.42);
   border-radius: var(--mm-radius-sm);
-  background: linear-gradient(180deg, #AAFC75, #AAFC75);
-  color: #102A23;
+  background: linear-gradient(180deg, #49c5b6, #7fe1d4);
+  color: #020504;
   box-shadow:
     0 0 0.35rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 1.8rem rgba(8, 22, 24, 0.28);
@@ -263,7 +312,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: linear-gradient(180deg, #AAFC75, #AAFC75);
+  background: linear-gradient(180deg, #5fd4c7, #9cf0e5);
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.13),
     0 0 2rem rgba(8, 22, 24, 0.32);
@@ -360,7 +409,7 @@
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 58% 24%, rgba(var(--mm-accent-rgb), 0.06), transparent 28rem),
-    linear-gradient(145deg, rgba(19, 51, 42, 0.94), rgba(7, 25, 20, 0.98));
+    linear-gradient(145deg, rgba(8, 17, 15, 0.94), rgba(0, 0, 0, 0.98));
   box-shadow:
     0 1.2rem 3rem rgba(0, 0, 0, 0.28),
     0 0 1.5rem rgba(var(--mm-accent-rgb), 0.09),
@@ -655,3 +704,5 @@
     font-size: 2rem;
   }
 }
+
+

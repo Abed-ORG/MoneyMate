@@ -22,7 +22,7 @@ def upgrade() -> None:
             "color",
             sa.String(),
             nullable=False,
-            server_default="#AAFC75",
+            server_default="#49c5b6",
         ),
     )
     op.alter_column("categories", "color", server_default=None)
@@ -30,3 +30,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("categories", "color")
+

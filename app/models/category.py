@@ -9,10 +9,11 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
-    color = Column(String, nullable=False, default="#AAFC75")
+    color = Column(String, nullable=False, default="#49c5b6")
     parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
 
     user = relationship("User", back_populates="categories")
     parent = relationship("Category", remote_side=[id], backref="children")
     transactions = relationship("Transaction", back_populates="category")
     budgets = relationship("Budget", back_populates="category")
+
