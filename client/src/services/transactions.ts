@@ -104,7 +104,7 @@ function buildLocalTransaction(payload: TransactionPayload, existing?: Transacti
 }
 
 function defaultLocalCategories(): Category[] {
-  const palette = ["#AAFC75", "#5ab9dd", "#f7c948", "#d77fda", "#ff8a66", "#8a9fff"];
+  const palette = ["#49c5b6", "#5ab9dd", "#f7c948", "#d77fda", "#ff8a66", "#8a9fff"];
   return transactionCategories.map((name, index) => ({
     id: `local-${name.toLowerCase().replace(/\s+/g, "-")}`,
     user_id: "local",
@@ -391,3 +391,4 @@ export const transactionsApi = {
     return response;
   },
 };
+

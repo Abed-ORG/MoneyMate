@@ -147,7 +147,7 @@ def category_to_schema(category: CategoryModel) -> Category:
         id=str(category.id),
         user_id=str(category.user_id),
         name=category.name,
-        color=category.color or "#AAFC75",
+        color=category.color or "#49c5b6",
         is_default=category.name in DEFAULT_CATEGORIES,
     )
 

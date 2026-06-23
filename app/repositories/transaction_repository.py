@@ -65,7 +65,7 @@ class InMemoryTransactionRepository:
                     id=str(uuid4()),
                     user_id=user_id,
                     name=name,
-                    color="#69f56a",
+                    color="#49c5b6",
                     is_default=True,
                 )
                 for name in DEFAULT_CATEGORIES

@@ -17,9 +17,7 @@
 .errorState {
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
-  background:
-    radial-gradient(circle at 85% 40%, rgba(var(--mm-accent-rgb), 0.1), transparent 18rem),
-    linear-gradient(135deg, rgba(19, 51, 42, 0.96), rgba(7, 25, 20, 0.94));
+  background: var(--mm-card-background);
   box-shadow: var(--mm-shadow-card);
 }
 
@@ -86,22 +84,39 @@
   min-width: 0;
 }
 
-.viewHeader button {
+.viewSwitcher {
   display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 8.5rem;
-  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: var(--mm-control-background);
+  padding: 0.25rem;
 }
 
-.viewHeader svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+.viewSwitcher button {
+  min-width: 6.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.48rem 0.85rem;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.viewSwitcher button:hover {
+  color: var(--mm-text);
+}
+
+.viewSwitcherActive {
+  background: var(--mm-accent) !important;
+  color: var(--mm-bg-deep) !important;
+  box-shadow: var(--mm-shadow-glow);
 }
 
 .panel {
@@ -190,3 +205,4 @@
     width: calc(100vw - 1.5rem);
   }
 }
+

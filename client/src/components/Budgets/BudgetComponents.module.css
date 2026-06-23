@@ -25,9 +25,7 @@
 .historyItem {
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.07), transparent 14rem),
-    linear-gradient(145deg, rgba(19, 51, 42, 0.92), rgba(7, 25, 20, 0.94));
+  background: var(--mm-card-background);
   box-shadow: var(--mm-shadow-card);
 }
 
@@ -135,7 +133,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
-    rgba(4, 30, 22, 0.9);
+    rgba(5, 15, 13, 0.9);
   color: var(--mm-accent-soft);
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
@@ -162,7 +160,7 @@
 .cardActions button {
   border: 1px solid var(--mm-border);
   border-radius: 999px;
-  background: rgba(7, 25, 20, 0.75);
+  background: var(--mm-control-background);
   color: var(--mm-accent-soft);
   cursor: pointer;
   font-size: 0.78rem;
@@ -180,7 +178,7 @@
   height: 0.75rem;
   border: 1px solid rgba(248, 255, 249, 0.12);
   border-radius: 999px;
-  background: rgba(7, 25, 20, 0.82);
+  background: rgba(var(--mm-bg-rgb), 0.42);
 }
 
 .progressTrack span {
@@ -192,7 +190,7 @@
 }
 
 .green span {
-  background: linear-gradient(90deg, #76d65b, var(--mm-accent));
+  background: linear-gradient(90deg, #49c5b6, var(--mm-accent));
 }
 
 .yellow span {
@@ -282,7 +280,7 @@
   gap: 0.65rem;
   border: 1px solid currentColor;
   border-radius: var(--mm-radius-md);
-  background: rgba(7, 25, 20, 0.72);
+  background: var(--mm-control-background);
   padding: 0.9rem;
 }
 
@@ -312,7 +310,7 @@
   place-items: center;
   border: 1px dashed var(--mm-border);
   border-radius: var(--mm-radius-md);
-  background: rgba(7, 25, 20, 0.36);
+  background: rgba(var(--mm-bg-rgb), 0.28);
   text-align: center;
 }
 
@@ -363,9 +361,7 @@
 
 .historyItem:hover {
   border-color: var(--mm-border-strong);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 14rem),
-    linear-gradient(145deg, rgba(23, 61, 50, 0.94), rgba(9, 30, 24, 0.96));
+  background: var(--mm-control-hover-background);
 }
 
 .historyItem strong {
@@ -427,3 +423,5 @@
     flex-direction: column-reverse;
   }
 }
+
+

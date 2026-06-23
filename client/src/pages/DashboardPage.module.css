@@ -13,9 +13,7 @@
   gap: 1rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
-  background:
-    radial-gradient(circle at 85% 50%, rgba(var(--mm-accent-rgb), 0.055), transparent 18rem),
-    linear-gradient(135deg, rgba(19, 51, 42, 0.94), rgba(7, 25, 20, 0.92));
+  background: var(--mm-card-background);
   padding: clamp(0.95rem, 2.2vw, 1.35rem);
   box-shadow: var(--mm-shadow-card);
 }
@@ -172,3 +170,4 @@
     flex-direction: column;
   }
 }
+

@@ -190,7 +190,7 @@ export function SettingsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#AAFC75");
+  const [newCategoryColor, setNewCategoryColor] = useState("#49c5b6");
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
@@ -250,7 +250,7 @@ export function SettingsPage() {
       setCustomCategories((current) => [...current, created]);
     }
     setNewCategoryName("");
-    setNewCategoryColor("#AAFC75");
+    setNewCategoryColor("#49c5b6");
     setEditingCategory(null);
     return true;
   };
@@ -258,7 +258,7 @@ export function SettingsPage() {
   const openCustomizeCategory = (category?: Category) => {
     setEditingCategory(category ?? null);
     setNewCategoryName(category?.name ?? "");
-    setNewCategoryColor(category?.color ?? "#AAFC75");
+    setNewCategoryColor(category?.color ?? "#49c5b6");
     setIsCustomizeOpen(true);
   };
 
@@ -266,7 +266,7 @@ export function SettingsPage() {
     setIsCustomizeOpen(false);
     setEditingCategory(null);
     setNewCategoryName("");
-    setNewCategoryColor("#AAFC75");
+    setNewCategoryColor("#49c5b6");
   };
 
   const deleteCustomCategory = async (id: string) => {
@@ -805,3 +805,4 @@ export function SettingsPage() {
     </div>
   );
 }
+

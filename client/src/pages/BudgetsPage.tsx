@@ -29,25 +29,6 @@ type ToastState = {
   variant: "success" | "error" | "warning" | "info";
 };
 
-function ListIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M8 6h12M8 12h12M8 18h12" />
-      <path d="M4 6h.01M4 12h.01M4 18h.01" />
-    </svg>
-  );
-}
-
-function VisualizeIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M5 20V10" />
-      <path d="M12 20V4" />
-      <path d="M19 20v-7" />
-    </svg>
-  );
-}
-
 function currentMonthState() {
   const now = new Date();
   return {
@@ -263,12 +244,22 @@ export function BudgetsPage() {
                     {viewMode === "visualize" ? "Budgeted versus actual" : "Category budgets"}
                   </h2>
                 </div>
-                <Button
-                  onClick={() => setViewMode((current) => (current === "visualize" ? "list" : "visualize"))}
-                >
-                  {viewMode === "visualize" ? <ListIcon /> : <VisualizeIcon />}
-                  {viewMode === "visualize" ? "List" : "Visualize"}
-                </Button>
+                <div className={styles.viewSwitcher} aria-label="Budget view mode">
+                  <button
+                    className={viewMode === "list" ? styles.viewSwitcherActive : ""}
+                    onClick={() => setViewMode("list")}
+                    type="button"
+                  >
+                    List
+                  </button>
+                  <button
+                    className={viewMode === "visualize" ? styles.viewSwitcherActive : ""}
+                    onClick={() => setViewMode("visualize")}
+                    type="button"
+                  >
+                    Visualize
+                  </button>
+                </div>
               </div>
 
               {viewMode === "visualize" ? (

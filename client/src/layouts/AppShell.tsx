@@ -10,6 +10,19 @@ import {
 } from "../utils/profileAvatar";
 import styles from "./AppShell.module.css";
 
+type ThemeMode = "dark" | "light";
+
+const THEME_STORAGE_KEY = "moneymate-theme";
+
+function getInitialTheme(): ThemeMode {
+  if (typeof window === "undefined") {
+    return "dark";
+  }
+
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  return savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+}
+
 function getInitials(name: string) {
   return name
     .split(/\s+/)
@@ -91,6 +104,12 @@ export function AppShell() {
   const displayName = user?.full_name || "MoneyMate user";
   const initials = getInitials(displayName) || "MM";
   const [profileAvatar, setProfileAvatar] = useState("");
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     setProfileAvatar(getProfileAvatar(user?.id));
@@ -240,47 +259,70 @@ export function AppShell() {
             </button>
             <h1>{pageTitle}</h1>
           </div>
-          <div className={styles.userArea} ref={profileMenuRef}>
+          <div className={styles.headerActions}>
             <button
-              aria-expanded={isProfileMenuOpen}
-              aria-haspopup="menu"
-              className={styles.userButton}
-              onClick={() => setIsProfileMenuOpen((current) => !current)}
+              aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} mode`}
+              className={styles.themeButton}
+              onClick={() =>
+                setThemeMode((current) => (current === "dark" ? "light" : "dark"))
+              }
               type="button"
             >
-              <span className={styles.avatar}>
-                {profileAvatar ? (
-                  <img src={profileAvatar} alt={`${displayName} profile`} />
-                ) : (
-                  initials
-                )}
-              </span>
-              <div>
-                <strong>{displayName}</strong>
-                <span>{user?.email}</span>
-              </div>
+              {themeMode === "dark" ? (
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                </svg>
+              ) : (
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 7 7 0 1 0 20 15.5Z" />
+                </svg>
+              )}
+              <span>{themeMode === "dark" ? "Light" : "Dark"}</span>
             </button>
-            {isProfileMenuOpen ? (
-              <div className={styles.profileMenu} role="menu">
-                <button
-                  onClick={() => navigate("/settings")}
-                  role="menuitem"
-                  type="button"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    setIsLogoutConfirmationOpen(true);
-                  }}
-                  role="menuitem"
-                  type="button"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : null}
+            <div className={styles.userArea} ref={profileMenuRef}>
+              <button
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="menu"
+                className={styles.userButton}
+                onClick={() => setIsProfileMenuOpen((current) => !current)}
+                type="button"
+              >
+                <span className={styles.avatar}>
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt={`${displayName} profile`} />
+                  ) : (
+                    initials
+                  )}
+                </span>
+                <div>
+                  <strong>{displayName}</strong>
+                  <span>{user?.email}</span>
+                </div>
+              </button>
+              {isProfileMenuOpen ? (
+                <div className={styles.profileMenu} role="menu">
+                  <button
+                    onClick={() => navigate("/settings")}
+                    role="menuitem"
+                    type="button"
+                  >
+                    Settings
+                  </button>
+                  <button
+                    className={styles.logoutMenuButton}
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      setIsLogoutConfirmationOpen(true);
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 

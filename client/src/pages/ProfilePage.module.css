@@ -7,10 +7,7 @@
 
 .onboardingPage {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 70% 15%, rgba(31, 197, 84, 0.13), transparent 28rem),
-    radial-gradient(circle at 15% 95%, rgba(17, 115, 72, 0.14), transparent 32rem),
-    linear-gradient(135deg, var(--mm-bg), #001914 52%, #00100d);
+  background: var(--mm-body-background);
   padding: clamp(1rem, 4vw, 3rem);
 }
 
@@ -60,7 +57,7 @@
   color: var(--mm-accent-soft);
   font-size: 1.15rem;
   font-weight: 900;
-  text-shadow: 0 0 1rem rgba(81, 243, 91, 0.24);
+  text-shadow: 0 0 1rem rgba(var(--mm-accent-rgb), 0.18);
 }
 
 .section {
@@ -81,7 +78,7 @@
   width: 5rem;
   height: 1px;
   background: linear-gradient(90deg, var(--mm-accent-soft), transparent);
-  box-shadow: 0 0 0.7rem rgba(81, 243, 91, 0.6);
+  box-shadow: 0 0 0.7rem rgba(var(--mm-accent-rgb), 0.36);
   content: "";
 }
 
@@ -123,7 +120,7 @@
   gap: 0.55rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background: rgba(0, 17, 13, 0.74);
+  background: var(--mm-control-background);
   color: var(--mm-text-soft);
   cursor: pointer;
   padding: 0.65rem 0.75rem;
@@ -139,17 +136,18 @@
 
 .category:hover {
   border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
   color: var(--mm-text);
   transform: translateY(-1px);
 }
 
 .category:has(input:checked) {
   border-color: var(--mm-accent-soft);
-  background: rgba(81, 243, 91, 0.12);
+  background: rgba(var(--mm-accent-rgb), 0.12);
   color: var(--mm-accent-soft);
   box-shadow:
-    inset 0 0 1rem rgba(81, 243, 91, 0.04),
-    0 0 1rem rgba(81, 243, 91, 0.08);
+    inset 0 0 1rem rgba(var(--mm-accent-rgb), 0.04),
+    0 0 1rem rgba(var(--mm-accent-rgb), 0.08);
 }
 
 .category input {
@@ -206,3 +204,4 @@
     grid-column: auto;
   }
 }
+

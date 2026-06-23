@@ -18,9 +18,7 @@
   overflow: hidden;
   border: 1px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-lg);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(var(--mm-accent-rgb), 0.1), transparent 15rem),
-    linear-gradient(145deg, #15352c, #071914);
+  background: var(--mm-card-background);
   box-shadow:
     0 0 2rem rgba(var(--mm-accent-rgb), 0.1),
     0 2rem 5rem rgba(0, 0, 0, 0.48);
@@ -54,3 +52,4 @@
   color: var(--mm-text-soft);
   scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
 }
+

@@ -2,10 +2,7 @@
   display: grid;
   min-height: 100vh;
   grid-template-columns: 12.5rem minmax(0, 1fr);
-  background:
-    radial-gradient(circle at 72% 10%, rgba(var(--mm-accent-rgb), 0.07), transparent 28rem),
-    radial-gradient(circle at 30% 100%, rgba(var(--mm-accent-rgb), 0.08), transparent 34rem),
-    linear-gradient(135deg, var(--mm-bg) 0%, #0b211b 52%, #071914 100%);
+  background: var(--mm-shell-background);
   color: var(--mm-text);
   transition: grid-template-columns 220ms ease;
 }
@@ -23,9 +20,7 @@
   flex-direction: column;
   gap: 1rem;
   border-right: 1px solid var(--mm-border);
-  background:
-    radial-gradient(circle at 30% 0%, rgba(var(--mm-accent-rgb), 0.08), transparent 18rem),
-    linear-gradient(180deg, rgba(16, 42, 35, 0.98), rgba(7, 25, 20, 0.98));
+  background: var(--mm-sidebar-background);
   padding: 0.9rem 0.65rem;
   box-shadow: 1rem 0 3rem rgba(0, 0, 0, 0.16);
   transition:
@@ -60,7 +55,7 @@
   width: 2.05rem;
   height: 2.05rem;
   object-fit: contain;
-  filter: drop-shadow(0 0 0.7rem rgba(var(--mm-accent-rgb), 0.34));
+  filter: var(--mm-logo-filter);
 }
 
 .brand strong,
@@ -113,18 +108,21 @@
 
 .navLink:hover,
 .active {
-  border-color: var(--mm-border);
-  background: linear-gradient(90deg, rgba(var(--mm-accent-rgb), 0.09), rgba(var(--mm-accent-rgb), 0.025));
-  color: var(--mm-accent-soft);
+  border-color: var(--mm-border-strong);
+  background: rgba(var(--mm-accent-rgb), 0.14);
+  color: var(--mm-text);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
   transform: translateX(2px);
 }
 
 .active {
   border-color: var(--mm-border-strong);
+  background:
+    linear-gradient(90deg, rgba(var(--mm-accent-rgb), 0.2), rgba(var(--mm-accent-rgb), 0.08));
+  color: var(--mm-accent-soft);
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.03),
-    0 0 1.2rem rgba(var(--mm-accent-rgb), 0.09);
+    0 0 1.2rem rgba(var(--mm-accent-rgb), 0.12);
 }
 
 .navIcon {
@@ -181,7 +179,7 @@
   justify-content: space-between;
   gap: 1rem;
   border-bottom: 1px solid var(--mm-border);
-  background: rgba(9, 30, 24, 0.82);
+  background: var(--mm-header-background);
   padding: 0.65rem clamp(0.85rem, 2.4vw, 1.6rem);
   backdrop-filter: blur(18px);
 }
@@ -209,6 +207,57 @@
 
 .userArea {
   position: relative;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.themeButton {
+  display: inline-flex;
+  width: 2.25rem;
+  min-height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: var(--mm-control-background);
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.themeButton span {
+  display: none;
+}
+
+.themeButton:hover {
+  border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
+  color: var(--mm-text);
+  box-shadow: var(--mm-shadow-glow);
+  transform: translateY(-1px);
+}
+
+.themeButton svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .userButton {
@@ -301,7 +350,7 @@
   min-width: 11rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-md);
-  background: rgba(9, 30, 24, 0.98);
+  background: var(--mm-menu-background);
   box-shadow: 0 1rem 2.2rem rgba(0, 0, 0, 0.35);
   padding: 0.35rem;
 }
@@ -324,6 +373,15 @@
 .profileMenu button:hover {
   background: rgba(var(--mm-accent-rgb), 0.08);
   color: var(--mm-text);
+}
+
+.logoutMenuButton {
+  color: var(--color-error) !important;
+}
+
+.logoutMenuButton:hover {
+  background: rgba(255, 107, 114, 0.12) !important;
+  color: var(--color-error) !important;
 }
 
 .logoutPrompt {
@@ -394,9 +452,13 @@
     padding: 0.85rem;
   }
 
-  .userArea {
+  .headerActions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .userArea {
+    min-width: 0;
   }
 
   .main {
@@ -411,6 +473,10 @@
 }
 
 @media (max-width: 520px) {
+  .themeButton span {
+    display: none;
+  }
+
   .userButton strong,
   .userButton span {
     display: none;
@@ -425,3 +491,5 @@
     width: 100%;
   }
 }
+
+

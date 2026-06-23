@@ -319,38 +319,38 @@ export function BudgetComparisonChart({
     <div className={styles.chartWrap}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(220, 239, 219, 0.12)" strokeDasharray="4 4" vertical={false} />
+          <CartesianGrid stroke="rgba(73, 197, 182, 0.22)" strokeDasharray="4 4" vertical={false} />
           <XAxis
             axisLine={false}
             dataKey="category"
             interval={0}
-            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
+            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
             tickLine={false}
           />
           <YAxis
             axisLine={false}
-            tick={{ fill: "rgba(235, 246, 238, 0.62)", fontSize: 12 }}
+            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
             tickFormatter={(value) => formatCurrency(value, currency)}
             tickLine={false}
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(9, 30, 24, 0.96)",
-              border: "1px solid rgba(170, 252, 117, 0.34)",
+              background: "var(--mm-surface-strong)",
+              border: "1px solid var(--mm-border-strong)",
               borderRadius: "12px",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-              color: "#f2f7f0",
+              color: "var(--mm-text)",
             }}
-            cursor={{ fill: "rgba(170, 252, 117, 0.08)" }}
+            cursor={{ fill: "rgba(73, 197, 182, 0.08)" }}
             formatter={(value, name) => [
               formatCurrency(Number(value), currency),
               name === "actual" ? "Actual spending" : "Budgeted",
             ]}
-            labelStyle={{ color: "#AAFC75", fontWeight: 800 }}
+            labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
           />
-          <Legend wrapperStyle={{ color: "rgba(239, 249, 242, 0.76)" }} />
-          <Bar dataKey="budgeted" fill="rgba(170, 252, 117, 0.34)" name="Budgeted" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="actual" fill="#AAFC75" name="Actual spending" radius={[6, 6, 0, 0]} />
+          <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
+          <Bar dataKey="budgeted" fill="#17635c" name="Budgeted" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="actual" fill="#49c5b6" name="Actual spending" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -622,4 +622,6 @@ export function DeleteConfirmationModal({
     </Modal>
   );
 }
+
+
 

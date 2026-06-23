@@ -1,13 +1,43 @@
 .landing {
-  --neon: #AAFC75;
-  --neon-soft: #AAFC75;
+  --neon: #49c5b6;
+  --neon-soft: #7fe1d4;
   min-height: 100vh;
   overflow: clip;
   background:
     radial-gradient(circle at 72% 44%, rgba(var(--mm-accent-rgb), 0.055), transparent 28rem),
     radial-gradient(circle at 20% 100%, rgba(var(--mm-accent-rgb), 0.045), transparent 34rem),
-    linear-gradient(135deg, #102A23 0%, #0b211b 55%, #071914 100%);
+    var(--mm-body-background);
   color: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .landing {
+  background: var(--mm-body-background);
+}
+
+:global(:root[data-theme="light"]) .featureHeading p,
+:global(:root[data-theme="light"]) .featureGrid p,
+:global(:root[data-theme="light"]) .aboutSection > p,
+:global(:root[data-theme="light"]) .aboutDescription,
+:global(:root[data-theme="light"]) .aboutHighlights span,
+:global(:root[data-theme="light"]) .contactCopy p,
+:global(:root[data-theme="light"]) .footer p {
+  color: var(--mm-text-soft);
+}
+
+:global(:root[data-theme="light"]) .featureGrid article {
+  background: var(--mm-card-background);
+  box-shadow: var(--mm-shadow-card);
+}
+
+:global(:root[data-theme="light"]) .featureArrow:hover {
+  color: var(--mm-text);
+}
+
+:global(:root[data-theme="light"]) .growthSculpture::after {
+  background: rgba(16, 92, 102, 0.18);
+  box-shadow:
+    0 0 2rem rgba(16, 92, 102, 0.16),
+    0 0 2rem rgba(var(--mm-accent-rgb), 0.1);
 }
 
 .header {
@@ -36,7 +66,7 @@
   width: 3.35rem;
   height: 3.35rem;
   object-fit: contain;
-  filter: drop-shadow(0 0 0.45rem rgba(var(--mm-accent-rgb), 0.18));
+  filter: var(--mm-logo-filter);
 }
 
 .brand > span > span {
@@ -90,9 +120,9 @@
 .primaryCta {
   min-width: 8rem;
   padding: 0.85rem 1.25rem;
-  border: 1px solid rgba(126, 221, 182, 0.15);
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
-  color: #102A23;
+  border: 1px solid rgba(73, 197, 182, 0.15);
+  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
+  color: var(--mm-bg-deep);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12),
     0 0 1.8rem rgba(8, 20, 21, 0.35);
@@ -101,7 +131,7 @@
 .signupButton:hover,
 .primaryCta:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
+  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
   box-shadow:
     0 0 1rem rgba(var(--mm-accent-rgb), 0.18),
     0 0 2rem rgba(8, 20, 21, 0.32);
@@ -118,7 +148,7 @@
 
 .secondaryCta:hover {
   transform: translateY(-1px);
-  border-color: rgba(126, 221, 182, 0.3);
+  border-color: rgba(73, 197, 182, 0.3);
   background: rgba(255, 255, 255, 0.08);
   color: #eef4f7;
 }
@@ -215,7 +245,7 @@
   height: 3.45rem;
   margin-left: -0.6rem;
   overflow: hidden;
-  border: 1px solid rgba(126, 221, 182, 0.4);
+  border: 1px solid rgba(73, 197, 182, 0.4);
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(var(--mm-accent-rgb), 0.06), rgba(0, 32, 24, 0.9));
   box-shadow: 0 0 0.9rem rgba(var(--mm-accent-rgb), 0.06);
@@ -495,7 +525,7 @@
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 10% 10%, rgba(var(--mm-accent-rgb), 0.05), transparent 12rem),
-    linear-gradient(145deg, rgba(3, 35, 26, 0.9), rgba(0, 17, 13, 0.92));
+    var(--mm-card-background);
   padding: 0.9rem;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.025),
@@ -737,21 +767,93 @@
 .growthSculpture {
   position: relative;
   z-index: 1;
-  width: min(72%, 18rem);
-  max-width: 18rem;
-  transform: rotateX(4deg) rotateY(-10deg) rotateZ(-2deg);
+  width: min(108%, 34rem);
+  max-width: 34rem;
+  transform: rotateX(4deg) rotateY(-9deg) rotateZ(-2deg);
   transform-style: preserve-3d;
   animation: sculptureFloat 6s ease-in-out infinite;
 }
 
-.growthSculpture img {
+.growthSvg {
   display: block;
   width: 100%;
   height: auto;
   filter:
-    drop-shadow(1rem 1.6rem 1.6rem rgba(0, 0, 0, 0.44))
-    drop-shadow(0 0 0.8rem rgba(var(--mm-accent-rgb), 0.09));
+    drop-shadow(1.2rem 1.8rem 1.5rem rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 1rem rgba(var(--mm-accent-rgb), 0.18))
+    drop-shadow(0 0 2.4rem rgba(var(--mm-accent-rgb), 0.08));
   transform: translateZ(2rem);
+  overflow: visible;
+}
+
+.growthGlow {
+  opacity: 0.98;
+}
+
+.growthGround {
+  fill: rgba(0, 0, 0, 0.4);
+  filter: blur(1rem);
+}
+
+.growthBar,
+.growthArrow,
+.growthPie {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.growthBar {
+  opacity: 0;
+  transform: translateY(7.5rem) scaleY(0.18);
+  transition:
+    opacity 520ms ease,
+    transform 780ms cubic-bezier(0.2, 0.95, 0.22, 1);
+  transition-delay: var(--growth-delay, 0ms);
+}
+
+.growthArrow {
+  opacity: 0;
+  transform: translate(-3rem, 2.5rem) rotate(-5deg);
+  transition:
+    opacity 420ms ease 460ms,
+    transform 980ms cubic-bezier(0.18, 0.92, 0.24, 1) 460ms;
+}
+
+.growthArrowDepth,
+.growthArrowFace {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: left bottom;
+}
+
+.growthArrowDepth,
+.growthArrowFace {
+  transform: translate(-2.4rem, 2.1rem) scale(0.9);
+  transition:
+    opacity 460ms ease 560ms,
+    transform 920ms cubic-bezier(0.18, 0.92, 0.24, 1) 560ms;
+}
+
+.growthPie {
+  opacity: 0;
+  transform: translate(4.5rem, -1rem) rotate(58deg) scale(0.84);
+  transform-origin: 72% 68%;
+  transition:
+    opacity 360ms ease 1220ms,
+    transform 880ms cubic-bezier(0.2, 1.1, 0.2, 1) 1220ms;
+}
+
+.growthSculptureVisible .growthBar,
+.growthSculptureVisible .growthArrow,
+.growthSculptureVisible .growthPie {
+  opacity: 1;
+  transform: translate(0, 0) rotate(0) scale(1);
+}
+
+.growthSculptureVisible .growthArrowDepth,
+.growthSculptureVisible .growthArrowFace {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
 }
 
 .growthSculpture::after {
@@ -760,7 +862,7 @@
   bottom: 6%;
   left: 8%;
   z-index: -1;
-  height: 4rem;
+  height: 5rem;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   box-shadow:
@@ -1102,3 +1204,6 @@
     flex-direction: column;
   }
 }
+
+
+

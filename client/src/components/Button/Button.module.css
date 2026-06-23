@@ -35,31 +35,31 @@
 
 .primary {
   border-color: rgba(var(--mm-accent-rgb), 0.48);
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
-  color: #102A23;
+  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
+  color: var(--mm-bg-deep);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 1.8rem rgba(9, 31, 25, 0.18);
 }
 
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #AAFC75, #AAFC75);
+  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 2rem rgba(9, 31, 25, 0.22);
 }
 
 .secondary {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(238, 244, 247, 0.92);
-  box-shadow: inset 0 1px 1.5rem rgba(255, 255, 255, 0.02);
+  border-color: var(--mm-border);
+  background: var(--mm-control-background);
+  color: var(--mm-text-soft);
+  box-shadow: inset 0 1px 1.5rem rgba(255, 255, 255, 0.03);
 }
 
 .secondary:hover:not(:disabled) {
-  border-color: rgba(var(--mm-accent-rgb), 0.48);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
+  color: var(--mm-text);
 }
 
 .danger {
