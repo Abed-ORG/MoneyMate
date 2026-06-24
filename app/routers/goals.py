@@ -21,7 +21,7 @@ from app.services.goal_service import (
     log_goal_contribution,
     update_goal,
 )
-from app.services.gemini_service import (
+from app.services.goal_ai_service import (
     calculate_goal_savings,
     calculate_goal_projection,
 )
@@ -44,6 +44,28 @@ def add_goal(
     db: Session = Depends(get_db),
 ):
     return create_goal(db, current_user.id, payload)
+
+
+# AI routes MUST be defined before /{goal_id} to avoid FastAPI
+# matching "ai" as a goal_id path parameter.
+@router.post("/ai/calculate", response_model=GoalAICalculationResponse)
+def ai_calculate_savings(
+    payload: GoalAICalculationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """AI savings calculator: required monthly to meet goal deadline."""
+    return calculate_goal_savings(payload)
+
+
+@router.post("/ai/projection", response_model=GoalProjectionResponse)
+def ai_projection(
+    payload: GoalAICalculationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """AI-powered goal timeline projection: month-by-month savings curve."""
+    return calculate_goal_projection(payload)
 
 
 @router.patch("/{goal_id}", response_model=GoalRead)
@@ -91,23 +113,3 @@ def add_contribution(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Goal not found.",
         )
-
-
-@router.post("/ai/calculate", response_model=GoalAICalculationResponse)
-def ai_calculate_savings(
-    payload: GoalAICalculationRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """AI savings calculator: required monthly to meet goal deadline."""
-    return calculate_goal_savings(payload)
-
-
-@router.post("/ai/projection", response_model=GoalProjectionResponse)
-def ai_projection(
-    payload: GoalAICalculationRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """AI-powered goal timeline projection: month-by-month savings curve."""
-    return calculate_goal_projection(payload)

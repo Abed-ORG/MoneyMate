@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.insights import (
     AnomalyDetectionResponse,
@@ -9,7 +8,7 @@ from app.schemas.insights import (
     RecurringDetectionResponse,
     SpendingInsightResponse,
 )
-from app.services.gemini_service import (
+from app.services.insights_ai_service import (
     analyze_spending_insights,
     detect_anomalies,
     detect_recurring_transactions,
@@ -42,7 +41,6 @@ def _transactions_as_dicts(current_user: User) -> list[dict]:
 @router.post("/insights/spending", response_model=SpendingInsightResponse)
 def spending_insights(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     """Analyze spending patterns with AI (Gemini, or heuristic fallback)."""
     txs = _transactions_as_dicts(current_user)
@@ -52,7 +50,6 @@ def spending_insights(
 @router.post("/insights/recurring", response_model=RecurringDetectionResponse)
 def recurring_insights(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     """Detect recurring transactions and subscriptions using AI."""
     txs = _transactions_as_dicts(current_user)
@@ -62,7 +59,6 @@ def recurring_insights(
 @router.post("/insights/anomalies", response_model=AnomalyDetectionResponse)
 def anomaly_insights(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     """Detect unusual or anomalous spending using AI."""
     txs = _transactions_as_dicts(current_user)
@@ -74,7 +70,6 @@ def anomaly_insights(
 )
 def monthly_summary(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     """Generate a monthly financial health summary using AI."""
     txs = _transactions_as_dicts(current_user)

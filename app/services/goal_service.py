@@ -1,9 +1,9 @@
-from datetime import datetime, time, timezone
+from datetime import datetime, time
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.models.goal import Goal
+from app.models.goal import Goal, GoalContribution
 from app.schemas.goal import GoalContributionCreate, GoalCreate, GoalUpdate
 
 
@@ -21,18 +21,23 @@ def _remaining(current: Decimal, target: Decimal) -> Decimal:
     return max(target - current, Decimal("0"))
 
 
+def _goal_to_read(goal: Goal) -> Goal:
+    """Attach computed fields to a Goal instance for response serialization."""
+    goal.saved_percentage = _percent(
+        Decimal(goal.current_amount or 0),
+        Decimal(goal.target_amount),
+    )
+    goal.remaining_amount = _remaining(
+        Decimal(goal.current_amount or 0),
+        Decimal(goal.target_amount),
+    )
+    return goal
+
+
 def list_goals(db: Session, user_id: int):
     goals = db.query(Goal).filter(Goal.user_id == user_id).all()
     for goal in goals:
-        goal.saved_percentage = _percent(
-            Decimal(goal.current_amount or 0),
-            Decimal(goal.target_amount),
-        )
-        goal.remaining_amount = _remaining(
-            Decimal(goal.current_amount or 0),
-            Decimal(goal.target_amount),
-        )
-        goal.contributions = []
+        _goal_to_read(goal)
     return goals
 
 
@@ -47,20 +52,12 @@ def create_goal(db: Session, user_id: int, payload: GoalCreate):
             if payload.deadline
             else None
         ),
+        linked_account=payload.linked_account,
     )
     db.add(goal)
     db.commit()
     db.refresh(goal)
-    goal.saved_percentage = _percent(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.remaining_amount = _remaining(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.contributions = []
-    return goal
+    return _goal_to_read(goal)
 
 
 def update_goal(db: Session, user_id: int, goal_id: int, payload: GoalUpdate):
@@ -83,16 +80,7 @@ def update_goal(db: Session, user_id: int, goal_id: int, payload: GoalUpdate):
         setattr(goal, field, value)
     db.commit()
     db.refresh(goal)
-    goal.saved_percentage = _percent(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.remaining_amount = _remaining(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.contributions = []
-    return goal
+    return _goal_to_read(goal)
 
 
 def delete_goal(db: Session, user_id: int, goal_id: int):
@@ -117,22 +105,16 @@ def log_goal_contribution(
     )
     if not goal:
         raise GoalNotFoundError
+
+    contribution = GoalContribution(
+        goal_id=goal.id,
+        amount=payload.amount,
+        contributed_at=payload.contributed_at or datetime.now(),
+        note=payload.note,
+    )
+    db.add(contribution)
+
     goal.current_amount = Decimal(goal.current_amount or 0) + payload.amount
     db.commit()
     db.refresh(goal)
-    goal.saved_percentage = _percent(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.remaining_amount = _remaining(
-        Decimal(goal.current_amount or 0),
-        Decimal(goal.target_amount),
-    )
-    goal.contributions = [{
-        "id": int(datetime.now(timezone.utc).timestamp() * 1000),
-        "goal_id": goal.id,
-        "amount": payload.amount,
-        "contributed_at": payload.contributed_at or datetime.now(timezone.utc),
-        "note": payload.note,
-    }]
-    return goal
+    return _goal_to_read(goal)

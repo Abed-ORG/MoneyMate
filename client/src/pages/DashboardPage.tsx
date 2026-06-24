@@ -14,26 +14,38 @@ const summaries = [
   { label: "Upcoming bills", value: "$620", detail: "Due over the next 7 days" },
 ];
 
-function money(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
-}
+type Status<T> =
+  | { state: "loading" }
+  | { state: "success"; data: T }
+  | { state: "error"; error: string };
 
 export function DashboardPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [spendingInsights, setSpendingInsights] = useState<SpendingInsightResponse | null>(null);
-  const [recurring, setRecurring] = useState<RecurringDetectionResponse | null>(null);
-  const [anomalies, setAnomalies] = useState<AnomalyDetectionResponse | null>(null);
-  const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryResponse | null>(null);
+  const [_transactions, setTransactions] = useState<Transaction[]>([]);
+  const [spendingStatus, setSpendingStatus] = useState<Status<SpendingInsightResponse>>({ state: "loading" });
+  const [recurringStatus, setRecurringStatus] = useState<Status<RecurringDetectionResponse>>({ state: "loading" });
+  const [anomaliesStatus, setAnomaliesStatus] = useState<Status<AnomalyDetectionResponse>>({ state: "loading" });
+  const [monthlyStatus, setMonthlyStatus] = useState<Status<MonthlySummaryResponse>>({ state: "loading" });
 
   useEffect(() => {
     void transactionsApi.list({ page: 1, pageSize: 200, sortBy: "date", sortDir: "desc" }).then((res) => {
       setTransactions(res.items);
     });
-    // Fetch AI insights from backend
-    void insightsApi.spending().then(setSpendingInsights);
-    void insightsApi.recurring().then(setRecurring);
-    void insightsApi.anomalies().then(setAnomalies);
-    void insightsApi.monthlySummary().then(setMonthlySummary);
+
+    insightsApi.spending()
+      .then((data) => setSpendingStatus({ state: "success", data }))
+      .catch(() => setSpendingStatus({ state: "error", error: "Failed to load spending insights." }));
+
+    insightsApi.recurring()
+      .then((data) => setRecurringStatus({ state: "success", data }))
+      .catch(() => setRecurringStatus({ state: "error", error: "Failed to load recurring charges." }));
+
+    insightsApi.anomalies()
+      .then((data) => setAnomaliesStatus({ state: "success", data }))
+      .catch(() => setAnomaliesStatus({ state: "error", error: "Failed to detect anomalies." }));
+
+    insightsApi.monthlySummary()
+      .then((data) => setMonthlyStatus({ state: "success", data }))
+      .catch(() => setMonthlyStatus({ state: "error", error: "Failed to load monthly summary." }));
   }, []);
 
   return (
@@ -70,25 +82,52 @@ export function DashboardPage() {
 
         <Card className={styles.insightCard}>
           <h3>AI spending insights</h3>
-          <p>{spendingInsights?.summary ?? "Loading insights..."}</p>
+
+          {spendingStatus.state === "loading" && <p className={styles.statusLoading}>Loading spending insights...</p>}
+          {spendingStatus.state === "error" && <p className={styles.statusError}>{spendingStatus.error}</p>}
+          {spendingStatus.state === "success" && <p>{spendingStatus.data.summary}</p>}
+
           <div className={styles.insightList}>
             <div>
               <strong>Recurring charges</strong>
-              <span>{recurring?.recurring?.length ? `${recurring.recurring.length} subscription(s) detected` : "No recurring pattern yet"}</span>
+              {recurringStatus.state === "loading" && <span className={styles.statusLoading}>Loading...</span>}
+              {recurringStatus.state === "error" && <span className={styles.statusError}>{recurringStatus.error}</span>}
+              {recurringStatus.state === "success" && (
+                <span>{recurringStatus.data.recurring?.length ? `${recurringStatus.data.recurring.length} subscription(s) detected` : "No recurring pattern yet"}</span>
+              )}
             </div>
             <div>
               <strong>Anomalies</strong>
-              <span>{anomalies?.anomalies?.length ? `${anomalies.anomalies.length} unusual transaction(s)` : "Nothing unusual flagged"}</span>
+              {anomaliesStatus.state === "loading" && <span className={styles.statusLoading}>Loading...</span>}
+              {anomaliesStatus.state === "error" && <span className={styles.statusError}>{anomaliesStatus.error}</span>}
+              {anomaliesStatus.state === "success" && (
+                <span>{anomaliesStatus.data.anomalies?.length ? `${anomaliesStatus.data.anomalies.length} unusual transaction(s)` : "Nothing unusual flagged"}</span>
+              )}
             </div>
             <div>
               <strong>Top category</strong>
-              <span>{spendingInsights?.top_category ?? "n/a"}</span>
+              {spendingStatus.state === "loading" && <span className={styles.statusLoading}>Loading...</span>}
+              {spendingStatus.state === "error" && <span className={styles.statusError}>n/a</span>}
+              {spendingStatus.state === "success" && <span>{spendingStatus.data.top_category}</span>}
             </div>
           </div>
-          {monthlySummary && (
+
+          {monthlyStatus.state === "loading" && (
             <div className={styles.monthlySummary}>
               <strong>Monthly summary</strong>
-              <p>{monthlySummary.summary}</p>
+              <p className={styles.statusLoading}>Loading...</p>
+            </div>
+          )}
+          {monthlyStatus.state === "error" && (
+            <div className={styles.monthlySummary}>
+              <strong>Monthly summary</strong>
+              <p className={styles.statusError}>{monthlyStatus.error}</p>
+            </div>
+          )}
+          {monthlyStatus.state === "success" && (
+            <div className={styles.monthlySummary}>
+              <strong>Monthly summary</strong>
+              <p>{monthlyStatus.data.summary}</p>
             </div>
           )}
         </Card>
