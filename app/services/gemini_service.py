@@ -1,9 +1,9 @@
 """
 Legacy module — function implementations have been split into:
 
-  - goal_ai_service.py        (goal savings & projection)
-  - insights_ai_service.py    (spending insights, recurring, anomalies, summary)
-  - category_service.py       (transaction category suggestion)
+  - goal_ai_service.py     (goal savings & projection)
+  - insights_ai_service.py (spending insights, recurring, anomalies, summary)
+  - category_service.py    (transaction category suggestion)
 
 This file re-exports everything for backward compatibility.
 New code should import directly from the split modules.

@@ -1,5 +1,4 @@
 """Ensure all Python files end with a single trailing newline."""
-import os
 
 files = [
     "app/services/goal_ai_service.py",
