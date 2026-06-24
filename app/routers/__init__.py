@@ -1,3 +1,11 @@
-from . import budgets, goals, insights, items, profile, transactions
+from . import analytics, budgets, goals, insights, items, profile, transactions
 
-__all__ = ["budgets", "goals", "insights", "items", "profile", "transactions"]
+__all__ = [
+    "analytics",
+    "budgets",
+    "goals",
+    "insights",
+    "items",
+    "profile",
+    "transactions",
+]

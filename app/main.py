@@ -3,7 +3,15 @@ import os
 
 from fastapi import FastAPI
 
-from app.routers import budgets, goals, insights, items, profile, transactions
+from app.routers import (
+    analytics,
+    budgets,
+    goals,
+    insights,
+    items,
+    profile,
+    transactions,
+)
 from app.auth import routes as auth_routes
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import status as status_router
@@ -44,6 +52,7 @@ app.add_middleware(
 app.include_router(items.router, prefix="/items", tags=["items"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(profile.router, prefix="/profile", tags=["profile"])
+app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 app.include_router(budgets.router, prefix="/budgets", tags=["budgets"])
 app.include_router(goals.router, prefix="/goals", tags=["goals"])
 app.include_router(insights.router, prefix="/api", tags=["insights"])
