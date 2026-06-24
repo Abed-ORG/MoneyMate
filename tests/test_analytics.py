@@ -279,14 +279,21 @@ def test_dashboard_analytics_endpoint_filters_and_aggregates(monkeypatch):
         )
         assert filtered.status_code == 200
         filtered_data = filtered.json()
-        assert Decimal(str(filtered_data["summary"]["current"]["total_income"])) == (
+        filtered_income = filtered_data["summary"]["current"]["total_income"]
+        assert Decimal(str(filtered_income)) == (
             Decimal("1000.00")
         )
-        assert Decimal(str(filtered_data["summary"]["current"]["total_expenses"])) == (
+        filtered_expenses = (
+            filtered_data["summary"]["current"]["total_expenses"]
+        )
+        assert Decimal(str(filtered_expenses)) == (
             Decimal("200.00")
         )
         assert len(filtered_data["spending_by_category"]) == 1
-        assert filtered_data["spending_by_category"][0]["category_name"] == "Food"
+        assert (
+            filtered_data["spending_by_category"][0]["category_name"]
+            == "Food"
+        )
 
         account_filtered = client.get(
             "/analytics/dashboard?start_date=2026-01-01&"
@@ -295,10 +302,14 @@ def test_dashboard_analytics_endpoint_filters_and_aggregates(monkeypatch):
         )
         assert account_filtered.status_code == 200
         account_data = account_filtered.json()
-        assert Decimal(str(account_data["summary"]["current"]["total_income"])) == (
+        account_income = account_data["summary"]["current"]["total_income"]
+        assert Decimal(str(account_income)) == (
             Decimal("0.00")
         )
-        assert Decimal(str(account_data["summary"]["current"]["total_expenses"])) == (
+        account_expenses = (
+            account_data["summary"]["current"]["total_expenses"]
+        )
+        assert Decimal(str(account_expenses)) == (
             Decimal("50.00")
         )
     finally:

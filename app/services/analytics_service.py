@@ -425,12 +425,19 @@ def trend_points(
         if row.amount >= 0:
             continue
         row_date = row.occurred_at.date()
-        bucket_date = week_start(row_date) if aggregation == "weekly" else row_date
+        bucket_date = (
+            week_start(row_date)
+            if aggregation == "weekly"
+            else row_date
+        )
         key = bucket_date.isoformat()
         if key in buckets:
             buckets[key] += abs(row.amount)
 
-    values = [quantize_money(buckets[item.isoformat()]) for item in bucket_dates]
+    values = [
+        quantize_money(buckets[item.isoformat()])
+        for item in bucket_dates
+    ]
     averages = moving_average(values, window)
     points: list[SpendingTrendPoint] = []
     for index, bucket_date in enumerate(bucket_dates):
