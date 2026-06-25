@@ -297,32 +297,23 @@
 
 .emptyState {
   display: grid;
-  max-width: 44rem;
+  width: min(100%, 46rem);
+  max-width: 46rem;
   place-self: center;
-  gap: 0.72rem;
-  padding: 1rem;
+  gap: 0.55rem;
+  padding: 0.8rem;
   text-align: center;
 }
 
-.assistantMark {
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
+.assistantLogo {
+  display: block;
+  width: clamp(5.2rem, 11vw, 7.2rem);
+  aspect-ratio: 1;
   justify-self: center;
-  border: 1px solid var(--mm-border);
-  border-radius: 999px;
-  background: var(--mm-control-background);
-  box-shadow: inset 0 0 1.2rem rgba(var(--mm-accent-rgb), 0.08);
-}
-
-.assistantMark span {
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 35%, var(--mm-accent-soft) 0 12%, transparent 13%),
-    conic-gradient(from 0deg, transparent 0 15%, var(--mm-accent-soft) 15% 23%, transparent 23% 40%, var(--mm-accent-soft) 40% 48%, transparent 48% 65%, var(--mm-accent-soft) 65% 73%, transparent 73%);
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0.55rem 1rem rgba(0, 0, 0, 0.28))
+    drop-shadow(0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12));
 }
 
 .promptLabel {
@@ -333,31 +324,94 @@
 }
 
 .suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
+  margin-top: 0.2rem;
 }
 
 .suggestions button {
-  border: 1px solid var(--mm-border);
-  border-radius: 0.42rem;
-  background: rgba(var(--mm-bg-rgb), 0.78);
+  position: relative;
+  display: grid;
+  min-height: 4.4rem;
+  overflow: hidden;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.68rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.1);
+  border-radius: var(--mm-radius-md);
+  background:
+    radial-gradient(circle at 12% 14%, rgba(var(--mm-accent-rgb), 0.06), transparent 8rem),
+    var(--mm-card-background);
   color: var(--mm-text);
   cursor: pointer;
-  font-weight: 800;
-  padding: 0.58rem 0.8rem;
-  box-shadow: 0 0.55rem 1.2rem rgba(0, 0, 0, 0.08);
+  padding: 0.72rem 0.78rem;
+  text-align: left;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 0.65rem 1.45rem rgba(0, 0, 0, 0.12);
   transition:
-    background 160ms ease,
     border-color 160ms ease,
+    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
+.suggestions button::before {
+  position: absolute;
+  top: 0;
+  left: 18%;
+  width: 42%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--mm-accent-rgb), 0.32), transparent);
+  box-shadow: 0 0 0.45rem rgba(var(--mm-accent-rgb), 0.12);
+  content: "";
+}
+
 .suggestions button:hover {
-  border-color: var(--mm-border-strong);
-  background: var(--mm-control-hover-background);
+  border-color: rgba(var(--mm-accent-rgb), 0.18);
+  box-shadow:
+    0 0 1rem rgba(var(--mm-accent-rgb), 0.045),
+    0 0.85rem 1.8rem rgba(0, 0, 0, 0.18);
   transform: translateY(-1px);
+}
+
+.suggestions button:focus-visible {
+  outline: 3px solid rgba(var(--mm-accent-rgb), 0.2);
+  outline-offset: 2px;
+}
+
+.suggestions button > span:last-child {
+  color: var(--mm-text);
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.suggestionIcon {
+  display: grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  place-items: center;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.2);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(var(--mm-accent-rgb), 0.16), transparent 62%),
+    rgba(18, 70, 40, 0.52);
+  box-shadow:
+    inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
+    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
+  color: var(--mm-accent-soft);
+}
+
+.suggestionIcon svg {
+  width: 1.32rem;
+  height: 1.32rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .composer {
@@ -461,5 +515,9 @@
 
   .messageRow {
     max-width: 96%;
+  }
+
+  .suggestions {
+    grid-template-columns: 1fr;
   }
 }
