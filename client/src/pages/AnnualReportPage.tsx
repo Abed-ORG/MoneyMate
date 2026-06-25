@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, Select } from "../components";
-import { getAnnualReport } from "../services/reports";
+import { getAnnualReport, type AnnualReport } from "../services/reports";
 import styles from "./AnnualReportPage.module.css";
 
 function money(value: number) {
@@ -39,7 +39,6 @@ function buildSimplePdf(lines: string[]) {
   contentLines.push("ET");
   const stream = contentLines.join("\n");
   const streamLength = stream.length;
-
   const objects = [
     "%PDF-1.4",
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
@@ -79,10 +78,33 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function downloadPdf(report: AnnualReport) {
+  const blob = buildSimplePdf([
+    "MoneyMate",
+    `Annual Report - ${report.year}`,
+    `Generated: ${new Date().toLocaleString("en-US")}`,
+    "",
+    `Income: ${money(report.totals.income)}`,
+    `Expenses: ${money(report.totals.expenses)}`,
+    `Net Savings: ${money(report.totals.netSavings)}`,
+    "",
+    "Month-by-month breakdown",
+    ...report.months.map(
+      (item) =>
+        `${item.monthLabel}: income ${money(item.income)}, expenses ${money(item.expenses)}, net savings ${money(item.netSavings)}`,
+    ),
+    "",
+    report.previousYearComparison
+      ? `YoY: income ${percent(report.previousYearComparison.incomeChange)}, expenses ${percent(report.previousYearComparison.expenseChange)}, savings ${percent(report.previousYearComparison.savingsChange)}`
+      : "No previous year data available.",
+  ]);
+  triggerDownload(blob, `MoneyMate_Annual_Report_${report.year}.pdf`);
+}
+
 export function AnnualReportPage() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<Awaited<ReturnType<typeof getAnnualReport>> | null>(null);
+  const [report, setReport] = useState<AnnualReport | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -93,29 +115,52 @@ export function AnnualReportPage() {
   }, [year]);
 
   const chartData = useMemo(
-    () => report?.months.map((item) => ({ name: item.monthLabel, income: item.income, expenses: item.expenses })) ?? [],
+    () =>
+      report?.months.map((item) => ({
+        name: item.monthLabel,
+        income: item.income,
+        expenses: item.expenses,
+      })) ?? [],
     [report],
   );
 
   return (
     <section className={styles.page}>
-      <Card className={styles.controls}>
-        <FormField label="Report year">
-          <Select aria-label="Select report year" options={buildYears()} value={year} onValueChange={setYear} />
+      <div className={styles.controlsBar}>
+        <FormField label="Year">
+          <Select
+            aria-label="Select report year"
+            options={buildYears()}
+            value={year}
+            onValueChange={setYear}
+          />
         </FormField>
-        <div className={styles.actions}>
-          <Button disabled={!report} onClick={() => report && downloadPdf(report)}>Export PDF</Button>
-        </div>
-      </Card>
+        <Button disabled={!report} onClick={() => report && downloadPdf(report)}>
+          Export PDF
+        </Button>
+      </div>
 
       {loading || !report ? (
-        <Card className={styles.state}><p>Loading annual report...</p></Card>
+        <Card className={styles.state}>
+          <p>Loading annual report...</p>
+        </Card>
       ) : (
         <>
           <div className={styles.summaryGrid}>
-            <Card className={styles.summaryCard}><span>Total income</span><strong>{money(report.totals.income)}</strong></Card>
-            <Card className={styles.summaryCard}><span>Total expenses</span><strong>{money(report.totals.expenses)}</strong></Card>
-            <Card className={styles.summaryCard}><span>Net savings</span><strong>{money(report.totals.netSavings)}</strong></Card>
+            <Card className={styles.summaryCard}>
+              <span>Total income</span>
+              <strong className={styles.positive}>{money(report.totals.income)}</strong>
+            </Card>
+            <Card className={styles.summaryCard}>
+              <span>Total expenses</span>
+              <strong className={styles.negative}>{money(report.totals.expenses)}</strong>
+            </Card>
+            <Card className={styles.summaryCard}>
+              <span>Net savings</span>
+              <strong className={report.totals.netSavings >= 0 ? styles.positive : styles.negative}>
+                {money(report.totals.netSavings)}
+              </strong>
+            </Card>
           </div>
 
           <Card className={styles.chartCard}>
@@ -126,7 +171,17 @@ export function AnnualReportPage() {
                   <CartesianGrid stroke="rgba(73, 197, 182, 0.18)" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                   <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} />
-                  <Tooltip />
+                  <Tooltip
+                    cursor={{ fill: "rgba(73, 197, 182, 0.055)" }}
+                    contentStyle={{
+                      background: "var(--mm-surface-strong)",
+                      border: "1px solid var(--mm-border-strong)",
+                      borderRadius: "12px",
+                      boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
+                      color: "var(--mm-text)",
+                    }}
+                    labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
+                  />
                   <Bar dataKey="income" fill="#49c5b6" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="expenses" fill="#17635c" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -137,7 +192,14 @@ export function AnnualReportPage() {
           <Card className={styles.tableCard}>
             <h3>Month-by-month breakdown</h3>
             <table>
-              <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net savings</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Income</th>
+                  <th>Expenses</th>
+                  <th>Net savings</th>
+                </tr>
+              </thead>
               <tbody>
                 {report.months.map((item) => (
                   <tr key={item.month}>
@@ -155,9 +217,18 @@ export function AnnualReportPage() {
             <h3>Year-over-year comparison</h3>
             {report.previousYearComparison ? (
               <div className={styles.comparisonGrid}>
-                <div><span>Income change</span><strong>{percent(report.previousYearComparison.incomeChange)}</strong></div>
-                <div><span>Expense change</span><strong>{percent(report.previousYearComparison.expenseChange)}</strong></div>
-                <div><span>Savings change</span><strong>{percent(report.previousYearComparison.savingsChange)}</strong></div>
+                <div>
+                  <span>Income change</span>
+                  <strong>{percent(report.previousYearComparison.incomeChange)}</strong>
+                </div>
+                <div>
+                  <span>Expense change</span>
+                  <strong>{percent(report.previousYearComparison.expenseChange)}</strong>
+                </div>
+                <div>
+                  <span>Savings change</span>
+                  <strong>{percent(report.previousYearComparison.savingsChange)}</strong>
+                </div>
               </div>
             ) : (
               <p>No previous year data available.</p>
@@ -167,18 +238,4 @@ export function AnnualReportPage() {
       )}
     </section>
   );
-}
-
-function downloadPdf(report: NonNullable<Awaited<ReturnType<typeof getAnnualReport>>>) {
-  const blob = buildSimplePdf([
-    "MoneyMate",
-    `Annual Report - ${report.year}`,
-    `Generated: ${new Date().toLocaleString("en-US")}`,
-    "",
-    "Annual totals",
-    `Income: ${money(report.totals.income)}`,
-    `Expenses: ${money(report.totals.expenses)}`,
-    `Net Savings: ${money(report.totals.netSavings)}`,
-  ]);
-  triggerDownload(blob, `MoneyMate_Annual_Report_${report.year}.pdf`);
 }
