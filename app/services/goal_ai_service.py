@@ -12,14 +12,14 @@ from typing import Any
 from urllib import request
 from urllib.error import HTTPError
 
-logger = logging.getLogger(__name__)
-
 from app.schemas.goal import (
     GoalAICalculationRequest,
     GoalAICalculationResponse,
     GoalProjectionPoint,
     GoalProjectionResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 GEMINI_ENDPOINT = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
