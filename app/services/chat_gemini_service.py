@@ -71,7 +71,10 @@ def retry_after_from_text(text: str) -> float | None:
         return None
 
 
-def retry_after_from_http_error(exc: error.HTTPError, body: str) -> float | None:
+def retry_after_from_http_error(
+    exc: error.HTTPError,
+    body: str,
+) -> float | None:
     header = exc.headers.get("Retry-After") if exc.headers else None
     if header:
         try:
