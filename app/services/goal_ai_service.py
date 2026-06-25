@@ -12,10 +12,6 @@ from typing import Any
 from urllib import request
 from urllib.error import HTTPError
 
-from app.services.gemini_transport import (
-    configure_gemini_tls,
-    gemini_generate_endpoint,
-)
 from app.schemas.goal import (
     GoalAICalculationRequest,
     GoalAICalculationResponse,
