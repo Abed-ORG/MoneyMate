@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib import error, request
@@ -22,6 +24,9 @@ DEFAULT_FALLBACK_MODELS = (
     "gemini-2.5-flash-lite",
     "gemini-2.0-flash-lite",
 )
+DEFAULT_MODEL_COOLDOWN_SECONDS = 60.0
+MAX_MODEL_COOLDOWN_SECONDS = 600.0
+MODEL_COOLDOWNS: dict[str, float] = {}
 
 
 class GeminiChatError(Exception):
@@ -35,6 +40,14 @@ class GeminiChatTimeoutError(GeminiChatError):
 class GeminiChatRateLimitError(GeminiChatError):
     code = "gemini_rate_limited"
 
+    def __init__(
+        self,
+        message: str,
+        retry_after_seconds: float | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+
 
 class GeminiChatConfigError(GeminiChatError):
     code = "gemini_config"
@@ -46,6 +59,26 @@ class GeminiChatSafetyError(GeminiChatError):
 
 class GeminiChatInvalidResponseError(GeminiChatError):
     code = "gemini_invalid_response"
+
+
+def retry_after_from_text(text: str) -> float | None:
+    match = re.search(r"retry in\s+([0-9]+(?:\.[0-9]+)?)s", text, re.I)
+    if not match:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
+
+
+def retry_after_from_http_error(exc: error.HTTPError, body: str) -> float | None:
+    header = exc.headers.get("Retry-After") if exc.headers else None
+    if header:
+        try:
+            return float(header)
+        except ValueError:
+            pass
+    return retry_after_from_text(body)
 
 
 SYSTEM_PROMPT = """
@@ -62,6 +95,9 @@ Keep answers concise, clear, and conversational.
 Explain calculations in plain language when useful.
 Compare previous periods only when comparison data is supplied.
 Never claim to have changed user data.
+When conversation_history is supplied in the financial context, use it only
+to interpret short follow-ups like "yes please" or "why not"; keep the answer
+grounded in the current structured financial context.
 For greetings, thanks, farewells, and simple friendly check-ins, respond
 warmly and briefly. Do not apologize or refuse those messages.
 When a request needs help outside MoneyMate finance, apologize warmly,
@@ -106,7 +142,30 @@ class GeminiChatClient:
         for model in candidates:
             if model and model not in unique:
                 unique.append(model)
-        return unique
+        now = time.monotonic()
+        available = [
+            model
+            for model in unique
+            if MODEL_COOLDOWNS.get(model, 0) <= now
+        ]
+        for model in unique:
+            resume_at = MODEL_COOLDOWNS.get(model, 0)
+            if resume_at > now:
+                logger.info(
+                    "Skipping Gemini chat model %s for %.1fs cooldown.",
+                    model,
+                    resume_at - now,
+                )
+        return available or unique
+
+    def cool_down_model(
+        self,
+        model: str,
+        seconds: float | None = None,
+    ) -> None:
+        wait_seconds = seconds or DEFAULT_MODEL_COOLDOWN_SECONDS
+        wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
+        MODEL_COOLDOWNS[model] = time.monotonic() + wait_seconds
 
     def generate_answer(
         self,
@@ -127,8 +186,12 @@ class GeminiChatClient:
                     context,
                 )
             except GeminiChatRateLimitError as exc:
+                self.cool_down_model(model, exc.retry_after_seconds)
                 logger.warning(
-                    "Gemini chat model %s is temporarily unavailable: %s",
+                    (
+                        "Gemini chat model %s is temporarily unavailable: "
+                        "%s"
+                    ),
                     model,
                     exc,
                 )
@@ -201,8 +264,10 @@ class GeminiChatClient:
                     "Gemini is not configured."
                 ) from exc
             if exc.code in {429, 503}:
+                retry_after = retry_after_from_http_error(exc, body)
                 raise GeminiChatRateLimitError(
-                    "Gemini is temporarily unavailable."
+                    "Gemini is temporarily unavailable.",
+                    retry_after,
                 ) from exc
             raise GeminiChatError("Gemini request failed.") from exc
         except Exception as exc:
