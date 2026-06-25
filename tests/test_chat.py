@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
+import json
+from urllib.error import HTTPError
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -20,7 +22,13 @@ from app.models.goal import Goal
 from app.models.transaction import Transaction
 from app.schemas.user import UserCreate
 from app.services import chat_service
-from app.services.chat_gemini_service import GeminiChatRateLimitError
+from app.services.chat_context_service import requested_period
+from app.services.chat_gemini_service import (
+    GeminiChatClient,
+    GeminiChatRateLimitError,
+    MODEL_COOLDOWNS,
+    retry_after_from_text,
+)
 
 
 def make_client():
@@ -355,3 +363,216 @@ def test_chat_validation_and_provider_failure_fallback(monkeypatch):
     finally:
         app.dependency_overrides.clear()
         session.close()
+
+
+def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
+    monkeypatch,
+):
+    client, session = make_client()
+
+    def unexpected_answer(question, context):
+        raise AssertionError("Greeting should not call Gemini.")
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        unexpected_answer,
+    )
+    try:
+        _, headers = create_account(session, client, "hello@example.com")
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "hiiii"},
+        )
+
+        assert response.status_code == 200
+        content = response.json()["assistant_message"]["content"]
+        assert "Hi!" in content
+        assert "finance questions" not in content
+        assert "Sorry" not in content
+        assert response.json()["assistant_message"]["sources"] == []
+        assert response.json()["assistant_message"]["metrics"] == {}
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
+    monkeypatch,
+):
+    client, session = make_client()
+
+    def unavailable_answer(question, context):
+        raise GeminiChatRateLimitError("limited")
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        unavailable_answer,
+    )
+    try:
+        user, headers = create_account(session, client, "yes@example.com")
+        add_financial_data(session, user.id)
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+        session.add(
+            ChatMessage(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=(
+                    "Currently, I have data available for June 2026. "
+                    "Would you like to know more about your spending, "
+                    "budget, savings, or goals for this period?"
+                ),
+            )
+        )
+        session.commit()
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "yesplease"},
+        )
+
+        assert response.status_code == 200
+        content = response.json()["assistant_message"]["content"]
+        assert "MoneyMate calculated" in content
+        assert "For **June 2026**" in content
+        assert "Hello! How can I help" not in content
+        assert response.json()["assistant_message"]["metrics"][
+            "total_expenses"
+        ] == 200.0
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_gemini_chat_tries_fallback_model_after_rate_limit(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [
+                                    {
+                                        "text": (
+                                            "You spent 509.50 USD in "
+                                            "June 2026."
+                                        )
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(req, timeout):
+        calls.append(req.full_url)
+        if len(calls) == 1:
+            raise HTTPError(
+                req.full_url,
+                429,
+                "rate limited",
+                hdrs=None,
+                fp=None,
+            )
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("GEMINI_FALLBACK_MODELS", "gemini-3.1-flash-lite")
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.request.urlopen",
+        fake_urlopen,
+    )
+
+    client = GeminiChatClient()
+    answer = client.generate_answer(
+        "How much did I spend this month?",
+        {"currency": "USD", "transactions": {"expenses": 509.5}},
+    )
+
+    assert answer == "You spent 509.50 USD in June 2026."
+    assert "gemini-2.5-flash" in calls[0]
+    assert "gemini-3.1-flash-lite" in calls[1]
+
+
+def test_gemini_chat_skips_model_during_rate_limit_cooldown(monkeypatch):
+    MODEL_COOLDOWNS.clear()
+    calls = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "Fallback answer."}]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(req, timeout):
+        calls.append(req.full_url)
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("GEMINI_FALLBACK_MODELS", "gemini-3.1-flash-lite")
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.request.urlopen",
+        fake_urlopen,
+    )
+
+    client = GeminiChatClient()
+    client.cool_down_model("gemini-2.5-flash", 30)
+
+    answer = client.generate_answer("Question", {})
+
+    assert answer == "Fallback answer."
+    assert len(calls) == 1
+    assert "gemini-3.1-flash-lite" in calls[0]
+    MODEL_COOLDOWNS.clear()
+
+
+def test_retry_after_from_text_reads_gemini_quota_message():
+    assert retry_after_from_text("Please retry in 28.996338323s.") == (
+        28.996338323
+    )
+
+
+def test_requested_period_supports_named_month_and_year():
+    assert requested_period(
+        "what were my expenses for april 2026",
+        today=date(2026, 6, 25),
+    ) == (date(2026, 4, 1), date(2026, 4, 30))
