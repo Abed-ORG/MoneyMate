@@ -10,6 +10,10 @@ from decimal import Decimal
 from typing import Any
 from urllib import request
 
+from app.services.gemini_transport import (
+    configure_gemini_tls,
+    gemini_generate_endpoint,
+)
 from app.schemas.goal import (
     GoalAICalculationRequest,
     GoalAICalculationResponse,
@@ -17,10 +21,8 @@ from app.schemas.goal import (
     GoalProjectionResponse,
 )
 
-GEMINI_ENDPOINT = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-1.5-flash:generateContent"
-)
+configure_gemini_tls()
+GEMINI_ENDPOINT = gemini_generate_endpoint()
 
 
 # -- Shared helper -----------------------------------------------------------

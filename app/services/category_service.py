@@ -12,12 +12,14 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from urllib import request
 
+from app.services.gemini_transport import (
+    configure_gemini_tls,
+    gemini_generate_endpoint,
+)
 from app.schemas.transaction import AiCategorization
 
-GEMINI_ENDPOINT = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-1.5-flash:generateContent"
-)
+configure_gemini_tls()
+GEMINI_ENDPOINT = gemini_generate_endpoint()
 
 CATEGORY_CONTEXT: dict[str, dict[str, list[str] | str]] = {
     "Food & Dining": {

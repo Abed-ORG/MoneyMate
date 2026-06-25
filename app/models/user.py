@@ -45,6 +45,11 @@ class User(Base):
     budgets = relationship("Budget", back_populates="user")
     goals = relationship("Goal", back_populates="user")
     chat_history = relationship("ChatHistory", back_populates="user")
+    chat_conversations = relationship(
+        "ChatConversation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     financial_profile = relationship(
         "FinancialProfile",

@@ -12,3 +12,4 @@ email-validator
 httpx2
 pytest
 resend
+truststore

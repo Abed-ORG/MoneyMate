@@ -1,42 +1,30 @@
 .page {
   display: grid;
   gap: 0.9rem;
+  min-width: 0;
 }
 
-.hero {
-  position: relative;
-  display: flex;
-  min-height: 8.2rem;
-  overflow: hidden;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-lg);
-  background: var(--mm-card-background);
-  padding: clamp(0.95rem, 2.2vw, 1.35rem);
-  box-shadow: var(--mm-shadow-card);
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  min-width: 0;
 }
 
-.hero::after {
-  position: absolute;
-  right: 5%;
-  bottom: 0;
-  width: min(22rem, 42%);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--mm-accent-soft), transparent);
-  box-shadow:
-    0 0 0.55rem rgba(var(--mm-accent-rgb), 0.28),
-    0 0 1.2rem rgba(var(--mm-accent-rgb), 0.12);
-  content: "";
+.analyticsGrid > :last-child {
+  grid-column: 1 / -1;
+}
+
+.insightCard {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: clamp(0.85rem, 2vw, 1.1rem);
 }
 
 .kicker,
-.hero h2,
-.hero p,
-.summaryCard p,
-.chartHeader h3,
-.chartHeader p {
+.insightCard h3,
+.insightCard p {
   margin: 0;
 }
 
@@ -48,103 +36,29 @@
   text-transform: uppercase;
 }
 
-.hero h2 {
-  margin-top: 0.5rem;
+.insightCard h3 {
+  margin-top: 0.25rem;
   color: var(--mm-text);
-  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-size: 1.05rem;
   letter-spacing: 0;
 }
 
-.hero p {
-  max-width: 45rem;
-  margin-top: 0.75rem;
+.insightCard p {
   color: var(--mm-text-soft);
   font-size: 0.92rem;
   line-height: 1.45;
 }
 
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.7rem;
-}
-
-.summaryCard {
-  position: relative;
-  display: grid;
-  min-height: 7rem;
-  overflow: hidden;
-  align-content: center;
-  gap: 0.35rem;
-  padding: 0.85rem;
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
-}
-
-.summaryCard::before {
-  position: absolute;
-  top: -1px;
-  left: 18%;
-  width: 44%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--mm-accent-soft), transparent);
-  box-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.22);
-  content: "";
-}
-
-.summaryCard:hover {
-  border-color: var(--mm-border-strong);
-  box-shadow:
-    var(--mm-shadow-card),
-    0 0 0.9rem rgba(var(--mm-accent-rgb), 0.07);
-  transform: translateY(-1px);
-}
-
-.summaryCard span {
-  color: var(--mm-text-muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.summaryCard strong {
-  color: var(--mm-text);
-  font-size: 1.45rem;
-  letter-spacing: 0;
-}
-
-.summaryCard p {
-  color: var(--mm-text-soft);
-  font-size: 0.82rem;
-}
-
-.chartCard {
-  padding: clamp(0.85rem, 2vw, 1.1rem);
-}
-
-.twoCol {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 0.7rem;
-}
-
-.insightCard {
-  display: grid;
-  gap: 0.85rem;
-  padding: clamp(0.85rem, 2vw, 1.1rem);
-}
-
 .insightList {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
 }
 
 .insightList div {
   display: grid;
   gap: 0.18rem;
+  min-width: 0;
   padding-top: 0.7rem;
   border-top: 1px solid var(--mm-border);
 }
@@ -154,46 +68,16 @@
 }
 
 .insightList span {
+  min-width: 0;
   color: var(--mm-text-muted);
   font-size: 0.9rem;
 }
 
-.chartHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.7rem;
-}
-
-.chartHeader h3 {
-  color: var(--mm-text);
-  font-size: 1.05rem;
-  letter-spacing: 0;
-}
-
-.chartHeader p {
-  margin-top: 0.25rem;
-  color: var(--mm-text-muted);
-}
-
-.badge {
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.2);
-  border-radius: 999px;
-  background: rgba(var(--mm-accent-rgb), 0.06);
-  color: var(--mm-accent-soft);
-  flex: 0 0 auto;
-  font-size: 0.82rem;
-  font-weight: 800;
-  padding: 0.3rem 0.55rem;
-}
-
-
 .monthlySummary {
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--mm-border);
   display: grid;
   gap: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--mm-border);
 }
 
 .monthlySummary strong {
@@ -214,32 +98,24 @@
 }
 
 .statusError {
-  color: var(--mm-danger, #e74c3c);
+  color: var(--color-error);
   font-size: 0.85rem;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
+  0%,
+  100% {
+    opacity: 0.6;
+  }
 
-@media (max-width: 1100px) {
-  .summaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  50% {
+    opacity: 1;
   }
 }
 
-@media (max-width: 640px) {
-  .summaryGrid {
+@media (max-width: 980px) {
+  .analyticsGrid,
+  .insightList {
     grid-template-columns: 1fr;
   }
-
-  .twoCol {
-    grid-template-columns: 1fr;
-  }
-
-  .chartHeader {
-    flex-direction: column;
-  }
 }
-
