@@ -231,7 +231,7 @@ export function GoalsPage() {
 
   const renderCreateForm = () => (
     <form
-      className={styles.formGrid}
+      className={styles.verticalForm}
       onSubmit={(event) => {
         event.preventDefault();
         void createGoal();
@@ -283,7 +283,7 @@ export function GoalsPage() {
 
   const renderEditForm = () => (
     <form
-      className={styles.formGrid}
+      className={styles.verticalForm}
       onSubmit={(event) => {
         event.preventDefault();
         void saveEdit();
@@ -469,7 +469,7 @@ export function GoalsPage() {
       {/* Log Contribution Modal */}
       <Modal isOpen={isContributeOpen} title="Log contribution" onClose={() => setIsContributeOpen(false)}>
         <form
-          className={styles.contributeForm}
+          className={styles.verticalForm}
           onSubmit={(event) => {
             event.preventDefault();
             void logContribution();
