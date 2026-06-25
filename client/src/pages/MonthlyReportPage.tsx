@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, Select } from "../components";
@@ -139,6 +140,7 @@ export function MonthlyReportPage() {
           <FormField label="Month">
             <Select
               aria-label="Select report month"
+              className={styles.wideSelect}
               options={buildMonths()}
               value={month}
               onValueChange={setMonth}
@@ -147,15 +149,26 @@ export function MonthlyReportPage() {
           <FormField label="Year">
             <Select
               aria-label="Select report year"
+              className={styles.wideSelect}
               options={buildYears()}
               value={year}
               onValueChange={setYear}
             />
           </FormField>
         </div>
-        <Button disabled={!report} onClick={() => report && downloadPdf(report)}>
-          Export PDF
-        </Button>
+        <div className={styles.controlActions}>
+          <Button disabled={!report} onClick={() => report && downloadPdf(report)}>
+            Export PDF
+          </Button>
+          <div className={styles.viewSwitcher} role="group" aria-label="Report view mode">
+            <NavLink className={({ isActive }) => `${styles.viewSwitcherButton} ${isActive ? styles.viewSwitcherActive : ""}`} to="/reports/monthly">
+              Monthly
+            </NavLink>
+            <NavLink className={({ isActive }) => `${styles.viewSwitcherButton} ${isActive ? styles.viewSwitcherActive : ""}`} to="/reports/annual">
+              Annual
+            </NavLink>
+          </div>
+        </div>
       </div>
 
       {loading || !report ? (
