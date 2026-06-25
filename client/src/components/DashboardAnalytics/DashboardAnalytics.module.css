@@ -116,6 +116,18 @@
   text-align: right;
 }
 
+.filterButtonActive {
+  border-color: rgba(var(--mm-accent-rgb), 0.56) !important;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(var(--mm-accent-rgb), 0.22), transparent 8rem),
+    rgba(var(--mm-accent-rgb), 0.13) !important;
+  color: var(--mm-text) !important;
+  box-shadow:
+    0 0 0.75rem rgba(var(--mm-accent-rgb), 0.16),
+    0 0 1.6rem rgba(var(--mm-accent-rgb), 0.08),
+    inset 0 1px 1.4rem rgba(255, 255, 255, 0.04) !important;
+}
+
 .filterCount {
   display: inline-grid;
   min-width: 1.25rem;
@@ -149,6 +161,8 @@
   max-height: min(23rem, 46vh);
   overflow: auto;
   padding-right: 0.2rem;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
 }
 
 .categoryFilterRow {
@@ -344,6 +358,30 @@
   gap: 0.45rem;
   overflow: auto;
   padding-right: 0.15rem;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
+}
+
+.categoryChecklist::-webkit-scrollbar,
+.legendList::-webkit-scrollbar {
+  width: 0.55rem;
+}
+
+.categoryChecklist::-webkit-scrollbar-track,
+.legendList::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.45);
+}
+
+.categoryChecklist::-webkit-scrollbar-thumb,
+.legendList::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(var(--mm-bg-rgb), 0.45);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--mm-accent-rgb), 0.82),
+    rgba(var(--mm-accent-rgb), 0.48)
+  );
 }
 
 .legendItem {

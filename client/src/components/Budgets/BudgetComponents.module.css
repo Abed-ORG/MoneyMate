@@ -153,23 +153,82 @@
 }
 
 .cardActions {
+  position: relative;
   display: flex;
-  gap: 0.45rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
-.cardActions button {
-  border: 1px solid var(--mm-border);
+.dotsButton {
+  display: inline-grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border: 0;
   border-radius: 999px;
-  background: var(--mm-control-background);
+  background: transparent;
   color: var(--mm-accent-soft);
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 800;
-  padding: 0.45rem 0.65rem;
+  line-height: 0;
+  padding: 0;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.cardActions button:last-child {
-  border-color: rgba(255, 107, 114, 0.42);
+.dotsButton:hover {
+  border: 0;
+  background: rgba(var(--mm-accent-rgb), 0.08);
+  color: var(--mm-accent-soft);
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+
+.dotsButton svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+  stroke: none;
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 25;
+  display: grid;
+  min-width: 10rem;
+  overflow: hidden;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-menu-background);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.34);
+  padding: 0.35rem;
+}
+
+.actionMenu button {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.actionMenu button:hover {
+  background: rgba(var(--mm-accent-rgb), 0.1);
+  color: var(--mm-accent-soft);
+}
+
+.actionMenu .dangerAction {
   color: var(--color-error);
 }
 
@@ -408,6 +467,7 @@
 
   .cardActions {
     grid-column: 1 / -1;
+    justify-content: space-between;
   }
 
   .summaryMetrics,

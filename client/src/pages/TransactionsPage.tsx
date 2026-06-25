@@ -313,6 +313,22 @@ function FilterIcon() {
   );
 }
 
+function ArrowLeftIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M15 18 9 12l6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
 function SpreadsheetIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -422,6 +438,12 @@ export function TransactionsPage() {
   const allVisibleSelected =
     transactions.length > 0 &&
     transactions.every((transaction) => selectedTransactionIds.includes(transaction.id));
+  const activeFilterCount = [
+    filters.search?.trim(),
+    filters.category,
+    filters.dateFrom || filters.dateTo,
+    filters.amountMin || filters.amountMax,
+  ].filter(Boolean).length;
 
   const loadTransactions = async () => {
     setIsLoading(true);
@@ -902,9 +924,16 @@ export function TransactionsPage() {
           <SpreadsheetIcon />
           Export CSV
         </Button>
-        <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+        <Button
+          className={activeFilterCount ? styles.filterButtonActive : ""}
+          variant="secondary"
+          onClick={() => setIsFiltersOpen(true)}
+        >
           <FilterIcon />
           Filters
+          {activeFilterCount ? (
+            <span className={styles.filterCount}>{activeFilterCount}</span>
+          ) : null}
         </Button>
         <Button variant="secondary" onClick={() => setIsSummaryOpen(true)}>
           Summary
@@ -1068,12 +1097,6 @@ export function TransactionsPage() {
       <main className={styles.content}>
         <section className={styles.tablePanel}>
           <header className={styles.tableHeader}>
-            <div>
-              <h2>Transactions</h2>
-              <p className={styles.tableSubtitle}>
-                {total} transaction{total === 1 ? "" : "s"}
-              </p>
-            </div>
             <div className={styles.tableActions}>
               <span className={styles.selectionSummary}>
                 {selectedCount ? `${selectedCount} selected` : "No selection"}
@@ -1196,14 +1219,28 @@ export function TransactionsPage() {
               {total} transaction{total === 1 ? "" : "s"}
             </span>
             <div className={styles.pageNavigation}>
-              <Button variant="secondary" disabled={filters.page <= 1} onClick={() => updateFilter({ page: filters.page - 1 })}>
-                Prev
+              <Button
+                aria-label="Previous page"
+                className={styles.paginationArrow}
+                variant="secondary"
+                disabled={filters.page <= 1}
+                onClick={() => updateFilter({ page: filters.page - 1 })}
+                title="Previous page"
+              >
+                <ArrowLeftIcon />
               </Button>
               <span className={styles.pageIndicator}>
                 Page <strong>{filters.page}</strong> of {totalPages}
               </span>
-              <Button variant="secondary" disabled={filters.page >= totalPages} onClick={() => updateFilter({ page: filters.page + 1 })}>
-                Next
+              <Button
+                aria-label="Next page"
+                className={styles.paginationArrow}
+                variant="secondary"
+                disabled={filters.page >= totalPages}
+                onClick={() => updateFilter({ page: filters.page + 1 })}
+                title="Next page"
+              >
+                <ArrowRightIcon />
               </Button>
             </div>
             <div className={styles.rowsControl}>

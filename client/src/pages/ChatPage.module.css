@@ -120,6 +120,7 @@
 .conversationSelect:focus-visible,
 .deleteConversation:focus-visible,
 .iconButton:focus-visible,
+.jumpLatest:focus-visible,
 .sendButton:focus-visible {
   outline: 3px solid rgba(var(--mm-accent-rgb), 0.22);
   outline-offset: 2px;
@@ -196,6 +197,31 @@
   overflow: auto;
   padding: 1.1rem;
   scroll-behavior: smooth;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
+}
+
+.messages::-webkit-scrollbar {
+  width: 0.55rem;
+}
+
+.messages::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.45);
+}
+
+.messages::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(var(--mm-bg-rgb), 0.45);
+  border-radius: 999px;
+  background:
+    linear-gradient(rgba(var(--mm-accent-rgb), 0.78), rgba(var(--mm-accent-rgb), 0.44))
+    padding-box;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(rgba(var(--mm-accent-rgb), 0.92), rgba(var(--mm-accent-rgb), 0.62))
+    padding-box;
 }
 
 .loadOlder,
@@ -208,6 +234,42 @@
   right: 1rem;
   bottom: 6rem;
   z-index: 2;
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.4);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.18), transparent 48%),
+    linear-gradient(135deg, rgba(var(--mm-accent-rgb), 0.92), rgba(var(--mm-accent-rgb), 0.58));
+  color: var(--mm-bg-deep);
+  cursor: pointer;
+  box-shadow:
+    0 0 0.85rem rgba(var(--mm-accent-rgb), 0.2),
+    0 0.7rem 1.6rem rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.jumpLatest:hover {
+  border-color: rgba(var(--mm-accent-rgb), 0.64);
+  box-shadow:
+    0 0 1rem rgba(var(--mm-accent-rgb), 0.28),
+    0 0.85rem 1.8rem rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.jumpLatest svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
 }
 
 .messageRow {

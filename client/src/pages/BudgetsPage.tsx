@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Toast } from "../components";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, CategoryIcon, Modal, Toast } from "../components";
 import {
   BudgetAlertPanel,
   BudgetCategoryCard,
@@ -20,6 +20,7 @@ import type {
   BudgetOverview,
   BudgetPayload,
   BudgetSummary,
+  BudgetStatus,
 } from "../types/budget";
 import styles from "./BudgetsPage.module.css";
 
@@ -29,12 +30,42 @@ type ToastState = {
   variant: "success" | "error" | "warning" | "info";
 };
 
+type BudgetFilters = {
+  statuses: BudgetStatus[];
+  categoryIds: number[];
+};
+
+const budgetStatusOptions: Array<{ value: BudgetStatus; label: string }> = [
+  { value: "under_budget", label: "Under budget" },
+  { value: "close_to_budget", label: "Close to budget" },
+  { value: "on_budget", label: "Exactly on budget" },
+  { value: "over_budget", label: "Over budget" },
+];
+
 function currentMonthState() {
   const now = new Date();
   return {
     month: now.getMonth() + 1,
     year: now.getFullYear(),
   };
+}
+
+function FilterIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M7 14v6" />
+      <circle cx="14" cy="7" r="2" />
+      <circle cx="7" cy="17" r="2" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
 }
 
 export function BudgetsPage() {
@@ -52,10 +83,33 @@ export function BudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetSummary | null>(null);
   const [viewMode, setViewMode] = useState<"visualize" | "list">("visualize");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [budgetFilters, setBudgetFilters] = useState<BudgetFilters>({
+    statuses: [],
+    categoryIds: [],
+  });
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
   const selectedHistory = history.find((item) => item.month === month && item.year === year);
+  const budgetCategoryOptions = useMemo(
+    () => overview?.budgets.map((budget) => ({
+      id: budget.category_id,
+      name: budget.category_name,
+    })) ?? [],
+    [overview?.budgets],
+  );
+  const filteredBudgets = useMemo(() => {
+    const budgets = overview?.budgets ?? [];
+    return budgets.filter((budget) => {
+      const matchesStatus =
+        !budgetFilters.statuses.length || budgetFilters.statuses.includes(budget.status);
+      const matchesCategory =
+        !budgetFilters.categoryIds.length || budgetFilters.categoryIds.includes(budget.category_id);
+      return matchesStatus && matchesCategory;
+    });
+  }, [budgetFilters, overview?.budgets]);
+  const activeBudgetFilterCount = budgetFilters.statuses.length + budgetFilters.categoryIds.length;
 
   const loadBudgetData = useCallback(async () => {
     setIsLoading(true);
@@ -196,6 +250,29 @@ export function BudgetsPage() {
   const selectMonth = (nextMonth: number, nextYear: number) => {
     setMonth(nextMonth);
     setYear(nextYear);
+    setBudgetFilters({ statuses: [], categoryIds: [] });
+  };
+
+  const toggleStatusFilter = (status: BudgetStatus) => {
+    setBudgetFilters((current) => ({
+      ...current,
+      statuses: current.statuses.includes(status)
+        ? current.statuses.filter((item) => item !== status)
+        : [...current.statuses, status],
+    }));
+  };
+
+  const toggleCategoryFilter = (categoryId: number) => {
+    setBudgetFilters((current) => ({
+      ...current,
+      categoryIds: current.categoryIds.includes(categoryId)
+        ? current.categoryIds.filter((item) => item !== categoryId)
+        : [...current.categoryIds, categoryId],
+    }));
+  };
+
+  const resetBudgetFilters = () => {
+    setBudgetFilters({ statuses: [], categoryIds: [] });
   };
 
   const hasBudgets = Boolean(overview?.budgets.length);
@@ -236,14 +313,6 @@ export function BudgetsPage() {
           ) : (
             <>
               <div className={styles.viewHeader}>
-                <div>
-                  <span className={styles.kicker}>
-                    {viewMode === "visualize" ? "Comparison" : "Budgets"}
-                  </span>
-                  <h2>
-                    {viewMode === "visualize" ? "Budgeted versus actual" : "Category budgets"}
-                  </h2>
-                </div>
                 <div className={styles.viewSwitcher} aria-label="Budget view mode">
                   <button
                     className={viewMode === "list" ? styles.viewSwitcherActive : ""}
@@ -271,13 +340,25 @@ export function BudgetsPage() {
                 <section className={styles.workspaceGrid}>
                   <div className={`${styles.panel} ${styles.categoryPanel}`}>
                     <div className={styles.panelHeader}>
-                      <div>
-                        <h2>Category budgets</h2>
-                      </div>
-                      <span>{overview.budgets.length} categories</span>
+                      <span className={styles.budgetCount}>
+                        {activeBudgetFilterCount
+                          ? `${filteredBudgets.length} of ${overview.budgets.length} budgets`
+                          : `${overview.budgets.length} budget${overview.budgets.length === 1 ? "" : "s"}`}
+                      </span>
+                      <Button
+                        className={activeBudgetFilterCount ? styles.filterButtonActive : ""}
+                        onClick={() => setIsFiltersOpen(true)}
+                        variant="secondary"
+                      >
+                        <FilterIcon />
+                        Filters
+                        {activeBudgetFilterCount ? (
+                          <span className={styles.filterCount}>{activeBudgetFilterCount}</span>
+                        ) : null}
+                      </Button>
                     </div>
                     <div className={styles.budgetList}>
-                      {overview.budgets.map((budget) => (
+                      {filteredBudgets.map((budget) => (
                         <BudgetCategoryCard
                           budget={budget}
                           currency={currency}
@@ -286,6 +367,11 @@ export function BudgetsPage() {
                           onEdit={openEdit}
                         />
                       ))}
+                      {!filteredBudgets.length ? (
+                        <div className={styles.filteredEmpty}>
+                          No budgets match the selected filters.
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
@@ -317,6 +403,72 @@ export function BudgetsPage() {
         onClose={() => setDeletingBudget(null)}
         onConfirm={deleteBudget}
       />
+
+      <Modal
+        bodyClassName={styles.filterModalBody}
+        isOpen={isFiltersOpen}
+        title="Filters"
+        onClose={() => setIsFiltersOpen(false)}
+      >
+        <fieldset className={styles.filterSection}>
+          <legend>Level</legend>
+          <div className={styles.filterChecklist}>
+            {budgetStatusOptions.map((option) => {
+              const isSelected = budgetFilters.statuses.includes(option.value);
+              return (
+                <label className={styles.filterRow} key={option.value}>
+                  <input
+                    checked={isSelected}
+                    onChange={() => toggleStatusFilter(option.value)}
+                    type="checkbox"
+                  />
+                  <span className={styles.filterCheck} aria-hidden="true">
+                    {isSelected ? <CheckIcon /> : null}
+                  </span>
+                  <span className={`${styles.levelDot} ${styles[option.value]}`} />
+                  <span>{option.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset className={styles.filterSection}>
+          <legend>Category</legend>
+          <div className={styles.filterChecklist}>
+            {budgetCategoryOptions.map((category) => {
+              const isSelected = budgetFilters.categoryIds.includes(category.id);
+              return (
+                <label className={styles.filterRow} key={category.id}>
+                  <input
+                    checked={isSelected}
+                    onChange={() => toggleCategoryFilter(category.id)}
+                    type="checkbox"
+                  />
+                  <span className={styles.filterCheck} aria-hidden="true">
+                    {isSelected ? <CheckIcon /> : null}
+                  </span>
+                  <span className={styles.filterCategoryIcon} aria-hidden="true">
+                    <CategoryIcon category={category.name} />
+                  </span>
+                  <span>{category.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className={styles.filterActions}>
+          <Button
+            disabled={!activeBudgetFilterCount}
+            onClick={resetBudgetFilters}
+            variant="secondary"
+          >
+            Reset Filters
+          </Button>
+          <Button onClick={() => setIsFiltersOpen(false)}>Apply</Button>
+        </div>
+      </Modal>
     </section>
   );
 }
