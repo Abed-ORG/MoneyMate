@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layouts/AppShell";
 import { BudgetsPage } from "../pages/BudgetsPage";
 import { ChatPage } from "../pages/ChatPage";
@@ -11,7 +11,6 @@ import { MonthlyReportPage } from "../pages/MonthlyReportPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { OnboardingPage } from "../pages/OnboardingPage";
 import { RegisterPage } from "../pages/RegisterPage";
-import { ReportsPage } from "../pages/ReportsPage";
 import { AnnualReportPage } from "../pages/AnnualReportPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { SettingsPage } from "../pages/SettingsPage";
@@ -45,7 +44,7 @@ export function AppRoutes() {
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports" element={<Navigate replace to="/reports/monthly" />} />
         <Route path="/reports/monthly" element={<MonthlyReportPage />} />
         <Route path="/reports/annual" element={<AnnualReportPage />} />
         <Route path="/chat" element={<ChatPage />} />
