@@ -21,6 +21,64 @@ function buildYears() {
   }));
 }
 
+function escapePdfText(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function buildSimplePdf(lines: string[]) {
+  const escapedLines = lines.map(escapePdfText);
+  const contentLines = ["BT", "/F1 12 Tf", "72 780 Td"];
+
+  escapedLines.forEach((line, index) => {
+    if (index > 0) {
+      contentLines.push("0 -16 Td");
+    }
+    contentLines.push(`(${line}) Tj`);
+  });
+
+  contentLines.push("ET");
+  const stream = contentLines.join("\n");
+  const streamLength = stream.length;
+
+  const objects = [
+    "%PDF-1.4",
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
+    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    `5 0 obj << /Length ${streamLength} >> stream\n${stream}\nendstream endobj`,
+  ];
+  const body = objects.join("\n");
+  const startXref = body.length + 1;
+  const xref = [
+    "xref",
+    "0 6",
+    "0000000000 65535 f ",
+    "0000000010 00000 n ",
+    "0000000059 00000 n ",
+    "0000000114 00000 n ",
+    "0000000247 00000 n ",
+    "0000000326 00000 n ",
+    "trailer << /Size 6 /Root 1 0 R >>",
+    "startxref",
+    String(startXref),
+    "%%EOF",
+  ].join("\n");
+
+  return new Blob([`${body}\n${xref}`], { type: "application/pdf" });
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function AnnualReportPage() {
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [loading, setLoading] = useState(true);
@@ -46,7 +104,7 @@ export function AnnualReportPage() {
           <Select aria-label="Select report year" options={buildYears()} value={year} onValueChange={setYear} />
         </FormField>
         <div className={styles.actions}>
-          <Button disabled={!report} onClick={() => report && downloadPdf(report.year)}>Export PDF</Button>
+          <Button disabled={!report} onClick={() => report && downloadPdf(report)}>Export PDF</Button>
         </div>
       </Card>
 
@@ -111,10 +169,16 @@ export function AnnualReportPage() {
   );
 }
 
-function downloadPdf(year: number) {
-  const blob = new Blob([`MoneyMate annual report ${year}`], { type: "application/pdf" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `MoneyMate_Annual_Report_${year}.pdf`;
-  link.click();
+function downloadPdf(report: NonNullable<Awaited<ReturnType<typeof getAnnualReport>>>) {
+  const blob = buildSimplePdf([
+    "MoneyMate",
+    `Annual Report - ${report.year}`,
+    `Generated: ${new Date().toLocaleString("en-US")}`,
+    "",
+    "Annual totals",
+    `Income: ${money(report.totals.income)}`,
+    `Expenses: ${money(report.totals.expenses)}`,
+    `Net Savings: ${money(report.totals.netSavings)}`,
+  ]);
+  triggerDownload(blob, `MoneyMate_Annual_Report_${report.year}.pdf`);
 }

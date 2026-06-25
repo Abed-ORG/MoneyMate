@@ -41,8 +41,8 @@ type AiReviewState = {
   suggestion: {
     category: string;
     confidence: number;
-  provider: string;
-  rationale: string;
+    provider: string;
+    rationale: string;
   };
 } | null;
 
