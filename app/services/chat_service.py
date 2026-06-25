@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from sqlalchemy import func
@@ -44,6 +45,40 @@ FINANCE_KEYWORDS = {
     "spend",
     "spent",
     "transaction",
+}
+SOCIAL_MESSAGE_WORDS = {
+    "afternoon",
+    "are",
+    "bye",
+    "doing",
+    "evening",
+    "good",
+    "goodbye",
+    "hello",
+    "help",
+    "hey",
+    "hi",
+    "morning",
+    "night",
+    "ok",
+    "okay",
+    "thanks",
+    "thank",
+    "there",
+    "yo",
+    "you",
+}
+SOCIAL_MESSAGE_PHRASES = {
+    "good afternoon",
+    "good evening",
+    "good morning",
+    "hello",
+    "hey",
+    "hi",
+    "how are you",
+    "thanks",
+    "thank you",
+    "whats up",
 }
 
 
@@ -293,7 +328,38 @@ def is_finance_question(question: str) -> bool:
     return any(keyword in text for keyword in FINANCE_KEYWORDS)
 
 
+def normalize_social_text(question: str) -> str:
+    text = question.casefold()
+    text = re.sub(r"[^a-z0-9\s']", " ", text)
+    text = re.sub(r"(.)\1{2,}", r"\1", text)
+    return " ".join(text.split())
+
+
+def is_social_message(question: str) -> bool:
+    text = normalize_social_text(question)
+    if not text or len(text) > 120 or is_finance_question(question):
+        return False
+    if text in SOCIAL_MESSAGE_PHRASES:
+        return True
+    words = text.replace("'", "").split()
+    return bool(words) and all(word in SOCIAL_MESSAGE_WORDS for word in words)
+
+
+def social_answer(question: str) -> str:
+    text = normalize_social_text(question)
+    if "thank" in text or "thanks" in text:
+        return "You're welcome! I'm here whenever you need me."
+    if "bye" in text or "goodbye" in text:
+        return "Bye for now! I'll be here when you want to chat again."
+    return (
+        "Hi! I'm here and happy to help. What would you like to look at today?"
+    )
+
+
 def fallback_answer(question: str, context: dict, exc: GeminiChatError) -> str:
+    if is_social_message(question):
+        return social_answer(question)
+
     if not is_finance_question(question):
         return (
             "Sorry, I can help with MoneyMate finance questions like "
@@ -307,8 +373,8 @@ def fallback_answer(question: str, context: dict, exc: GeminiChatError) -> str:
     categories = transactions.get("category_totals") or []
     lines = [
         (
-            "Sorry, the AI response took a moment, but I can still show what "
-            "MoneyMate calculated."
+            "Sorry, the AI service is temporarily unavailable, but I can "
+            "still show what MoneyMate calculated."
         ),
         (
             f"For **{period.get('label', 'this period')}**, income was "
@@ -341,6 +407,15 @@ def send_message(
         raise ValueError("Question is too long.")
     conversation = get_conversation(db, user_id, conversation_id)
     user_message = add_user_message(db, conversation, question)
+    if is_social_message(question):
+        answer = social_answer(question)
+        assistant = add_assistant_message(db, conversation, answer, [], {})
+        return ChatSendMessageResponse(
+            conversation=conversation_to_schema(db, conversation),
+            user_message=message_to_schema(user_message),
+            assistant_message=message_to_schema(assistant),
+        )
+
     context = build_financial_context(db, user_id, question)
     try:
         answer = gemini_chat_client.generate_answer(question, context)
@@ -379,6 +454,24 @@ def retry_message(
     )
     if not user_message:
         raise ChatNotFoundError
+    if is_social_message(user_message.content):
+        user_message.status = "complete"
+        user_message.error_code = None
+        assistant = add_assistant_message(
+            db,
+            conversation,
+            social_answer(user_message.content),
+            [],
+            {},
+        )
+        db.commit()
+        db.refresh(user_message)
+        return ChatSendMessageResponse(
+            conversation=conversation_to_schema(db, conversation),
+            user_message=message_to_schema(user_message),
+            assistant_message=message_to_schema(assistant),
+        )
+
     context = build_financial_context(db, user_id, user_message.content)
     try:
         answer = gemini_chat_client.generate_answer(
