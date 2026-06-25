@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -8,10 +8,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Button, Card, FormField, Input } from "../components";
+import { Button, Card, FormField, Input, Modal, Toast } from "../components";
 import { goalsApi } from "../services/goals";
 import { goalAiApi, type GoalProjectionPoint } from "../services/insights";
-import type { Goal } from "../types/goal";
+import type { Goal, GoalPayload, GoalUpdatePayload } from "../types/goal";
 import styles from "./GoalsPage.module.css";
 
 const emptyForm = {
@@ -22,8 +22,22 @@ const emptyForm = {
   currentAmount: "",
 };
 
+type ToastState = {
+  title: string;
+  message: string;
+  variant: "success" | "error" | "warning" | "info";
+};
+
 function money(value: number | string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value));
+}
+
+function AddIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
 }
 
 export function GoalsPage() {
@@ -36,12 +50,41 @@ export function GoalsPage() {
   const [aiProvider, setAiProvider] = useState("heuristic");
   const [aiRationale, setAiRationale] = useState("");
 
+  // Modals
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isContributeOpen, setIsContributeOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     void goalsApi.list().then((items) => {
       setGoals(items);
-      setSelectedId(items[0]?.id ?? null);
+      if (!selectedId && items.length > 0) {
+        setSelectedId(items[0].id);
+      }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!actionMenuId) {
+      return undefined;
+    }
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (actionMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setActionMenuId(null);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [actionMenuId]);
 
   const selectedGoal = useMemo(
     () => goals.find((goal) => goal.id === selectedId) ?? goals[0],
@@ -71,45 +114,241 @@ export function GoalsPage() {
     setGoals((current) => current.map((goal) => (goal.id === updated.id ? updated : goal)));
   }
 
-  async function createGoal() {
-    const created = await goalsApi.create({
+  function formToCreatePayload(): GoalPayload {
+    return {
       name: form.name,
       target_amount: Number(form.targetAmount),
       deadline: form.deadline || undefined,
       linked_account: form.linkedAccount || undefined,
       current_amount: Number(form.currentAmount || 0),
-    });
-    setGoals((current) => [created, ...current]);
-    setSelectedId(created.id);
-    setForm(emptyForm);
+    };
+  }
+
+  function formToUpdatePayload(): GoalUpdatePayload {
+    return {
+      name: form.name,
+      target_amount: form.targetAmount ? Number(form.targetAmount) : undefined,
+      deadline: form.deadline || undefined,
+      linked_account: form.linkedAccount || undefined,
+      current_amount: form.currentAmount ? Number(form.currentAmount) : undefined,
+    };
+  }
+
+  function goalToForm(goal: Goal) {
+    return {
+      name: goal.name,
+      targetAmount: String(goal.target_amount),
+      deadline: goal.deadline ? goal.deadline.slice(0, 10) : "",
+      linkedAccount: goal.linked_account ?? "",
+      currentAmount: String(goal.current_amount),
+    };
+  }
+
+  async function createGoal() {
+    try {
+      const created = await goalsApi.create(formToCreatePayload());
+      setGoals((current) => [created, ...current]);
+      setSelectedId(created.id);
+      setForm(emptyForm);
+      setIsAddOpen(false);
+      setToast({ title: "Goal created", message: `${created.name} has been added.`, variant: "success" });
+    } catch {
+      setToast({ title: "Could not create goal", message: "Something went wrong.", variant: "error" });
+    }
+  }
+
+  async function saveEdit() {
+    if (!selectedGoal) return;
+    try {
+      await refresh(goalsApi.update(selectedGoal.id, formToUpdatePayload()));
+      setIsEditOpen(false);
+      setToast({ title: "Goal updated", message: "Changes saved.", variant: "success" });
+    } catch {
+      setToast({ title: "Could not update goal", message: "Something went wrong.", variant: "error" });
+    }
+  }
+
+  async function confirmDelete() {
+    if (!selectedGoal) return;
+    try {
+      await goalsApi.remove(selectedGoal.id);
+      setGoals((current) => current.filter((g) => g.id !== selectedGoal.id));
+      if (selectedId === selectedGoal.id) {
+        setSelectedId(goals.length > 1 ? goals.find((g) => g.id !== selectedGoal.id)?.id ?? null : null);
+      }
+      setIsDeleteOpen(false);
+      setToast({ title: "Goal deleted", message: "The goal was removed.", variant: "success" });
+    } catch {
+      setToast({ title: "Could not delete goal", message: "Something went wrong.", variant: "error" });
+    }
   }
 
   async function logContribution() {
     if (!selectedGoal) return;
-    await refresh(
-      goalsApi.contribute(selectedGoal.id, {
-        amount: Number(contribution),
-        note: "Manual log",
-      }),
-    );
-    setContribution("");
+    try {
+      await refresh(
+        goalsApi.contribute(selectedGoal.id, {
+          amount: Number(contribution),
+          note: "Manual log",
+        }),
+      );
+      setContribution("");
+      setIsContributeOpen(false);
+      setToast({ title: "Contribution logged", message: "Goal progress updated.", variant: "success" });
+    } catch {
+      setToast({ title: "Could not log contribution", message: "Something went wrong.", variant: "error" });
+    }
   }
 
-  return (
-    <div className={styles.page}>
-      <section className={styles.grid}>
-        <Card className={styles.panel}>
-          <h2>Create goal</h2>
-          <div className={styles.formGrid}>
-            <FormField label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></FormField>
-            <FormField label="Target amount"><Input type="number" value={form.targetAmount} onChange={(e) => setForm({ ...form, targetAmount: e.target.value })} /></FormField>
-            <FormField label="Deadline"><Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></FormField>
-            <FormField label="Linked account"><Input value={form.linkedAccount} onChange={(e) => setForm({ ...form, linkedAccount: e.target.value })} /></FormField>
-            <FormField label="Starting amount"><Input type="number" value={form.currentAmount} onChange={(e) => setForm({ ...form, currentAmount: e.target.value })} /></FormField>
-          </div>
-          <Button onClick={() => void createGoal()} disabled={!form.name || !form.targetAmount}>Save goal</Button>
-        </Card>
+  function openActionMenu(goal: Goal) {
+    setSelectedId(goal.id);
+    setActionMenuId((current) => (current === goal.id ? null : goal.id));
+  }
 
+  function openEditFromMenu(goal: Goal) {
+    setActionMenuId(null);
+    setForm(goalToForm(goal));
+    setIsEditOpen(true);
+  }
+
+  function openContributeFromMenu(goal: Goal) {
+    setActionMenuId(null);
+    setSelectedId(goal.id);
+    setContribution("");
+    setIsContributeOpen(true);
+  }
+
+  function openDeleteFromMenu(goal: Goal) {
+    setActionMenuId(null);
+    setSelectedId(goal.id);
+    setIsDeleteOpen(true);
+  }
+
+  function openAddModal() {
+    setForm(emptyForm);
+    setIsAddOpen(true);
+  }
+
+  const renderCreateForm = () => (
+    <form
+      className={styles.formGrid}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void createGoal();
+      }}
+    >
+      <FormField label="Name">
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Target amount">
+        <Input
+          type="number"
+          value={form.targetAmount}
+          onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Starting amount">
+        <Input
+          type="number"
+          value={form.currentAmount}
+          onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Deadline">
+        <Input
+          type="date"
+          value={form.deadline}
+          onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+        />
+      </FormField>
+      <FormField
+        label="Linked account"
+        helperText="e.g. Savings account, Checking account"
+      >
+        <Input
+          value={form.linkedAccount}
+          onChange={(e) => setForm({ ...form, linkedAccount: e.target.value })}
+          placeholder="Savings account"
+        />
+      </FormField>
+      <div className={styles.modalActions}>
+        <Button variant="secondary" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+        <Button type="submit" disabled={!form.name || !form.targetAmount}>Save goal</Button>
+      </div>
+    </form>
+  );
+
+  const renderEditForm = () => (
+    <form
+      className={styles.formGrid}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void saveEdit();
+      }}
+    >
+      <FormField label="Name">
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Target amount">
+        <Input
+          type="number"
+          value={form.targetAmount}
+          onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Starting amount">
+        <Input
+          type="number"
+          value={form.currentAmount}
+          onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Deadline">
+        <Input
+          type="date"
+          value={form.deadline}
+          onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+        />
+      </FormField>
+      <FormField
+        label="Linked account"
+        helperText="e.g. Savings account, Checking account"
+      >
+        <Input
+          value={form.linkedAccount}
+          onChange={(e) => setForm({ ...form, linkedAccount: e.target.value })}
+          placeholder="Savings account"
+        />
+      </FormField>
+      <div className={styles.modalActions}>
+        <Button variant="secondary" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+        <Button type="submit">Save Changes</Button>
+      </div>
+    </form>
+  );
+
+  return (
+    <section className={styles.page}>
+      {toast ? (
+        <div className={styles.toastDock}>
+          <Toast {...toast} onClose={() => setToast(null)} />
+        </div>
+      ) : null}
+
+      <div className={styles.actionBar}>
+        <Button onClick={openAddModal}>
+          <AddIcon />
+          Add Goal
+        </Button>
+      </div>
+
+      <div className={styles.grid}>
         <Card className={styles.panel}>
           <h2>Goal timeline</h2>
           {selectedGoal ? (
@@ -126,25 +365,74 @@ export function GoalsPage() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <p>AI monthly contribution: {money(requiredMonthly)}</p>
+              <div className={styles.aiSavingsBox}>
+                <span className={styles.aiLabel}>
+                  AI savings calculator
+                </span>
+                <strong className={styles.aiAmount}>{money(requiredMonthly)}</strong>
+                <span className={styles.aiDesc}>required monthly contribution</span>
+                {aiRationale ? (
+                  <p className={styles.aiRationale}>{aiRationale}</p>
+                ) : null}
+                <span className={styles.aiProvider}>Source: {aiProvider}</span>
+              </div>
             </>
           ) : (
-            <p>Create a goal to see the projection.</p>
+            <p className={styles.emptyState}>Create a goal to see the projection.</p>
           )}
         </Card>
-      </section>
+      </div>
 
       <section className={styles.listSection}>
         {goals.map((goal) => (
-          <Card className={styles.goalCard} key={goal.id} onClick={() => setSelectedId(goal.id)}>
+          <Card
+            className={`${styles.goalCard} ${selectedId === goal.id ? styles.selectedCard : ""}`}
+            key={goal.id}
+            onClick={() => setSelectedId(goal.id)}
+          >
             <div className={styles.goalHeader}>
-              <div>
+              <div className={styles.goalInfo}>
                 <h3>{goal.name}</h3>
-                <p>{goal.linked_account || "No linked account"} · due {goal.deadline ? new Date(goal.deadline).toLocaleDateString() : "no deadline"}</p>
+                <p>
+                  {goal.linked_account || "No linked account"}
+                  {goal.deadline ? ` · due ${new Date(goal.deadline).toLocaleDateString()}` : ""}
+                </p>
               </div>
-              <strong>{goal.saved_percentage.toFixed(0)}%</strong>
+              <div className={styles.goalHeaderRight}>
+                <strong className={styles.goalPercentage}>{goal.saved_percentage.toFixed(0)}%</strong>
+                <div
+                  className={styles.rowActions}
+                  ref={actionMenuId === goal.id ? actionMenuRef : undefined}
+                >
+                  <button
+                    className={styles.dotsButton}
+                    type="button"
+                    aria-expanded={actionMenuId === goal.id}
+                    aria-label="Open goal actions"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openActionMenu(goal);
+                    }}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      <circle cx="12" cy="5" r="1.8" />
+                      <circle cx="12" cy="12" r="1.8" />
+                      <circle cx="12" cy="19" r="1.8" />
+                    </svg>
+                  </button>
+                  {actionMenuId === goal.id ? (
+                    <div className={styles.actionMenu}>
+                      <button type="button" onClick={() => openContributeFromMenu(goal)}>Log contribution</button>
+                      <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
+                      <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
-            <div className={styles.progressTrack}><span style={{ width: `${Math.min(goal.saved_percentage, 100)}%` }} /></div>
+            <div className={styles.progressTrack}>
+              <span style={{ width: `${Math.min(goal.saved_percentage, 100)}%` }} />
+            </div>
             <div className={styles.goalMeta}>
               <span>Saved {money(goal.current_amount)}</span>
               <span>Remaining {money(goal.remaining_amount)}</span>
@@ -153,24 +441,63 @@ export function GoalsPage() {
         ))}
       </section>
 
-      {selectedGoal && (
+      {selectedGoal && selectedGoal.contributions.length > 0 && (
         <Card className={styles.panel}>
           <h2>Contribution history</h2>
-          <div className={styles.contributionRow}>
-            <Input type="number" placeholder="Amount" value={contribution} onChange={(e) => setContribution(e.target.value)} />
-            <Button onClick={() => void logContribution()} disabled={!contribution}>Log contribution</Button>
-          </div>
           <div className={styles.history}>
-            {selectedGoal.contributions.length ? selectedGoal.contributions.map((entry) => (
+            {selectedGoal.contributions.map((entry) => (
               <div key={entry.id} className={styles.historyItem}>
                 <strong>{money(entry.amount)}</strong>
                 <span>{new Date(entry.contributed_at).toLocaleDateString()}</span>
                 <p>{entry.note || "Manual contribution"}</p>
               </div>
-            )) : <p>No contributions logged yet.</p>}
+            ))}
           </div>
         </Card>
       )}
-    </div>
+
+      {/* Add Goal Modal */}
+      <Modal isOpen={isAddOpen} title="Create goal" onClose={() => setIsAddOpen(false)}>
+        {renderCreateForm()}
+      </Modal>
+
+      {/* Edit Goal Modal */}
+      <Modal isOpen={isEditOpen} title="Edit goal" onClose={() => setIsEditOpen(false)}>
+        {renderEditForm()}
+      </Modal>
+
+      {/* Log Contribution Modal */}
+      <Modal isOpen={isContributeOpen} title="Log contribution" onClose={() => setIsContributeOpen(false)}>
+        <form
+          className={styles.contributeForm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void logContribution();
+          }}
+        >
+          <FormField label="Amount">
+            <Input
+              type="number"
+              placeholder="Amount"
+              value={contribution}
+              onChange={(e) => setContribution(e.target.value)}
+            />
+          </FormField>
+          <div className={styles.modalActions}>
+            <Button variant="secondary" onClick={() => setIsContributeOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={!contribution}>Log contribution</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteOpen} title="Delete goal" onClose={() => setIsDeleteOpen(false)}>
+        <p className={styles.confirmText}>Are you sure you want to delete this goal?</p>
+        <div className={styles.modalActions}>
+          <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+          <Button variant="danger" onClick={() => void confirmDelete()}>Delete goal</Button>
+        </div>
+      </Modal>
+    </section>
   );
 }
