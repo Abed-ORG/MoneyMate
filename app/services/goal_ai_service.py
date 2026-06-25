@@ -4,16 +4,14 @@ Extracted from gemini_service.py to keep files focused and maintainable.
 """
 
 import json
+import logging
 import os
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 from urllib import request
+from urllib.error import HTTPError
 
-from app.services.gemini_transport import (
-    configure_gemini_tls,
-    gemini_generate_endpoint,
-)
 from app.schemas.goal import (
     GoalAICalculationRequest,
     GoalAICalculationResponse,
@@ -21,8 +19,12 @@ from app.schemas.goal import (
     GoalProjectionResponse,
 )
 
-configure_gemini_tls()
-GEMINI_ENDPOINT = gemini_generate_endpoint()
+logger = logging.getLogger(__name__)
+
+GEMINI_ENDPOINT = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    "gemini-1.5-flash:generateContent"
+)
 
 
 # -- Shared helper -----------------------------------------------------------
@@ -62,7 +64,12 @@ def _call_gemini_json(
         return json.loads(
             text[text.find("{"):text.rfind("}") + 1]
         )
-    except Exception:
+    except HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        logger.warning("Gemini API HTTP %d: %s", e.code, body[:500])
+        return None
+    except Exception as e:
+        logger.warning("Gemini API call failed: %s", e)
         return None
 
 

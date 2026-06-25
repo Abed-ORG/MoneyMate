@@ -45,11 +45,11 @@
 }
 
 .panel, .goalCard {
-  padding: 18px;
+  padding: 14px;
 }
 
 .panel h2 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .panel p {
@@ -60,26 +60,25 @@
 .emptyState {
   color: var(--mm-text-muted);
   text-align: center;
-  padding: 2rem 0;
+  padding: 1.5rem 0;
 }
 
-.formGrid {
+/* Vertical single-column form for modals (matches TransactionsPage style) */
+.verticalForm {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 0;
+  gap: 0.8rem;
 }
 
 .chart {
-  height: 240px;
-  margin-top: 12px;
+  height: 160px;
+  margin-top: 8px;
 }
 
 .aiSavingsBox {
   display: grid;
-  gap: 4px;
-  margin-top: 16px;
-  padding: 14px;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.06);
@@ -87,32 +86,32 @@
 
 .aiLabel {
   color: var(--mm-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .aiAmount {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: #49c5b6;
 }
 
 .aiDesc {
   color: var(--mm-text-soft);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .aiRationale {
   color: var(--mm-text-muted);
-  font-size: 0.85rem;
-  margin: 4px 0 0;
+  font-size: 0.82rem;
+  margin: 2px 0 0;
   font-style: italic;
 }
 
 .aiProvider {
   color: var(--mm-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .listSection {
@@ -124,7 +123,7 @@
 .goalCard {
   cursor: pointer;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -150,25 +149,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 1rem;
 }
 
 .goalInfo p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--mm-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.82rem;
 }
 
 .goalHeaderRight {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .goalPercentage {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #49c5b6;
 }
 
@@ -181,11 +182,11 @@
 
 .goalMeta span {
   color: var(--mm-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .progressTrack {
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(255,255,255,0.08);
   overflow: hidden;
@@ -200,15 +201,15 @@
 
 .history {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .historyItem {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 8px 12px;
-  padding-top: 10px;
+  gap: 6px 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--mm-border);
   align-items: center;
 }
@@ -221,11 +222,12 @@
 
 .historyItem strong {
   color: #49c5b6;
+  font-size: 0.9rem;
 }
 
 .historyItem span {
   color: var(--mm-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   text-align: right;
 }
 
@@ -313,21 +315,10 @@
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .confirmText {
   margin-top: 0;
   color: var(--mm-text-soft);
-}
-
-.contributeForm {
-  display: grid;
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .formGrid {
-    grid-template-columns: 1fr;
-  }
 }
