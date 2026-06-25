@@ -81,14 +81,17 @@ def _fallback_required_monthly(
     current: Decimal,
     deadline: date | None,
 ) -> Decimal:
-    if not deadline:
+    needed = max(target - current, Decimal("0"))
+    if needed <= 0:
         return Decimal("0")
+    if not deadline:
+        # No deadline: assume 12 months as a sensible default
+        return max(needed / Decimal("12"), Decimal("0"))
     remaining_days = (
         datetime.combine(deadline, datetime.min.time())
         - datetime.now()
     ).days
     months = max(remaining_days / 30.0, 1)
-    needed = max(target - current, Decimal("0"))
     return max(needed / Decimal(str(months)), Decimal("0"))
 
 
@@ -114,11 +117,15 @@ def calculate_goal_savings(
     prompt = (
         "You are a financial planning assistant. "
         "Calculate the required monthly contribution "
-        "to reach a savings goal by its deadline.\n\n"
-        f"Target amount: ${request_data.target_amount}\n"
-        f"Current saved: ${request_data.current_amount}\n"
-        f"Deadline: {request_data.deadline}\n"
-        "Return strict JSON with keys: "
+        "to reach a savings goal."
+        + (
+            f" The deadline is {request_data.deadline}."
+            if request_data.deadline
+            else ""
+        )
+        + f"\n\nTarget amount: ${request_data.target_amount}"
+        f"\nCurrent saved: ${request_data.current_amount}"
+        "\nReturn strict JSON with keys: "
         "required_monthly (number, the monthly amount needed), "
         "rationale (string, a brief explanation).\n"
         "Assume contributions are made monthly starting now."
