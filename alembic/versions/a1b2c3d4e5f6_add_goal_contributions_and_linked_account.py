@@ -18,23 +18,30 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column(
-        "goals",
-        sa.Column("linked_account", sa.String(), nullable=True),
-    )
-    op.create_table(
-        "goal_contributions",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column(
-            "goal_id",
-            sa.Integer(),
-            sa.ForeignKey("goals.id"),
-            nullable=False,
-        ),
-        sa.Column("amount", sa.Numeric(14, 2), nullable=False),
-        sa.Column("contributed_at", sa.DateTime(), nullable=False),
-        sa.Column("note", sa.Text(), nullable=True),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    goal_columns = {column["name"] for column in inspector.get_columns("goals")}
+
+    if "linked_account" not in goal_columns:
+        op.add_column(
+            "goals",
+            sa.Column("linked_account", sa.String(), nullable=True),
+        )
+
+    if "goal_contributions" not in inspector.get_table_names():
+        op.create_table(
+            "goal_contributions",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column(
+                "goal_id",
+                sa.Integer(),
+                sa.ForeignKey("goals.id"),
+                nullable=False,
+            ),
+            sa.Column("amount", sa.Numeric(14, 2), nullable=False),
+            sa.Column("contributed_at", sa.DateTime(), nullable=False),
+            sa.Column("note", sa.Text(), nullable=True),
+        )
 
 
 def downgrade():

@@ -1,0 +1,431 @@
+.page {
+  display: grid;
+  min-height: calc(100dvh - 7rem);
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: 0.9rem;
+}
+
+.historyPanel,
+.chatPanel {
+  min-width: 0;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background: var(--mm-card-background);
+  box-shadow: var(--mm-shadow-card);
+}
+
+.historyPanel {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.historyHeader,
+.composer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border-bottom: 1px solid var(--mm-border);
+  padding: 0.9rem;
+}
+
+.historyHeader h2,
+.emptyState h2 {
+  margin: 0;
+  color: var(--mm-text);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+.conversationList {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.conversationItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-md);
+  background: rgba(var(--mm-bg-rgb), 0.16);
+  color: var(--mm-text-soft);
+  padding: 0.35rem;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.conversationItem:hover,
+.conversationItemActive {
+  border-color: var(--mm-border-strong);
+  background: rgba(var(--mm-accent-rgb), 0.1);
+  color: var(--mm-text);
+}
+
+.conversationItem:hover {
+  transform: translateY(-1px);
+}
+
+.conversationSelect {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.34rem;
+  text-align: left;
+}
+
+.conversationSelect:focus-visible,
+.deleteConversation:focus-visible,
+.iconButton:focus-visible,
+.sendButton:focus-visible {
+  outline: 3px solid rgba(var(--mm-accent-rgb), 0.22);
+  outline-offset: 2px;
+}
+
+.conversationSelect strong {
+  overflow: hidden;
+  color: var(--mm-text);
+  font-size: 0.92rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyState p,
+.messageTime,
+.status,
+.validation {
+  color: var(--mm-text-muted);
+  font-size: 0.82rem;
+}
+
+.deleteConversation,
+.iconButton,
+.sendButton {
+  display: inline-grid;
+  width: 2.35rem;
+  min-width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border-radius: var(--mm-radius-sm);
+  padding: 0;
+}
+
+.deleteConversation {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mm-text-muted);
+  cursor: pointer;
+}
+
+.deleteConversation:hover:not(:disabled) {
+  border-color: rgba(232, 94, 111, 0.34);
+  background: rgba(232, 94, 111, 0.1);
+  color: var(--color-error);
+}
+
+.deleteConversation svg,
+.iconButton svg,
+.sendButton svg {
+  width: 1.12rem;
+  height: 1.12rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.chatPanel {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.messages {
+  display: grid;
+  align-content: start;
+  gap: 0.82rem;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.1rem;
+  scroll-behavior: smooth;
+}
+
+.loadOlder,
+.jumpLatest {
+  justify-self: center;
+}
+
+.jumpLatest {
+  position: absolute;
+  right: 1rem;
+  bottom: 6rem;
+  z-index: 2;
+}
+
+.messageRow {
+  display: grid;
+  max-width: min(46rem, 88%);
+  gap: 0.25rem;
+  animation: messageIn 180ms ease-out;
+}
+
+.messageUser {
+  justify-self: end;
+}
+
+.messageAssistant {
+  justify-self: start;
+}
+
+.bubble {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid var(--mm-border);
+  border-radius: 1rem;
+  padding: 0.82rem 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  box-shadow: 0 0.55rem 1.5rem rgba(0, 0, 0, 0.12);
+}
+
+.messageUser .bubble {
+  border-color: rgba(var(--mm-accent-rgb), 0.46);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--mm-accent-rgb), 0.24),
+    rgba(var(--mm-accent-rgb), 0.14)
+  );
+  color: var(--mm-text);
+  border-bottom-right-radius: 0.35rem;
+}
+
+.messageAssistant .bubble {
+  background: rgba(var(--mm-bg-rgb), 0.72);
+  color: var(--mm-text);
+  border-bottom-left-radius: 0.35rem;
+}
+
+.bubble p {
+  margin: 0;
+}
+
+.bubble strong {
+  color: var(--mm-text);
+  font-weight: 900;
+}
+
+.messageMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.failed {
+  color: var(--color-error);
+}
+
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.typing span {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--mm-accent-soft);
+  animation: bounce 1s infinite ease-in-out;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.emptyState {
+  display: grid;
+  max-width: 44rem;
+  place-self: center;
+  gap: 0.72rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.assistantMark {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  justify-self: center;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: var(--mm-control-background);
+  box-shadow: inset 0 0 1.2rem rgba(var(--mm-accent-rgb), 0.08);
+}
+
+.assistantMark span {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 35%, var(--mm-accent-soft) 0 12%, transparent 13%),
+    conic-gradient(from 0deg, transparent 0 15%, var(--mm-accent-soft) 15% 23%, transparent 23% 40%, var(--mm-accent-soft) 40% 48%, transparent 48% 65%, var(--mm-accent-soft) 65% 73%, transparent 73%);
+}
+
+.promptLabel {
+  margin-top: 0.35rem;
+  color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.suggestions button {
+  border: 1px solid var(--mm-border);
+  border-radius: 0.42rem;
+  background: rgba(var(--mm-bg-rgb), 0.78);
+  color: var(--mm-text);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.58rem 0.8rem;
+  box-shadow: 0 0.55rem 1.2rem rgba(0, 0, 0, 0.08);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.suggestions button:hover {
+  border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
+  transform: translateY(-1px);
+}
+
+.composer {
+  align-items: center;
+  border-top: 1px solid var(--mm-border);
+  border-bottom: 0;
+  padding: 0.75rem 0.9rem;
+}
+
+.composerForm {
+  display: grid;
+  width: 100%;
+  gap: 0.4rem;
+}
+
+.inputRow {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+}
+
+.inputRow textarea {
+  width: 100%;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  max-height: 2.65rem;
+  resize: none;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: #06100e;
+  color: var(--mm-text);
+  padding: 0.72rem 0.8rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  line-height: 1.2;
+  overflow: auto;
+}
+
+.sendButton {
+  width: 2.65rem;
+  min-width: 2.65rem;
+  height: 2.65rem;
+}
+
+.inputRow textarea:focus {
+  border-color: var(--mm-accent-soft);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--mm-accent-rgb), 0.12),
+    0 0 0 3px rgba(var(--mm-accent-rgb), 0.14);
+  outline: none;
+}
+
+.errorState {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.88rem;
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-0.18rem);
+  }
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:global(:root[data-theme="light"]) .inputRow textarea {
+  background: #fff;
+}
+
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .historyPanel {
+    max-height: 16rem;
+  }
+
+  .messageRow {
+    max-width: 96%;
+  }
+}
