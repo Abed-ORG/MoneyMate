@@ -7,10 +7,12 @@ import { GoalsPage } from "../pages/GoalsPage";
 import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { LandingPage } from "../pages/LandingPage";
 import { LoginPage } from "../pages/LoginPage";
+import { MonthlyReportPage } from "../pages/MonthlyReportPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { OnboardingPage } from "../pages/OnboardingPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { ReportsPage } from "../pages/ReportsPage";
+import { AnnualReportPage } from "../pages/AnnualReportPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { TransactionsPage } from "../pages/TransactionsPage";
@@ -44,6 +46,8 @@ export function AppRoutes() {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/monthly" element={<MonthlyReportPage />} />
+        <Route path="/reports/annual" element={<AnnualReportPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>

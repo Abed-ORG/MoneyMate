@@ -1,0 +1,78 @@
+.page {
+  display: grid;
+  gap: 1rem;
+}
+
+.controls,
+.summaryCard,
+.chartCard,
+.tableCard,
+.state {
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background: var(--mm-card-background);
+  box-shadow: var(--mm-shadow-card);
+}
+
+.controls {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+
+.summaryCard span,
+.tableCard p,
+.comparisonGrid span {
+  color: var(--mm-text-muted);
+}
+
+.chartCard,
+.tableCard,
+.state {
+  padding: 1rem;
+}
+
+.tableCard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableCard th,
+.tableCard td {
+  border-bottom: 1px solid var(--mm-border);
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+}
+
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 920px) {
+  .controls,
+  .summaryGrid,
+  .comparisonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

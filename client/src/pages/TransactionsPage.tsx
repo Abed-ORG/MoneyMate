@@ -41,13 +41,30 @@ type AiReviewState = {
   suggestion: {
     category: string;
     confidence: number;
-    provider: string;
-    rationale: string;
+  provider: string;
+  rationale: string;
   };
 } | null;
 
+type ExportPreset = "last30" | "last90" | "currentMonth" | "currentYear" | "custom";
+type ExportColumn = "date" | "vendor" | "category" | "amount" | "notes" | "transactionType";
+type ExportState = {
+  preset: ExportPreset;
+  dateFrom: string;
+  dateTo: string;
+  columns: ExportColumn[];
+};
+
 const noteMaxLength = 160;
 const templateHeaders = ["date", "amount", "category", "vendor", "notes"];
+const exportColumns: Array<{ value: ExportColumn; label: string }> = [
+  { value: "date", label: "Date" },
+  { value: "vendor", label: "Vendor" },
+  { value: "category", label: "Category" },
+  { value: "amount", label: "Amount" },
+  { value: "notes", label: "Notes" },
+  { value: "transactionType", label: "Transaction Type" },
+];
 
 const emptyForm: FormState = {
   date: new Date().toISOString().slice(0, 10),
@@ -64,6 +81,13 @@ const defaultFilters: TransactionListParams = {
   sortDir: "desc",
 };
 
+const defaultExportState: ExportState = {
+  preset: "last30",
+  dateFrom: "",
+  dateTo: "",
+  columns: ["date", "vendor", "category", "amount", "notes", "transactionType"],
+};
+
 function toMoney(value: string | number) {
   const amount = Number(value);
   const formatted = new Intl.NumberFormat("en-US", {
@@ -71,6 +95,38 @@ function toMoney(value: string | number) {
     currency: "USD",
   }).format(Math.abs(amount));
   return amount < 0 ? `-${formatted}` : formatted;
+}
+
+function csvEscape(value: string) {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportDateWindow(preset: ExportPreset, dateFrom: string, dateTo: string) {
+  const end = new Date();
+  const start = new Date();
+  if (preset === "last30") start.setDate(end.getDate() - 30);
+  if (preset === "last90") start.setDate(end.getDate() - 90);
+  if (preset === "currentMonth") {
+    start.setDate(1);
+  }
+  if (preset === "currentYear") {
+    start.setMonth(0, 1);
+  }
+  return preset === "custom"
+    ? { dateFrom, dateTo }
+    : { dateFrom: start.toISOString().slice(0, 10), dateTo: end.toISOString().slice(0, 10) };
 }
 
 function formatDate(value: string, includeTime = false) {
@@ -292,6 +348,7 @@ export function TransactionsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState>(null);
@@ -303,6 +360,7 @@ export function TransactionsPage() {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
+  const [exportState, setExportState] = useState<ExportState>(defaultExportState);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -442,6 +500,44 @@ export function TransactionsPage() {
     setSelectedTransactionIds((current) =>
       Array.from(new Set([...current, ...transactions.map((transaction) => transaction.id)])),
     );
+  };
+
+  const openExportModal = () => {
+    setExportState(defaultExportState);
+    setIsExportOpen(true);
+  };
+
+  const exportCsv = async () => {
+    const { dateFrom, dateTo } = exportDateWindow(
+      exportState.preset,
+      exportState.dateFrom,
+      exportState.dateTo,
+    );
+    const response = await transactionsApi.list({
+      ...defaultFilters,
+      pageSize: 10000,
+      dateFrom,
+      dateTo,
+      sortBy: "date",
+      sortDir: "desc",
+    });
+    const headers = exportState.columns.map((column) => exportColumns.find((item) => item.value === column)?.label ?? column);
+    const rows = response.items.map((transaction) =>
+      exportState.columns.map((column) => {
+        if (column === "date") return new Intl.DateTimeFormat("en-US").format(new Date(transaction.date));
+        if (column === "vendor") return transaction.vendor;
+        if (column === "category") return transaction.category;
+        if (column === "amount") return toMoney(transaction.amount);
+        if (column === "notes") return transaction.notes;
+        return Number(transaction.amount) >= 0 ? "Income" : "Expense";
+      }),
+    );
+    const csv = [headers, ...rows]
+      .map((row) => row.map((value) => csvEscape(String(value ?? ""))).join(","))
+      .join("\n");
+    const filename = `MoneyMate_Transactions_${new Date(dateTo || new Date().toISOString()).toISOString().slice(0, 7)}.csv`;
+    downloadTextFile(filename, csv, "text/csv");
+    setIsExportOpen(false);
   };
 
   const resetImportState = () => {
@@ -802,6 +898,10 @@ export function TransactionsPage() {
           <CloudUploadIcon />
           Upload Transactions
         </Button>
+        <Button variant="secondary" onClick={openExportModal}>
+          <SpreadsheetIcon />
+          Export CSV
+        </Button>
         <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
           <FilterIcon />
           Filters
@@ -902,6 +1002,67 @@ export function TransactionsPage() {
           <strong className={styles.income}>{toMoney(income)}</strong>
           <span>Total Income</span>
         </section>
+      </Modal>
+
+      <Modal
+        bodyClassName={styles.exportModal}
+        isOpen={isExportOpen}
+        title="Export CSV"
+        onClose={() => setIsExportOpen(false)}
+      >
+        <div className={styles.exportForm}>
+          <FormField label="Date Range">
+            <Select
+              aria-label="Export date range"
+              value={exportState.preset}
+              options={[
+                { value: "last30", label: "Last 30 days" },
+                { value: "last90", label: "Last 90 days" },
+                { value: "currentMonth", label: "Current month" },
+                { value: "currentYear", label: "Current year" },
+                { value: "custom", label: "Custom range" },
+              ]}
+              onValueChange={(value) => setExportState((current) => ({ ...current, preset: value as ExportPreset }))}
+            />
+          </FormField>
+          {exportState.preset === "custom" ? (
+            <div className={styles.splitFields}>
+              <Input type="date" value={exportState.dateFrom} onChange={(event) => setExportState((current) => ({ ...current, dateFrom: event.target.value }))} />
+              <Input type="date" value={exportState.dateTo} onChange={(event) => setExportState((current) => ({ ...current, dateTo: event.target.value }))} />
+            </div>
+          ) : null}
+          <div className={styles.exportColumnGrid}>
+            {exportColumns.map((column) => (
+              <label key={column.value} className={styles.checkboxRow}>
+                <input
+                  checked={exportState.columns.includes(column.value)}
+                  type="checkbox"
+                  onChange={(event) =>
+                    setExportState((current) => ({
+                      ...current,
+                      columns: event.target.checked
+                        ? Array.from(new Set([...current.columns, column.value]))
+                        : current.columns.filter((item) => item !== column.value),
+                    }))
+                  }
+                />
+                <span>{column.label}</span>
+              </label>
+            ))}
+          </div>
+          <div className={styles.modalActions}>
+            <Button variant="secondary" onClick={() => setExportState((current) => ({ ...current, columns: exportColumns.map((item) => item.value) }))}>
+              Select All
+            </Button>
+            <Button variant="secondary" onClick={() => setExportState((current) => ({ ...current, columns: [] }))}>
+              Deselect All
+            </Button>
+          </div>
+          <div className={styles.modalActions}>
+            <Button variant="secondary" onClick={() => setIsExportOpen(false)}>Cancel</Button>
+            <Button onClick={() => void exportCsv()}>Download CSV</Button>
+          </div>
+        </div>
       </Modal>
 
       <main className={styles.content}>
