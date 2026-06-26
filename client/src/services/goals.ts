@@ -87,6 +87,7 @@ export const goalsApi = {
   remove: async (id: number) => {
     try {
       await api.delete<void>(`/goals/${id}`);
+      saveLocalGoals(readLocalGoals().filter((goal) => goal.id !== id));
     } catch {
       saveLocalGoals(readLocalGoals().filter((goal) => goal.id !== id));
     }

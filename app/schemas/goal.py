@@ -23,6 +23,7 @@ class GoalContributionRead(BaseModel):
 class GoalBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     target_amount: Decimal = Field(..., gt=0)
+    start_date: date | None = None
     deadline: date | None = None
     linked_account: str | None = Field(default=None, max_length=120)
 
@@ -34,6 +35,7 @@ class GoalCreate(GoalBase):
 class GoalUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     target_amount: Decimal | None = Field(default=None, gt=0)
+    start_date: date | None = None
     deadline: date | None = None
     linked_account: str | None = Field(default=None, max_length=120)
     current_amount: Decimal | None = Field(default=None, ge=0)
@@ -47,6 +49,7 @@ class GoalRead(GoalBase):
     user_id: int
     current_amount: Decimal
     is_active: bool
+    start_date: date | None = Field(default=None, alias="start_date")
     deadline: date | None = Field(default=None, alias="target_date")
     contributions: list[GoalContributionRead] = Field(default_factory=list)
     saved_percentage: float = 0
@@ -61,6 +64,7 @@ class GoalAICalculationRequest(BaseModel):
     goal_id: int | None = None
     target_amount: Decimal
     current_amount: Decimal = Decimal("0")
+    start_date: date | None = None
     deadline: date | None = None
     monthly_contribution: Decimal | None = None
 

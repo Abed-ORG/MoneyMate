@@ -12,6 +12,7 @@ export type Goal = {
   name: string;
   target_amount: string;
   current_amount: string;
+  start_date?: string | null;
   deadline?: string | null;
   linked_account?: string | null;
   is_active: boolean;
@@ -23,6 +24,7 @@ export type Goal = {
 export type GoalPayload = {
   name: string;
   target_amount: number;
+  start_date?: string | null;
   deadline?: string | null;
   linked_account?: string | null;
   current_amount?: number;
