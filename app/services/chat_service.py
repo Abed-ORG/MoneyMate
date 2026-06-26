@@ -447,7 +447,7 @@ def context_for_gemini(
 def fallback_answer(
     question: str,
     context: dict,
-    exc: GeminiChatError,
+    _exc: GeminiChatError,
     history: list[dict[str, str]] | None = None,
 ) -> str:
     history = history or []
@@ -466,19 +466,104 @@ def fallback_answer(
     period = context.get("period", {})
     transactions = context.get("transactions", {})
     categories = transactions.get("category_totals") or []
+    period_label = period.get("label", "this period")
+    question_text = effective_question.casefold()
+    transaction_count = int(transactions.get("transaction_count") or 0)
+
+    if not transaction_count:
+        return (
+            f"I don't have any transactions for **{period_label}** yet, so "
+            "I can't calculate that accurately. Once you add transactions, "
+            "I can help you review your spending, budgets, and savings goals."
+        )
+
+    if "category" in question_text and any(
+        word in question_text for word in ["most", "highest", "top", "biggest"]
+    ):
+        if not categories:
+            return (
+                f"I don't see any expenses recorded for **{period_label}** "
+                "yet, so there isn't a top spending category to show."
+            )
+        top_category = categories[0]
+        return (
+            f"For **{period_label}**, you spent the most on "
+            f"**{top_category['category']}**: "
+            f"**{format_money(top_category['total'], currency)}** "
+            f"({top_category['percentage_of_expenses']:.0f}% "
+            "of your expenses)."
+        )
+
+    if any(word in question_text for word in ["budget", "within", "over"]):
+        budgets = context.get("budgets") or []
+        if not budgets:
+            return (
+                f"I don't see any budgets set for **{period_label}** yet. "
+                "Add a category budget and I can track whether you are "
+                "on pace."
+            )
+        over_budget = [item for item in budgets if item["remaining"] < 0]
+        if over_budget:
+            names = ", ".join(item["category"] for item in over_budget[:2])
+            return (
+                f"For **{period_label}**, you are over budget in **{names}**. "
+                "Your total spending is "
+                f"**{format_money(transactions.get('expenses'), currency)}**."
+            )
+        return (
+            f"You are currently within all of your budgets for "
+            f"**{period_label}**. Your spending so far is "
+            f"**{format_money(transactions.get('expenses'), currency)}**."
+        )
+
+    if any(word in question_text for word in ["goal", "saving", "savings"]):
+        goals = context.get("goals") or []
+        if not goals:
+            return (
+                "You don't have an active savings goal yet. Add one and I "
+                "can help you track its progress."
+            )
+        goal = goals[0]
+        return (
+            f"Your **{goal['name']}** goal is "
+            f"**{goal['progress_percentage']:.0f}%** complete: "
+            f"**{format_money(goal['current_amount'], currency)}** saved and "
+            f"**{format_money(goal['remaining_amount'], currency)}** "
+            "remaining."
+        )
+
+    if any(word in question_text for word in ["income", "earn"]):
+        return (
+            f"For **{period_label}**, your income is "
+            f"**{format_money(transactions.get('income'), currency)}**."
+        )
+
+    if any(word in question_text for word in ["net", "position", "balance"]):
+        return (
+            f"For **{period_label}**, your net position is "
+            f"**{format_money(transactions.get('net_amount'), currency)}** "
+            f"from **{format_money(transactions.get('income'), currency)}** "
+            "income and "
+            f"**{format_money(transactions.get('expenses'), currency)}** "
+            "expenses."
+        )
+
+    if any(word in question_text for word in ["spend", "spent", "expense"]):
+        return (
+            f"For **{period_label}**, you spent "
+            f"**{format_money(transactions.get('expenses'), currency)}** "
+            f"across **{transaction_count}** transactions."
+        )
+
     lines = [
         (
-            "Sorry, the AI service is temporarily unavailable, but I can "
-            "still show what MoneyMate calculated."
-        ),
-        (
-            f"For **{period.get('label', 'this period')}**, income was "
+            f"Based on your MoneyMate data for **{period_label}**, income was "
             f"**{format_money(transactions.get('income'), currency)}**, "
-            f"expenses were "
+            "expenses were "
             f"**{format_money(transactions.get('expenses'), currency)}**, "
-            f"and net was "
+            "and net was "
             f"**{format_money(transactions.get('net_amount'), currency)}**."
-        ),
+        )
     ]
     if categories:
         top_category = categories[0]
@@ -486,8 +571,6 @@ def fallback_answer(
             f"Your top spending category was **{top_category['category']}** "
             f"at **{format_money(top_category['total'], currency)}**."
         )
-    elif context.get("insufficient_data"):
-        lines.append("I do not see enough data for a deeper breakdown yet.")
 
     return "\n\n".join(lines)
 

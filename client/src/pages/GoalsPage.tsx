@@ -48,7 +48,6 @@ export function GoalsPage() {
   const [contribution, setContribution] = useState("");
   const [projections, setProjections] = useState<GoalProjectionPoint[]>([]);
   const [requiredMonthly, setRequiredMonthly] = useState(0);
-  const [aiProvider, setAiProvider] = useState("heuristic");
   const [aiRationale, setAiRationale] = useState("");
 
   // Modals
@@ -103,7 +102,6 @@ export function GoalsPage() {
 
     void goalAiApi.calculateSavings({ target_amount: target, current_amount: current, start_date: startDate, deadline }).then((res) => {
       setRequiredMonthly(res.required_monthly);
-      setAiProvider(res.provider);
       setAiRationale(res.rationale ?? "");
     });
 
@@ -394,7 +392,6 @@ export function GoalsPage() {
                 {aiRationale ? (
                   <p className={styles.aiRationale}>{aiRationale}</p>
                 ) : null}
-                <span className={styles.aiProvider}>Source: {aiProvider}</span>
               </div>
             </>
           ) : (
