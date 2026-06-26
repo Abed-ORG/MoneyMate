@@ -37,7 +37,7 @@
 .viewHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
   padding: 0;
 }
@@ -74,7 +74,7 @@
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(19rem, 0.88fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 0.8fr);
   gap: 1rem;
   align-items: start;
 }
@@ -137,6 +137,47 @@
   color: var(--mm-text-muted);
 }
 
+.budgetCount {
+  color: var(--mm-text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.panelHeader button svg,
+.filterActions svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.filterButtonActive {
+  border-color: rgba(var(--mm-accent-rgb), 0.56) !important;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(var(--mm-accent-rgb), 0.22), transparent 8rem),
+    rgba(var(--mm-accent-rgb), 0.13) !important;
+  color: var(--mm-text) !important;
+  box-shadow:
+    0 0 0.75rem rgba(var(--mm-accent-rgb), 0.16),
+    0 0 1.6rem rgba(var(--mm-accent-rgb), 0.08),
+    inset 0 1px 1.4rem rgba(255, 255, 255, 0.04) !important;
+}
+
+.filterCount {
+  display: inline-grid;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--mm-accent);
+  color: var(--mm-bg-deep);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
 .panelHeader p {
   max-width: 42rem;
   margin-top: 0;
@@ -146,6 +187,191 @@
 .budgetList {
   display: grid;
   gap: 0.85rem;
+  max-height: min(38rem, calc(100dvh - 22rem));
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.2rem;
+  padding-bottom: 3.2rem;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
+}
+
+.budgetList::-webkit-scrollbar,
+.filterChecklist::-webkit-scrollbar {
+  width: 0.55rem;
+}
+
+.budgetList::-webkit-scrollbar-track,
+.filterChecklist::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.45);
+}
+
+.budgetList::-webkit-scrollbar-thumb,
+.filterChecklist::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(var(--mm-bg-rgb), 0.45);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--mm-accent-rgb), 0.82),
+    rgba(var(--mm-accent-rgb), 0.48)
+  );
+}
+
+.filteredEmpty {
+  display: grid;
+  min-height: 8rem;
+  place-items: center;
+  border: 1px dashed var(--mm-border);
+  border-radius: var(--mm-radius-md);
+  background: rgba(var(--mm-bg-rgb), 0.18);
+  color: var(--mm-text-muted);
+  padding: 1rem;
+  text-align: center;
+}
+
+.filterModalBody {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.filterSection {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+.filterSection legend {
+  color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filterChecklist {
+  display: grid;
+  gap: 0.48rem;
+  max-height: min(18rem, 40vh);
+  overflow: auto;
+  padding-right: 0.2rem;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
+}
+
+.filterRow {
+  position: relative;
+  display: grid;
+  min-height: 3rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-md);
+  background: rgba(var(--mm-bg-rgb), 0.18);
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  padding: 0.58rem 0.7rem;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.filterRow:hover {
+  border-color: var(--mm-border-strong);
+  color: var(--mm-text);
+}
+
+.filterRow:has(input:checked) {
+  border-color: rgba(var(--mm-accent-rgb), 0.45);
+  background: rgba(var(--mm-accent-rgb), 0.1);
+}
+
+.filterRow input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filterCheck {
+  display: grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  place-items: center;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 0.28rem;
+  background: rgba(var(--mm-bg-rgb), 0.36);
+  color: var(--mm-bg-deep);
+}
+
+.filterRow:has(input:checked) .filterCheck {
+  background: var(--mm-accent);
+}
+
+.filterCheck svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.levelDot {
+  width: 0.78rem;
+  height: 0.78rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: var(--mm-accent);
+  box-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.24);
+}
+
+.levelDot.under_budget {
+  background: var(--mm-accent);
+  box-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.24);
+}
+
+.levelDot.close_to_budget {
+  background: #facc15;
+  box-shadow: 0 0 0.75rem rgba(250, 204, 21, 0.22);
+}
+
+.levelDot.on_budget {
+  background: var(--mm-text-soft);
+  box-shadow: 0 0 0.75rem rgba(238, 244, 247, 0.14);
+}
+
+.levelDot.over_budget {
+  background: var(--color-error);
+  box-shadow: 0 0 0.75rem rgba(255, 107, 114, 0.24);
+}
+
+.filterCategoryIcon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 999px;
+  background: rgba(var(--mm-accent-rgb), 0.12);
+  color: var(--mm-accent-soft);
+}
+
+.filterCategoryIcon svg {
+  width: 1.18rem;
+  height: 1.18rem;
+}
+
+.filterActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
 .emptyState,

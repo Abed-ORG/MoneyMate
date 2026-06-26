@@ -63,6 +63,15 @@ function uniqueMessages(messages: ChatMessage[]) {
   });
 }
 
+function ArrowDownIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 5v14" />
+      <path d="m6 13 6 6 6-6" />
+    </svg>
+  );
+}
+
 function renderMessageText(content: string) {
   const renderInline = (line: string) => {
     const parts: ReactNode[] = [];
@@ -631,17 +640,19 @@ export function ChatPage() {
         </div>
 
         {showJumpLatest ? (
-          <Button
+          <button
+            aria-label="Jump to latest message"
             className={styles.jumpLatest}
             onClick={() => {
               shouldStickToBottom.current = true;
               setShowJumpLatest(false);
               scrollToBottom();
             }}
-            variant="secondary"
+            title="Jump to latest"
+            type="button"
           >
-            Jump to latest
-          </Button>
+            <ArrowDownIcon />
+          </button>
         ) : null}
 
         <footer className={styles.composer}>

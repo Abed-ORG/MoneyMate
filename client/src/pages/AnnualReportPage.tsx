@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, Select } from "../components";
 import { getAnnualReport, type AnnualReport } from "../services/reports";
+import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./AnnualReportPage.module.css";
 
 function money(value: number) {
@@ -22,84 +23,61 @@ function buildYears() {
   }));
 }
 
-function escapePdfText(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-}
+async function downloadPdf(report: AnnualReport) {
+  const comparisonRows = report.previousYearComparison
+    ? [
+        {
+          metric: "Income change",
+          value: percent(report.previousYearComparison.incomeChange),
+        },
+        {
+          metric: "Expense change",
+          value: percent(report.previousYearComparison.expenseChange),
+        },
+        {
+          metric: "Savings change",
+          value: percent(report.previousYearComparison.savingsChange),
+        },
+      ]
+    : [];
 
-function buildSimplePdf(lines: string[]) {
-  const escapedLines = lines.map(escapePdfText);
-  const contentLines = ["BT", "/F1 12 Tf", "72 780 Td"];
-
-  escapedLines.forEach((line, index) => {
-    if (index > 0) {
-      contentLines.push("0 -16 Td");
-    }
-    contentLines.push(`(${line}) Tj`);
+  const blob = await buildThemedReportPdf({
+    title: `Annual Report - ${report.year}`,
+    eyebrow: "Personal finance report",
+    generatedAt: `Generated ${new Date().toLocaleString("en-US")}`,
+    summaryCards: [
+      { label: "Total income", value: money(report.totals.income), tone: "positive" },
+      { label: "Total expenses", value: money(report.totals.expenses), tone: "negative" },
+      {
+        label: "Net savings",
+        value: money(report.totals.netSavings),
+        tone: report.totals.netSavings >= 0 ? "positive" : "negative",
+      },
+    ],
+    tables: [
+      {
+        title: "Month-by-month breakdown",
+        rows: report.months,
+        columns: [
+          { label: "Month", width: 135, value: (item) => item.monthLabel },
+          { label: "Income", width: 124, value: (item) => money(item.income), align: "right" },
+          { label: "Expenses", width: 124, value: (item) => money(item.expenses), align: "right" },
+          { label: "Net savings", width: 124, value: (item) => money(item.netSavings), align: "right" },
+        ],
+      },
+      {
+        title: "Year-over-year comparison",
+        rows: comparisonRows,
+        emptyText: "No previous year data available.",
+        columns: [
+          { label: "Metric", width: 300, value: (item) => item.metric },
+          { label: "Change", width: 207, value: (item) => item.value, align: "right" },
+        ],
+      },
+    ],
+    footerNote: "MoneyMate annual report",
   });
-
-  contentLines.push("ET");
-  const stream = contentLines.join("\n");
-  const streamLength = stream.length;
-  const objects = [
-    "%PDF-1.4",
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${streamLength} >> stream\n${stream}\nendstream endobj`,
-  ];
-  const body = objects.join("\n");
-  const startXref = body.length + 1;
-  const xref = [
-    "xref",
-    "0 6",
-    "0000000000 65535 f ",
-    "0000000010 00000 n ",
-    "0000000059 00000 n ",
-    "0000000114 00000 n ",
-    "0000000247 00000 n ",
-    "0000000326 00000 n ",
-    "trailer << /Size 6 /Root 1 0 R >>",
-    "startxref",
-    String(startXref),
-    "%%EOF",
-  ].join("\n");
-
-  return new Blob([`${body}\n${xref}`], { type: "application/pdf" });
-}
-
-function triggerDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function downloadPdf(report: AnnualReport) {
-  const blob = buildSimplePdf([
-    "MoneyMate",
-    `Annual Report - ${report.year}`,
-    `Generated: ${new Date().toLocaleString("en-US")}`,
-    "",
-    `Income: ${money(report.totals.income)}`,
-    `Expenses: ${money(report.totals.expenses)}`,
-    `Net Savings: ${money(report.totals.netSavings)}`,
-    "",
-    "Month-by-month breakdown",
-    ...report.months.map(
-      (item) =>
-        `${item.monthLabel}: income ${money(item.income)}, expenses ${money(item.expenses)}, net savings ${money(item.netSavings)}`,
-    ),
-    "",
-    report.previousYearComparison
-      ? `YoY: income ${percent(report.previousYearComparison.incomeChange)}, expenses ${percent(report.previousYearComparison.expenseChange)}, savings ${percent(report.previousYearComparison.savingsChange)}`
-      : "No previous year data available.",
-  ]);
-  triggerDownload(blob, `MoneyMate_Annual_Report_${report.year}.pdf`);
+  triggerPdfDownload(blob, `MoneyMate_Annual_Report_${report.year}.pdf`);
 }
 
 export function AnnualReportPage() {
@@ -137,7 +115,7 @@ export function AnnualReportPage() {
           />
         </FormField>
         <div className={styles.controlActions}>
-          <Button disabled={!report} onClick={() => report && downloadPdf(report)}>
+          <Button disabled={!report} onClick={() => report && void downloadPdf(report)}>
             Export PDF
           </Button>
           <div className={styles.viewSwitcher} role="group" aria-label="Report view mode">

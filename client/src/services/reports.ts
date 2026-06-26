@@ -1,7 +1,7 @@
 import { budgetsApi } from "./budgets";
 import { transactionsApi } from "./transactions";
 import type { BudgetSummary } from "../types/budget";
-import type { Transaction } from "../types/transaction";
+import type { Transaction, TransactionListParams } from "../types/transaction";
 
 export type MonthlyReportCategory = {
   category: string;
@@ -54,10 +54,40 @@ function toNumber(value: string | number | undefined | null) {
   return Number(value ?? 0) || 0;
 }
 
+function roundMoney(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 function monthLabel(month: number, year: number) {
   return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
     new Date(year, month - 1, 1),
   );
+}
+
+function dateKey(year: number, month: number, day: number) {
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
+function lastDayOfMonth(month: number, year: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+function monthRange(month: number, year: number) {
+  return {
+    dateFrom: dateKey(year, month, 1),
+    dateTo: dateKey(year, month, lastDayOfMonth(month, year)),
+  };
+}
+
+function yearRange(year: number) {
+  return {
+    dateFrom: dateKey(year, 1, 1),
+    dateTo: dateKey(year, 12, 31),
+  };
 }
 
 function getLocalTransactions(): Transaction[] {
@@ -73,17 +103,35 @@ function getLocalTransactions(): Transaction[] {
   }
 }
 
-async function loadTransactions() {
+async function loadTransactions(
+  params: Pick<TransactionListParams, "dateFrom" | "dateTo"> = {},
+) {
+  const pageSize = 100;
+  const items: Transaction[] = [];
+  let page = 1;
+  let total = 0;
+
   try {
-    const response = await transactionsApi.list({
-      page: 1,
-      pageSize: 10000,
-      sortBy: "date",
-      sortDir: "desc",
-    });
-    return response.items;
+    do {
+      const response = await transactionsApi.list({
+        page,
+        pageSize,
+        sortBy: "date",
+        sortDir: "asc",
+        ...params,
+      });
+      items.push(...response.items);
+      total = response.total;
+      if (response.items.length < pageSize) {
+        break;
+      }
+      page += 1;
+    } while (items.length < total);
+    return items;
   } catch {
-    return getLocalTransactions();
+    return getLocalTransactions().filter((transaction) =>
+      withinDateRange(transaction.date, params.dateFrom, params.dateTo),
+    );
   }
 }
 
@@ -97,12 +145,46 @@ async function loadBudgets(month: number, year: number) {
 }
 
 function withinMonth(date: string, month: number, year: number) {
-  const parsed = new Date(date);
-  return parsed.getMonth() + 1 === month && parsed.getFullYear() === year;
+  const key = transactionDateKey(date);
+  return key >= dateKey(year, month, 1) && key <= dateKey(year, month, lastDayOfMonth(month, year));
+}
+
+function transactionDateKey(value: string) {
+  const directDate = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (directDate) {
+    return `${directDate[1]}-${directDate[2]}-${directDate[3]}`;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  return dateKey(
+    parsed.getUTCFullYear(),
+    parsed.getUTCMonth() + 1,
+    parsed.getUTCDate(),
+  );
+}
+
+function withinDateRange(
+  date: string,
+  dateFrom?: string,
+  dateTo?: string,
+) {
+  const key = transactionDateKey(date);
+  if (!key) {
+    return false;
+  }
+  if (dateFrom && key < dateFrom) {
+    return false;
+  }
+  if (dateTo && key > dateTo) {
+    return false;
+  }
+  return true;
 }
 
 function summarizeTransactions(transactions: Transaction[]) {
-  return transactions.reduce(
+  const summary = transactions.reduce(
     (acc, transaction) => {
       const amount = toNumber(transaction.amount);
       if (amount > 0) {
@@ -114,10 +196,18 @@ function summarizeTransactions(transactions: Transaction[]) {
     },
     { income: 0, expenses: 0 },
   );
+  return {
+    income: roundMoney(summary.income),
+    expenses: roundMoney(summary.expenses),
+  };
 }
 
 export async function getMonthlyReport(month: number, year: number): Promise<MonthlyReport> {
-  const [transactions, budgets] = await Promise.all([loadTransactions(), loadBudgets(month, year)]);
+  const range = monthRange(month, year);
+  const [transactions, budgets] = await Promise.all([
+    loadTransactions(range),
+    loadBudgets(month, year),
+  ]);
   const monthlyTransactions = transactions.filter((transaction) =>
     withinMonth(transaction.date, month, year),
   );
@@ -129,22 +219,22 @@ export async function getMonthlyReport(month: number, year: number): Promise<Mon
     if (amount < 0) {
       spendingByCategory.set(
         transaction.category || "Uncategorized",
-        (spendingByCategory.get(transaction.category || "Uncategorized") ?? 0) + Math.abs(amount),
+        roundMoney((spendingByCategory.get(transaction.category || "Uncategorized") ?? 0) + Math.abs(amount)),
       );
     }
   });
 
   const budgetCategories = budgets.map((budget) => {
-    const spent = spendingByCategory.get(budget.category_name) ?? 0;
+    const spent = toNumber(budget.actual_spending);
     const budgeted = toNumber(budget.budgeted_amount);
-    const remaining = budgeted - spent;
-    const usagePercentage = budgeted > 0 ? Math.min(100, (spent / budgeted) * 100) : 0;
+    const remaining = toNumber(budget.remaining_amount);
+    const usagePercentage = toNumber(budget.usage_percentage);
 
     return {
       category: budget.category_name,
-      spent,
-      budgeted,
-      remaining,
+      spent: roundMoney(spent),
+      budgeted: roundMoney(budgeted),
+      remaining: roundMoney(remaining),
       usagePercentage,
     };
   });
@@ -163,7 +253,7 @@ export async function getMonthlyReport(month: number, year: number): Promise<Mon
     monthLabel: monthLabel(month, year),
     income: summary.income,
     expenses: summary.expenses,
-    netSavings: summary.income - summary.expenses,
+    netSavings: roundMoney(summary.income - summary.expenses),
     budgetCategories,
     topSpendingCategories,
     budgets,
@@ -171,7 +261,10 @@ export async function getMonthlyReport(month: number, year: number): Promise<Mon
 }
 
 export async function getAnnualReport(year: number): Promise<AnnualReport> {
-  const transactions = await loadTransactions();
+  const [transactions, previousYearTransactions] = await Promise.all([
+    loadTransactions(yearRange(year)),
+    loadTransactions(yearRange(year - 1)),
+  ]);
   const months = Array.from({ length: 12 }, (_, index) => index + 1).map((month) => {
     const monthlyTransactions = transactions.filter(
       (transaction) => withinMonth(transaction.date, month, year),
@@ -184,11 +277,11 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
       ),
       income: summary.income,
       expenses: summary.expenses,
-      netSavings: summary.income - summary.expenses,
+      netSavings: roundMoney(summary.income - summary.expenses),
     };
   });
 
-  const totals = months.reduce(
+  const rawTotals = months.reduce(
     (acc, month) => {
       acc.income += month.income;
       acc.expenses += month.expenses;
@@ -197,13 +290,13 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     },
     { income: 0, expenses: 0, netSavings: 0 },
   );
+  const totals = {
+    income: roundMoney(rawTotals.income),
+    expenses: roundMoney(rawTotals.expenses),
+    netSavings: roundMoney(rawTotals.netSavings),
+  };
 
-  const previousYear = year - 1;
-  const previousMonths = transactions.filter((transaction) =>
-    new Date(transaction.date).getFullYear() === previousYear,
-  );
-
-  if (!previousMonths.length) {
+  if (!previousYearTransactions.length) {
     return {
       year,
       months,
@@ -212,8 +305,8 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     };
   }
 
-  const previousTotals = summarizeTransactions(previousMonths);
-  const previousNet = previousTotals.income - previousTotals.expenses;
+  const previousTotals = summarizeTransactions(previousYearTransactions);
+  const previousNet = roundMoney(previousTotals.income - previousTotals.expenses);
 
   return {
     year,

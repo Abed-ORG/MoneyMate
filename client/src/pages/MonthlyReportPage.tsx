@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, Select } from "../components";
 import { getMonthlyReport, type MonthlyReport } from "../services/reports";
+import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./MonthlyReportPage.module.css";
 
 function money(value: number) {
@@ -28,85 +29,52 @@ function buildYears() {
   }));
 }
 
-function escapePdfText(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-}
-
-function buildSimplePdf(lines: string[]) {
-  const escapedLines = lines.map(escapePdfText);
-  const contentLines = ["BT", "/F1 12 Tf", "72 780 Td"];
-
-  escapedLines.forEach((line, index) => {
-    if (index > 0) {
-      contentLines.push("0 -16 Td");
-    }
-    contentLines.push(`(${line}) Tj`);
+async function downloadPdf(report: MonthlyReport) {
+  const blob = await buildThemedReportPdf({
+    title: `Monthly Report - ${report.monthLabel}`,
+    eyebrow: "Personal finance report",
+    generatedAt: `Generated ${new Date().toLocaleString("en-US")}`,
+    summaryCards: [
+      { label: "Total income", value: money(report.income), tone: "positive" },
+      { label: "Total expenses", value: money(report.expenses), tone: "negative" },
+      {
+        label: "Net savings",
+        value: money(report.netSavings),
+        tone: report.netSavings >= 0 ? "positive" : "negative",
+      },
+    ],
+    tables: [
+      {
+        title: "Budget details",
+        rows: report.budgetCategories,
+        emptyText: "No budget categories were found for this month.",
+        columns: [
+          { label: "Category", width: 160, value: (item) => item.category },
+          { label: "Budget", width: 86, value: (item) => money(item.budgeted), align: "right" },
+          { label: "Spent", width: 86, value: (item) => money(item.spent), align: "right" },
+          { label: "Remaining", width: 86, value: (item) => money(item.remaining), align: "right" },
+          { label: "Used", width: 89, value: (item) => percent(item.usagePercentage), align: "right" },
+        ],
+      },
+      {
+        title: "Top spending categories",
+        rows: report.topSpendingCategories,
+        emptyText: "No spending categories were found for this month.",
+        columns: [
+          { label: "Category", width: 240, value: (item) => item.category },
+          { label: "Amount", width: 140, value: (item) => money(item.spent), align: "right" },
+          {
+            label: "% of expenses",
+            width: 127,
+            value: (item) => percent(item.percentageOfExpenses),
+            align: "right",
+          },
+        ],
+      },
+    ],
+    footerNote: "MoneyMate monthly report",
   });
-
-  contentLines.push("ET");
-  const stream = contentLines.join("\n");
-  const streamLength = stream.length;
-  const objects = [
-    "%PDF-1.4",
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    `5 0 obj << /Length ${streamLength} >> stream\n${stream}\nendstream endobj`,
-  ];
-  const body = objects.join("\n");
-  const startXref = body.length + 1;
-  const xref = [
-    "xref",
-    "0 6",
-    "0000000000 65535 f ",
-    "0000000010 00000 n ",
-    "0000000059 00000 n ",
-    "0000000114 00000 n ",
-    "0000000247 00000 n ",
-    "0000000326 00000 n ",
-    "trailer << /Size 6 /Root 1 0 R >>",
-    "startxref",
-    String(startXref),
-    "%%EOF",
-  ].join("\n");
-
-  return new Blob([`${body}\n${xref}`], { type: "application/pdf" });
-}
-
-function triggerDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function downloadPdf(report: MonthlyReport) {
-  const blob = buildSimplePdf([
-    "MoneyMate",
-    `Monthly Report - ${report.monthLabel}`,
-    `Generated: ${new Date().toLocaleString("en-US")}`,
-    "",
-    `Income: ${money(report.income)}`,
-    `Expenses: ${money(report.expenses)}`,
-    `Net Savings: ${money(report.netSavings)}`,
-    "",
-    "Budget Summary",
-    ...report.budgetCategories.map(
-      (item) =>
-        `${item.category}: budget ${money(item.budgeted)}, spent ${money(item.spent)}, remaining ${money(item.remaining)}`,
-    ),
-    "",
-    "Top Spending",
-    ...report.topSpendingCategories.map(
-      (item) => `${item.category}: ${money(item.spent)} (${percent(item.percentageOfExpenses)})`,
-    ),
-  ]);
-  triggerDownload(blob, `MoneyMate_Report_${report.monthLabel.replace(/\s+/g, "_")}.pdf`);
+  triggerPdfDownload(blob, `MoneyMate_Report_${report.monthLabel.replace(/\s+/g, "_")}.pdf`);
 }
 
 export function MonthlyReportPage() {
@@ -157,7 +125,7 @@ export function MonthlyReportPage() {
           </FormField>
         </div>
         <div className={styles.controlActions}>
-          <Button disabled={!report} onClick={() => report && downloadPdf(report)}>
+          <Button disabled={!report} onClick={() => report && void downloadPdf(report)}>
             Export PDF
           </Button>
           <div className={styles.viewSwitcher} role="group" aria-label="Report view mode">

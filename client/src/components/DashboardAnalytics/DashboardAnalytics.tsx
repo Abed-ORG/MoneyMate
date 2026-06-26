@@ -320,6 +320,7 @@ export function DashboardFilters({
             />
           </label>
           <Button
+            className={activeCategoryCount ? styles.filterButtonActive : ""}
             disabled={disabled}
             onClick={() => setIsFilterOpen(true)}
             variant="secondary"
