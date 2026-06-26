@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from calendar import month_name
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -17,6 +18,14 @@ from app.models.transaction import Transaction
 
 MONEY = Decimal("0.01")
 PERCENT = Decimal("0.01")
+MONTH_LOOKUP = {
+    name.casefold(): index
+    for index, name in enumerate(month_name)
+    if name
+}
+MONTH_LOOKUP.update(
+    {name[:3].casefold(): index for name, index in MONTH_LOOKUP.items()}
+)
 
 
 def quantize_money(value: Decimal) -> Decimal:
@@ -90,6 +99,20 @@ def requested_period(
 ) -> tuple[date, date]:
     today = today or date.today()
     text = question.casefold()
+    month_pattern = "|".join(sorted(MONTH_LOOKUP, key=len, reverse=True))
+    month_match = re.search(
+        rf"\b({month_pattern})\b(?:\s+(\d{{4}}))?",
+        text,
+    )
+    if month_match:
+        month = MONTH_LOOKUP[month_match.group(1)]
+        year = int(month_match.group(2) or today.year)
+        start = date(year, month, 1)
+        if month == 12:
+            end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end = date(year, month + 1, 1) - timedelta(days=1)
+        return start, end
     if "last month" in text or "previous month" in text:
         return month_bounds(today, previous=True)
     if "today" in text:

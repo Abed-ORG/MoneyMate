@@ -18,6 +18,56 @@
   flex-wrap: wrap;
 }
 
+.controlActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.wideSelect {
+  min-width: 12rem;
+}
+
+.viewSwitcher {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: var(--mm-control-background);
+  padding: 0.25rem;
+}
+
+.viewSwitcherButton {
+  min-width: 5.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.48rem 0.85rem;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.viewSwitcherButton:hover {
+  color: var(--mm-text);
+}
+
+.viewSwitcherActive {
+  background: var(--mm-accent) !important;
+  color: var(--mm-bg-deep) !important;
+  box-shadow: var(--mm-shadow-glow);
+}
+
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -103,5 +153,15 @@
   .controlGroup {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .controlActions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .wideSelect {
+    min-width: 0;
   }
 }

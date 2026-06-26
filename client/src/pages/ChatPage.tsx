@@ -17,12 +17,30 @@ import styles from "./ChatPage.module.css";
 
 const maxQuestionLength = 1200;
 const suggestions = [
-  "How much did I spend this month?",
-  "Which category did I spend the most on?",
-  "How does my spending compare with last month?",
-  "Am I staying within my budgets?",
-  "How close am I to my savings goals?",
-  "What was my net position this month?",
+  {
+    icon: "spending",
+    question: "How much did I spend this month?",
+  },
+  {
+    icon: "category",
+    question: "Which category did I spend the most on?",
+  },
+  {
+    icon: "compare",
+    question: "How does my spending compare with last month?",
+  },
+  {
+    icon: "budget",
+    question: "Am I staying within my budgets?",
+  },
+  {
+    icon: "goals",
+    question: "How close am I to my savings goals?",
+  },
+  {
+    icon: "net",
+    question: "What was my net position this month?",
+  },
 ];
 
 function formatTimestamp(value: string) {
@@ -43,6 +61,15 @@ function uniqueMessages(messages: ChatMessage[]) {
     seen.add(message.id);
     return true;
   });
+}
+
+function ArrowDownIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 5v14" />
+      <path d="m6 13 6 6 6-6" />
+    </svg>
+  );
 }
 
 function renderMessageText(content: string) {
@@ -145,6 +172,62 @@ function TrashIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
       <path d="M5 7h14M10 11v6M14 11v6M8 7l1-3h6l1 3M7 7l1 13h8l1-13" />
+    </svg>
+  );
+}
+
+function SuggestionIcon({ type }: { type: string }) {
+  if (type === "category") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M4 6h16M4 12h10M4 18h7" />
+        <path d="m16 15 2 2 4-5" />
+      </svg>
+    );
+  }
+
+  if (type === "compare") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M4 17 9 12l4 4 7-8" />
+        <path d="M15 8h5v5" />
+      </svg>
+    );
+  }
+
+  if (type === "budget") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 12V4a8 8 0 1 1-8 8h8Z" />
+        <path d="M15 3v6h6A6 6 0 0 0 15 3Z" />
+      </svg>
+    );
+  }
+
+  if (type === "goals") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <circle cx="11" cy="13" r="7" />
+        <circle cx="11" cy="13" r="3" />
+        <path d="m13 11 7-7M17 4h3v3" />
+      </svg>
+    );
+  }
+
+  if (type === "net") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M5 19V5" />
+        <path d="M5 19h14" />
+        <path d="M8 16V9M12 16V7M16 16v-4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M6 7h12M6 12h12M6 17h8" />
+      <path d="M17 16c0 2-2 4-5 4s-5-2-5-4" />
     </svg>
   );
 }
@@ -518,23 +601,28 @@ export function ChatPage() {
           {isLoadingMessages ? <p className={styles.status}>Loading messages...</p> : null}
           {!isLoadingMessages && !isSending && !messages.length ? (
             <div className={styles.emptyState}>
-              <div className={styles.assistantMark} aria-hidden="true">
-                <span />
-              </div>
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.assistantLogo}
+                src="/moneymate-ai-assistant.png"
+              />
               <h2>Hi, {firstName}</h2>
               <p>
                 What would you like to understand about your money today?
               </p>
-              <span className={styles.promptLabel}>Try these prompts</span>
               <div className={styles.suggestions}>
                 {suggestions.map((suggestion) => (
                   <button
                     disabled={isSending}
-                    key={suggestion}
-                    onClick={() => void sendQuestion(suggestion)}
+                    key={suggestion.question}
+                    onClick={() => void sendQuestion(suggestion.question)}
                     type="button"
                   >
-                    {suggestion}
+                    <span className={styles.suggestionIcon}>
+                      <SuggestionIcon type={suggestion.icon} />
+                    </span>
+                    <span>{suggestion.question}</span>
                   </button>
                 ))}
               </div>
@@ -552,17 +640,19 @@ export function ChatPage() {
         </div>
 
         {showJumpLatest ? (
-          <Button
+          <button
+            aria-label="Jump to latest message"
             className={styles.jumpLatest}
             onClick={() => {
               shouldStickToBottom.current = true;
               setShowJumpLatest(false);
               scrollToBottom();
             }}
-            variant="secondary"
+            title="Jump to latest"
+            type="button"
           >
-            Jump to latest
-          </Button>
+            <ArrowDownIcon />
+          </button>
         ) : null}
 
         <footer className={styles.composer}>

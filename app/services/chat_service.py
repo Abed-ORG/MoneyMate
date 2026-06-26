@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from sqlalchemy import func
@@ -27,6 +28,7 @@ from app.services.chat_gemini_service import (
 
 
 MAX_QUESTION_LENGTH = 1200
+RECENT_HISTORY_LIMIT = 8
 FINANCE_KEYWORDS = {
     "account",
     "balance",
@@ -44,6 +46,53 @@ FINANCE_KEYWORDS = {
     "spend",
     "spent",
     "transaction",
+}
+SOCIAL_MESSAGE_WORDS = {
+    "afternoon",
+    "are",
+    "bye",
+    "doing",
+    "evening",
+    "good",
+    "goodbye",
+    "hello",
+    "help",
+    "hey",
+    "hi",
+    "morning",
+    "night",
+    "ok",
+    "okay",
+    "thanks",
+    "thank",
+    "there",
+    "yo",
+    "you",
+}
+SOCIAL_MESSAGE_PHRASES = {
+    "good afternoon",
+    "good evening",
+    "good morning",
+    "hello",
+    "hey",
+    "hi",
+    "how are you",
+    "thanks",
+    "thank you",
+    "whats up",
+}
+AFFIRMATIVE_REPLIES = {
+    "absolutely",
+    "ok",
+    "okay",
+    "please",
+    "sure",
+    "sure please",
+    "yeah",
+    "yep",
+    "yes",
+    "yes please",
+    "yesplease",
 }
 
 
@@ -283,6 +332,31 @@ def add_assistant_message(
     return message
 
 
+def recent_conversation_history(
+    db: Session,
+    conversation_id: int,
+    before_message_id: int | None = None,
+    limit: int = RECENT_HISTORY_LIMIT,
+) -> list[dict[str, str]]:
+    query = db.query(ChatMessage).filter(
+        ChatMessage.conversation_id == conversation_id
+    )
+    if before_message_id is not None:
+        query = query.filter(ChatMessage.id < before_message_id)
+    messages = (
+        query.order_by(ChatMessage.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "role": message.role,
+            "content": normalize_text(message.content)[:700],
+        }
+        for message in reversed(messages)
+    ]
+
+
 def format_money(value: float | int | None, currency: str) -> str:
     amount = float(value or 0)
     return f"{amount:,.2f} {currency}"
@@ -293,8 +367,95 @@ def is_finance_question(question: str) -> bool:
     return any(keyword in text for keyword in FINANCE_KEYWORDS)
 
 
-def fallback_answer(question: str, context: dict, exc: GeminiChatError) -> str:
-    if not is_finance_question(question):
+def normalize_social_text(question: str) -> str:
+    text = question.casefold()
+    text = re.sub(r"[^a-z0-9\s']", " ", text)
+    text = re.sub(r"(.)\1{2,}", r"\1", text)
+    return " ".join(text.split())
+
+
+def is_social_message(question: str) -> bool:
+    text = normalize_social_text(question)
+    if not text or len(text) > 120 or is_finance_question(question):
+        return False
+    if text in SOCIAL_MESSAGE_PHRASES:
+        return True
+    words = text.replace("'", "").split()
+    return bool(words) and all(word in SOCIAL_MESSAGE_WORDS for word in words)
+
+
+def social_answer(question: str) -> str:
+    text = normalize_social_text(question)
+    if "thank" in text or "thanks" in text:
+        return "You're welcome! I'm here whenever you need me."
+    if "bye" in text or "goodbye" in text:
+        return "Bye for now! I'll be here when you want to chat again."
+    return (
+        "Hi! I'm here and happy to help. What would you like to look at today?"
+    )
+
+
+def is_affirmative_reply(question: str) -> bool:
+    return normalize_social_text(question) in AFFIRMATIVE_REPLIES
+
+
+def last_assistant_message(history: list[dict[str, str]]) -> str:
+    for message in reversed(history):
+        if message["role"] == "assistant":
+            return message["content"]
+    return ""
+
+
+def resolve_followup_question(
+    question: str,
+    history: list[dict[str, str]],
+) -> str:
+    if not is_affirmative_reply(question):
+        return question
+
+    previous_assistant = last_assistant_message(history).casefold()
+    if "would you like" not in previous_assistant:
+        return question
+    if not any(
+        word in previous_assistant
+        for word in [
+            "spending",
+            "budget",
+            "savings",
+            "goal",
+            "net position",
+            "finances",
+            "period",
+        ]
+    ):
+        return question
+    return (
+        "Tell me more about my spending, budgets, savings goals, and net "
+        "position for the available period."
+    )
+
+
+def context_for_gemini(
+    context: dict,
+    history: list[dict[str, str]],
+) -> dict:
+    if not history:
+        return context
+    return {**context, "conversation_history": history}
+
+
+def fallback_answer(
+    question: str,
+    context: dict,
+    exc: GeminiChatError,
+    history: list[dict[str, str]] | None = None,
+) -> str:
+    history = history or []
+    if is_social_message(question):
+        return social_answer(question)
+
+    effective_question = resolve_followup_question(question, history)
+    if not is_finance_question(effective_question):
         return (
             "Sorry, I can help with MoneyMate finance questions like "
             "spending, budgets, savings goals, and net position. Try asking "
@@ -307,8 +468,8 @@ def fallback_answer(question: str, context: dict, exc: GeminiChatError) -> str:
     categories = transactions.get("category_totals") or []
     lines = [
         (
-            "Sorry, the AI response took a moment, but I can still show what "
-            "MoneyMate calculated."
+            "Sorry, the AI service is temporarily unavailable, but I can "
+            "still show what MoneyMate calculated."
         ),
         (
             f"For **{period.get('label', 'this period')}**, income was "
@@ -341,11 +502,25 @@ def send_message(
         raise ValueError("Question is too long.")
     conversation = get_conversation(db, user_id, conversation_id)
     user_message = add_user_message(db, conversation, question)
-    context = build_financial_context(db, user_id, question)
+    history = recent_conversation_history(db, conversation.id, user_message.id)
+    effective_question = resolve_followup_question(question, history)
+    if is_social_message(question):
+        answer = social_answer(question)
+        assistant = add_assistant_message(db, conversation, answer, [], {})
+        return ChatSendMessageResponse(
+            conversation=conversation_to_schema(db, conversation),
+            user_message=message_to_schema(user_message),
+            assistant_message=message_to_schema(assistant),
+        )
+
+    context = build_financial_context(db, user_id, effective_question)
     try:
-        answer = gemini_chat_client.generate_answer(question, context)
+        answer = gemini_chat_client.generate_answer(
+            question,
+            context_for_gemini(context, history),
+        )
     except GeminiChatError as exc:
-        answer = fallback_answer(question, context, exc)
+        answer = fallback_answer(question, context, exc, history)
 
     assistant = add_assistant_message(
         db,
@@ -379,14 +554,37 @@ def retry_message(
     )
     if not user_message:
         raise ChatNotFoundError
-    context = build_financial_context(db, user_id, user_message.content)
+    history = recent_conversation_history(db, conversation.id, user_message.id)
+    effective_question = resolve_followup_question(
+        user_message.content,
+        history,
+    )
+    if is_social_message(user_message.content):
+        user_message.status = "complete"
+        user_message.error_code = None
+        assistant = add_assistant_message(
+            db,
+            conversation,
+            social_answer(user_message.content),
+            [],
+            {},
+        )
+        db.commit()
+        db.refresh(user_message)
+        return ChatSendMessageResponse(
+            conversation=conversation_to_schema(db, conversation),
+            user_message=message_to_schema(user_message),
+            assistant_message=message_to_schema(assistant),
+        )
+
+    context = build_financial_context(db, user_id, effective_question)
     try:
         answer = gemini_chat_client.generate_answer(
             user_message.content,
-            context,
+            context_for_gemini(context, history),
         )
     except GeminiChatError as exc:
-        answer = fallback_answer(user_message.content, context, exc)
+        answer = fallback_answer(user_message.content, context, exc, history)
 
     user_message.status = "complete"
     user_message.error_code = None

@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -92,6 +92,16 @@ function statusLabel(status: BudgetSummary["status"]) {
   if (status === "close_to_budget") return "Close to budget";
   if (status === "on_budget") return "Exactly on budget";
   return "Under budget";
+}
+
+function DotsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  );
 }
 
 function TrendIcon({ trend }: { trend: BudgetHistoryMonth["trend"] }) {
@@ -211,6 +221,25 @@ export function BudgetCategoryCard({
   onEdit: (budget: BudgetSummary) => void;
 }) {
   const exceeded = toNumber(budget.remaining_amount) < 0;
+  const [isActionOpen, setIsActionOpen] = useState(false);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isActionOpen) {
+      return undefined;
+    }
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (actionMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setIsActionOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [isActionOpen]);
+
   return (
     <article className={styles.budgetCard}>
       <header>
@@ -219,17 +248,44 @@ export function BudgetCategoryCard({
         </span>
         <div>
           <h3>{budget.category_name}</h3>
+        </div>
+        <div className={styles.cardActions} ref={actionMenuRef}>
           <span className={`${styles.statusBadge} ${styles[budget.status]}`}>
             {statusLabel(budget.status)}
           </span>
-        </div>
-        <div className={styles.cardActions}>
-          <button type="button" onClick={() => onEdit(budget)} aria-label={`Edit ${budget.category_name} budget`}>
-            Edit
+          <button
+            aria-expanded={isActionOpen}
+            aria-label={`Open ${budget.category_name} budget actions`}
+            className={styles.dotsButton}
+            onClick={() => setIsActionOpen((current) => !current)}
+            title="Budget actions"
+            type="button"
+          >
+            <DotsIcon />
           </button>
-          <button type="button" onClick={() => onDelete(budget)} aria-label={`Delete ${budget.category_name} budget`}>
-            Delete
-          </button>
+          {isActionOpen ? (
+            <div className={styles.actionMenu}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsActionOpen(false);
+                  onEdit(budget);
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className={styles.dangerAction}
+                type="button"
+                onClick={() => {
+                  setIsActionOpen(false);
+                  onDelete(budget);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ) : null}
         </div>
       </header>
       <BudgetProgressBar budget={budget} />
