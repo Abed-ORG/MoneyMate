@@ -47,6 +47,11 @@ def create_goal(db: Session, user_id: int, payload: GoalCreate):
         name=payload.name,
         target_amount=payload.target_amount,
         current_amount=payload.current_amount,
+        start_date=(
+            datetime.combine(payload.start_date, time.min)
+            if payload.start_date
+            else None
+        ),
         target_date=(
             datetime.combine(payload.deadline, time.min)
             if payload.deadline
@@ -74,6 +79,13 @@ def update_goal(db: Session, user_id: int, goal_id: int, payload: GoalUpdate):
         values["target_date"] = (
             datetime.combine(deadline, time.min)
             if deadline
+            else None
+        )
+    if "start_date" in values:
+        start_date = values.pop("start_date")
+        values["start_date"] = (
+            datetime.combine(start_date, time.min)
+            if start_date
             else None
         )
     for field, value in values.items():

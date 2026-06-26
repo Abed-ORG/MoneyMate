@@ -121,24 +121,26 @@ export const goalAiApi = {
   calculateSavings: async (payload: {
     target_amount: number;
     current_amount: number;
+    start_date?: string | null;
     deadline: string | null;
   }): Promise<GoalAICalculationResponse> => {
     try {
       return await api.post<GoalAICalculationResponse>("/goals/ai/calculate", {
         target_amount: payload.target_amount,
         current_amount: payload.current_amount,
+        start_date: payload.start_date ?? null,
         deadline: payload.deadline,
       });
     } catch {
       // Client-side fallback
       const remaining = Math.max(payload.target_amount - payload.current_amount, 0);
-      const months = payload.deadline
-        ? Math.max(Math.ceil((new Date(payload.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)), 1)
-        : 1;
+      const start = payload.start_date ? new Date(payload.start_date) : new Date();
+      const end = payload.deadline ? new Date(payload.deadline) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      const msDiff = end.getTime() - start.getTime();
+      const months = Math.max(Math.ceil(msDiff / (1000 * 60 * 60 * 24 * 30.44)), 1);
       return {
         required_monthly: remaining / months,
         provider: "heuristic",
-        rationale: "Backend unavailable; calculated locally.",
       };
     }
   },
@@ -146,20 +148,23 @@ export const goalAiApi = {
   projection: async (payload: {
     target_amount: number;
     current_amount: number;
+    start_date?: string | null;
     deadline: string | null;
   }): Promise<GoalProjectionResponse> => {
     try {
       return await api.post<GoalProjectionResponse>("/goals/ai/projection", {
         target_amount: payload.target_amount,
         current_amount: payload.current_amount,
+        start_date: payload.start_date ?? null,
         deadline: payload.deadline,
       });
     } catch {
       // Client-side fallback
       const remaining = Math.max(payload.target_amount - payload.current_amount, 0);
-      const months = payload.deadline
-        ? Math.max(Math.ceil((new Date(payload.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)), 1)
-        : 1;
+      const start = payload.start_date ? new Date(payload.start_date) : new Date();
+      const end = payload.deadline ? new Date(payload.deadline) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      const msDiff = end.getTime() - start.getTime();
+      const months = Math.max(Math.ceil(msDiff / (1000 * 60 * 60 * 24 * 30.44)), 1);
       const monthly = remaining / months;
       const projections: GoalProjectionPoint[] = [];
       let running = payload.current_amount;
