@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 def _transactions_as_dicts(db: Session, user_id: int) -> list[dict]:
-    """Fetch user transactions from the database as plain dicts for AI functions."""
+    """Fetch user transactions from the database as plain dicts."""
     txs = (
         db.query(Transaction)
         .join(Category, Transaction.category_id == Category.id, isouter=True)
