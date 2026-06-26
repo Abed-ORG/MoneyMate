@@ -27,6 +27,7 @@ DEFAULT_FALLBACK_MODELS = (
 DEFAULT_MODEL_COOLDOWN_SECONDS = 60.0
 MAX_MODEL_COOLDOWN_SECONDS = 600.0
 MODEL_COOLDOWNS: dict[str, float] = {}
+SERVICE_COOLDOWN_UNTIL = 0.0
 
 
 class GeminiChatError(Exception):
@@ -117,7 +118,7 @@ Avoid legal, tax, investment, credit, or professional financial advice.
 
 @dataclass
 class GeminiChatClient:
-    timeout_seconds: int = 24
+    timeout_seconds: int = 10
 
     @property
     def api_key(self) -> str:
@@ -159,7 +160,7 @@ class GeminiChatClient:
                     model,
                     resume_at - now,
                 )
-        return available or unique
+        return available
 
     def cool_down_model(
         self,
@@ -169,6 +170,16 @@ class GeminiChatClient:
         wait_seconds = seconds or DEFAULT_MODEL_COOLDOWN_SECONDS
         wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
         MODEL_COOLDOWNS[model] = time.monotonic() + wait_seconds
+
+    def service_cooldown_remaining(self) -> float:
+        return max(0.0, SERVICE_COOLDOWN_UNTIL - time.monotonic())
+
+    def cool_down_service(self, seconds: float | None = None) -> None:
+        global SERVICE_COOLDOWN_UNTIL
+
+        wait_seconds = seconds or DEFAULT_MODEL_COOLDOWN_SECONDS
+        wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
+        SERVICE_COOLDOWN_UNTIL = time.monotonic() + wait_seconds
 
     def generate_answer(
         self,
@@ -180,6 +191,13 @@ class GeminiChatClient:
         if not self.model:
             raise GeminiChatConfigError("Gemini model is not configured.")
 
+        cooldown_remaining = self.service_cooldown_remaining()
+        if cooldown_remaining:
+            raise GeminiChatRateLimitError(
+                "Gemini is temporarily unavailable.",
+                cooldown_remaining,
+            )
+
         last_error: GeminiChatError | None = None
         for model in self.model_candidates():
             try:
@@ -190,15 +208,21 @@ class GeminiChatClient:
                 )
             except GeminiChatRateLimitError as exc:
                 self.cool_down_model(model, exc.retry_after_seconds)
+                self.cool_down_service(exc.retry_after_seconds)
                 logger.warning(
                     (
-                        "Gemini chat model %s is temporarily unavailable: "
-                        "%s"
+                        "Gemini chat is temporarily unavailable after model "
+                        "%s failed: %s"
                     ),
                     model,
                     exc,
                 )
-                last_error = exc
+                raise exc
+            except GeminiChatTimeoutError as exc:
+                self.cool_down_model(model)
+                self.cool_down_service()
+                logger.warning("Gemini chat model %s timed out.", model)
+                raise exc
             except GeminiChatConfigError as exc:
                 logger.warning(
                     "Gemini chat model %s is not available: %s",
@@ -208,7 +232,7 @@ class GeminiChatClient:
                 last_error = exc
         if last_error:
             raise last_error
-        raise GeminiChatConfigError("Gemini model is not configured.")
+        raise GeminiChatRateLimitError("Gemini is temporarily unavailable.")
 
     def _generate_answer_with_model(
         self,

@@ -101,6 +101,11 @@ function csvEscape(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
+function csvDate(value: string) {
+  const isoDate = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? `\t${isoDate}` : value;
+}
+
 function downloadTextFile(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -546,7 +551,7 @@ export function TransactionsPage() {
     const headers = exportState.columns.map((column) => exportColumns.find((item) => item.value === column)?.label ?? column);
     const rows = response.items.map((transaction) =>
       exportState.columns.map((column) => {
-        if (column === "date") return new Intl.DateTimeFormat("en-US").format(new Date(transaction.date));
+        if (column === "date") return csvDate(transaction.date);
         if (column === "vendor") return transaction.vendor;
         if (column === "category") return transaction.category;
         if (column === "amount") return toMoney(transaction.amount);
@@ -558,7 +563,7 @@ export function TransactionsPage() {
       .map((row) => row.map((value) => csvEscape(String(value ?? ""))).join(","))
       .join("\n");
     const filename = `MoneyMate_Transactions_${new Date(dateTo || new Date().toISOString()).toISOString().slice(0, 7)}.csv`;
-    downloadTextFile(filename, csv, "text/csv");
+    downloadTextFile(filename, `\ufeff${csv}`, "text/csv;charset=utf-8");
     setIsExportOpen(false);
   };
 
