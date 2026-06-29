@@ -444,7 +444,9 @@ def is_contextual_finance_followup(
     words = set(text.replace("'", "").split())
     if not words.intersection(CONTEXTUAL_FOLLOWUP_WORDS):
         return False
-    return any(is_finance_question(message["content"]) for message in history[-4:])
+    return any(
+        is_finance_question(message["content"]) for message in history[-4:]
+    )
 
 
 def resolve_contextual_finance_followup(
