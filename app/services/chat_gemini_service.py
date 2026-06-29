@@ -6,7 +6,7 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib import error, request
 
 from app.services.gemini_transport import (
@@ -19,15 +19,21 @@ from app.services.gemini_transport import (
 configure_gemini_tls()
 
 logger = logging.getLogger(__name__)
-DEFAULT_FALLBACK_MODELS = (
+ChatModelTier = Literal["smart", "simple"]
+DEFAULT_SMART_FALLBACK_MODELS = (
+    "gemini-2.5-flash",
     "gemini-3.1-flash-lite",
     "gemini-2.5-flash-lite",
+    "gemini-2.0-flash-lite",
+)
+DEFAULT_SIMPLE_MODEL = "gemini-2.5-flash-lite"
+DEFAULT_SIMPLE_FALLBACK_MODELS = (
+    "gemini-3.1-flash-lite",
     "gemini-2.0-flash-lite",
 )
 DEFAULT_MODEL_COOLDOWN_SECONDS = 60.0
 MAX_MODEL_COOLDOWN_SECONDS = 600.0
 MODEL_COOLDOWNS: dict[str, float] = {}
-SERVICE_COOLDOWN_UNTIL = 0.0
 
 
 class GeminiChatError(Exception):
@@ -129,19 +135,44 @@ class GeminiChatClient:
         return gemini_model_name()
 
     @property
+    def simple_model(self) -> str:
+        return (
+            os.getenv("GEMINI_SIMPLE_MODEL", DEFAULT_SIMPLE_MODEL).strip()
+            or DEFAULT_SIMPLE_MODEL
+        ).removeprefix("models/")
+
+    @property
     def fallback_models(self) -> list[str]:
-        configured = os.getenv("GEMINI_FALLBACK_MODELS", "").strip()
-        raw_models = (
-            configured.split(",") if configured else DEFAULT_FALLBACK_MODELS
+        return self._configured_models(
+            "GEMINI_FALLBACK_MODELS",
+            DEFAULT_SMART_FALLBACK_MODELS,
         )
+
+    @property
+    def simple_fallback_models(self) -> list[str]:
+        return self._configured_models(
+            "GEMINI_SIMPLE_FALLBACK_MODELS",
+            DEFAULT_SIMPLE_FALLBACK_MODELS,
+        )
+
+    def _configured_models(
+        self,
+        env_name: str,
+        defaults: tuple[str, ...],
+    ) -> list[str]:
+        configured = os.getenv(env_name, "").strip()
+        raw_models = configured.split(",") if configured else defaults
         return [
             model.removeprefix("models/").strip()
             for model in raw_models
             if model.strip()
         ]
 
-    def model_candidates(self) -> list[str]:
-        candidates = [self.model, *self.fallback_models]
+    def model_candidates(self, tier: ChatModelTier = "smart") -> list[str]:
+        if tier == "simple":
+            candidates = [self.simple_model, *self.simple_fallback_models]
+        else:
+            candidates = [self.model, *self.fallback_models]
         unique = []
         for model in candidates:
             if model and model not in unique:
@@ -171,35 +202,23 @@ class GeminiChatClient:
         wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
         MODEL_COOLDOWNS[model] = time.monotonic() + wait_seconds
 
-    def service_cooldown_remaining(self) -> float:
-        return max(0.0, SERVICE_COOLDOWN_UNTIL - time.monotonic())
-
-    def cool_down_service(self, seconds: float | None = None) -> None:
-        global SERVICE_COOLDOWN_UNTIL
-
-        wait_seconds = seconds or DEFAULT_MODEL_COOLDOWN_SECONDS
-        wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
-        SERVICE_COOLDOWN_UNTIL = time.monotonic() + wait_seconds
-
     def generate_answer(
         self,
         question: str,
         context: dict[str, Any],
+        tier: ChatModelTier = "smart",
     ) -> str:
         if not self.api_key:
             raise GeminiChatConfigError("Gemini API key is not configured.")
-        if not self.model:
+        if not self.model and tier == "smart":
             raise GeminiChatConfigError("Gemini model is not configured.")
-
-        cooldown_remaining = self.service_cooldown_remaining()
-        if cooldown_remaining:
-            raise GeminiChatRateLimitError(
-                "Gemini is temporarily unavailable.",
-                cooldown_remaining,
+        if not self.simple_model and tier == "simple":
+            raise GeminiChatConfigError(
+                "Gemini simple model is not configured."
             )
 
         last_error: GeminiChatError | None = None
-        for model in self.model_candidates():
+        for model in self.model_candidates(tier):
             try:
                 return self._generate_answer_with_model(
                     model,
@@ -208,27 +227,27 @@ class GeminiChatClient:
                 )
             except GeminiChatRateLimitError as exc:
                 self.cool_down_model(model, exc.retry_after_seconds)
-                self.cool_down_service(exc.retry_after_seconds)
                 logger.warning(
                     (
-                        "Gemini chat is temporarily unavailable after model "
-                        "%s failed: %s"
+                        "Gemini chat model %s is temporarily unavailable: %s"
                     ),
                     model,
                     exc,
                 )
-                raise exc
+                last_error = exc
             except GeminiChatTimeoutError as exc:
                 self.cool_down_model(model)
-                self.cool_down_service()
                 logger.warning("Gemini chat model %s timed out.", model)
-                raise exc
+                last_error = exc
             except GeminiChatConfigError as exc:
                 logger.warning(
                     "Gemini chat model %s is not available: %s",
                     model,
                     exc,
                 )
+                last_error = exc
+            except GeminiChatError as exc:
+                logger.warning("Gemini chat model %s failed: %s", model, exc)
                 last_error = exc
         if last_error:
             raise last_error

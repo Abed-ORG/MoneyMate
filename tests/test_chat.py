@@ -3,8 +3,6 @@ from decimal import Decimal
 import json
 from urllib.error import HTTPError
 
-import pytest
-
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -147,9 +145,10 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
     client, session = make_client()
     captured = {}
 
-    def fake_answer(question, context):
+    def fake_answer(question, context, tier="smart"):
         captured["question"] = question
         captured["context"] = context
+        captured["tier"] = tier
         return "You spent $200.00 from June 1 through June 24."
 
     monkeypatch.setattr(
@@ -186,6 +185,7 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
         assert captured["context"]["transactions"]["income"] == 1000.0
         assert captured["context"]["budgets"][0]["category"] == "Food & Dining"
         assert captured["context"]["goals"][0]["name"] == "Emergency Fund"
+        assert captured["tier"] == "smart"
 
         messages = client.get(
             f"/chat/conversations/{conversation_id}/messages",
@@ -210,7 +210,7 @@ def test_chat_conversation_ownership_and_archive(monkeypatch):
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        lambda question, context: "Answer",
+        lambda question, context, tier="smart": "Answer",
     )
     try:
         first, first_headers = create_account(
@@ -264,7 +264,7 @@ def test_chat_message_pagination_has_no_duplicates(monkeypatch):
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        lambda question, context: "Answer",
+        lambda question, context, tier="smart": "Answer",
     )
     try:
         user, headers = create_account(
@@ -312,20 +312,16 @@ def test_chat_message_pagination_has_no_duplicates(monkeypatch):
         session.close()
 
 
-def test_chat_validation_and_provider_failure_fallback(monkeypatch):
+def test_chat_validation_and_provider_failure_is_retryable(monkeypatch):
     client, session = make_client()
-    calls = {"count": 0}
 
-    def flaky_answer(question, context):
-        calls["count"] += 1
-        if calls["count"] == 1:
-            raise GeminiChatRateLimitError("limited")
-        return "Recovered answer."
+    def unavailable_answer(question, context, tier="smart"):
+        raise GeminiChatRateLimitError("limited")
 
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        flaky_answer,
+        unavailable_answer,
     )
     try:
         user, headers = create_account(session, client, "retry@example.com")
@@ -343,25 +339,22 @@ def test_chat_validation_and_provider_failure_fallback(monkeypatch):
         )
         assert empty.status_code == 422
 
-        fallback = client.post(
+        failure = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
             json={"question": "Am I staying within my budgets?"},
         )
-        assert fallback.status_code == 200
-        body = fallback.json()
-        assert body["user_message"]["status"] == "complete"
-        assert body["assistant_message"]["role"] == "assistant"
-        assert (
-            "within all of your budgets"
-            in body["assistant_message"]["content"]
-        )
+        assert failure.status_code == 503
+        detail = failure.json()["detail"]
+        assert detail["retryable"] is True
+        assert detail["user_message"]["status"] == "assistant_failed"
+        assert detail["user_message"]["error_code"] == "gemini_rate_limited"
         messages = client.get(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
         ).json()["items"]
         assert [item["role"] for item in messages].count("user") == 1
-        assert [item["role"] for item in messages].count("assistant") == 1
+        assert [item["role"] for item in messages].count("assistant") == 0
     finally:
         app.dependency_overrides.clear()
         session.close()
@@ -371,14 +364,18 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
     monkeypatch,
 ):
     client, session = make_client()
+    captured = {}
 
-    def unexpected_answer(question, context):
-        raise AssertionError("Greeting should not call Gemini.")
+    def friendly_answer(question, context, tier="smart"):
+        captured["question"] = question
+        captured["context"] = context
+        captured["tier"] = tier
+        return "Hi! Happy to help."
 
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        unexpected_answer,
+        friendly_answer,
     )
     try:
         _, headers = create_account(session, client, "hello@example.com")
@@ -399,6 +396,8 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
         assert "Hi!" in content
         assert "finance questions" not in content
         assert "Sorry" not in content
+        assert captured["tier"] == "simple"
+        assert captured["context"]["mode"] == "general_conversation"
         assert response.json()["assistant_message"]["sources"] == []
         assert response.json()["assistant_message"]["metrics"] == {}
     finally:
@@ -406,16 +405,19 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
         session.close()
 
 
-def test_chat_answers_top_category_when_gemini_is_unavailable(monkeypatch):
+def test_chat_routes_typo_finance_question_to_smart_model(monkeypatch):
     client, session = make_client()
+    captured = {}
 
-    def unavailable_answer(question, context):
-        raise GeminiChatRateLimitError("limited")
+    def finance_answer(question, context, tier="smart"):
+        captured["tier"] = tier
+        captured["context"] = context
+        return "Food & Dining is your top category."
 
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        unavailable_answer,
+        finance_answer,
     )
     try:
         user, headers = create_account(session, client, "category@example.com")
@@ -429,31 +431,98 @@ def test_chat_answers_top_category_when_gemini_is_unavailable(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "Which category did I spend the most on?"},
+            json={"question": "Which catgory did I spend the most on?"},
         )
 
         assert response.status_code == 200
         content = response.json()["assistant_message"]["content"]
         assert "Food & Dining" in content
-        assert "120.00 USD" in content
-        assert "temporarily unavailable" not in content
+        assert captured["tier"] == "smart"
+        assert captured["context"]["transactions"]["expenses"] == 200.0
     finally:
         app.dependency_overrides.clear()
         session.close()
 
 
-def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
-    monkeypatch,
-):
+def test_chat_routes_short_finance_followup_to_smart_model(monkeypatch):
     client, session = make_client()
+    captured = {}
 
-    def unavailable_answer(question, context):
-        raise GeminiChatRateLimitError("limited")
+    def followup_answer(question, context, tier="smart"):
+        captured["question"] = question
+        captured["context"] = context
+        captured["tier"] = tier
+        return "Your lowest spending category was Travel at 80.00 USD."
 
     monkeypatch.setattr(
         chat_service.gemini_chat_client,
         "generate_answer",
-        unavailable_answer,
+        followup_answer,
+    )
+    try:
+        user, headers = create_account(session, client, "least@example.com")
+        add_financial_data(session, user.id)
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+        session.add_all(
+            [
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="user",
+                    content=(
+                        "what was the catgry i spent most in june"
+                    ),
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=(
+                        "In June 2026, your highest spending category "
+                        "was Food & Dining."
+                    ),
+                ),
+            ]
+        )
+        session.commit()
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "what about least"},
+        )
+
+        assert response.status_code == 200
+        assert "Travel" in response.json()["assistant_message"]["content"]
+        assert captured["question"] == "what about least"
+        assert captured["tier"] == "smart"
+        assert captured["context"]["period"]["label"] == "June 2026"
+        assert captured["context"]["transactions"]["category_totals"][1] == {
+            "category": "Travel",
+            "total": 80.0,
+            "percentage_of_expenses": 40.0,
+        }
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_affirmative_followup_continues_previous_offer(
+    monkeypatch,
+):
+    client, session = make_client()
+
+    def followup_answer(question, context, tier="smart"):
+        assert tier == "smart"
+        assert context["transactions"]["expenses"] == 200.0
+        return "You spent 200.00 USD and your budgets are still on track."
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        followup_answer,
     )
     try:
         user, headers = create_account(session, client, "yes@example.com")
@@ -484,7 +553,7 @@ def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
 
         assert response.status_code == 200
         content = response.json()["assistant_message"]["content"]
-        assert "within all of your budgets" in content
+        assert "200.00 USD" in content
         assert "Hello! How can I help" not in content
         assert response.json()["assistant_message"]["metrics"][
             "total_expenses"
@@ -494,14 +563,10 @@ def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
         session.close()
 
 
-def test_gemini_chat_stops_after_rate_limit_to_keep_chat_responsive(
+def test_gemini_chat_tries_fallback_model_after_rate_limit(
     monkeypatch,
 ):
     calls = []
-    monkeypatch.setattr(
-        "app.services.chat_gemini_service.SERVICE_COOLDOWN_UNTIL",
-        0.0,
-    )
 
     class FakeResponse:
         def __enter__(self):
@@ -551,23 +616,20 @@ def test_gemini_chat_stops_after_rate_limit_to_keep_chat_responsive(
     )
 
     client = GeminiChatClient()
-    with pytest.raises(GeminiChatRateLimitError):
-        client.generate_answer(
-            "How much did I spend this month?",
-            {"currency": "USD", "transactions": {"expenses": 509.5}},
-        )
+    answer = client.generate_answer(
+        "How much did I spend this month?",
+        {"currency": "USD", "transactions": {"expenses": 509.5}},
+    )
 
+    assert answer == "You spent 509.50 USD in June 2026."
     assert "gemini-2.5-flash" in calls[0]
-    assert len(calls) == 1
+    assert "gemini-3.1-flash-lite" in calls[1]
+    assert len(calls) == 2
 
 
 def test_gemini_chat_skips_model_during_rate_limit_cooldown(monkeypatch):
     MODEL_COOLDOWNS.clear()
     calls = []
-    monkeypatch.setattr(
-        "app.services.chat_gemini_service.SERVICE_COOLDOWN_UNTIL",
-        0.0,
-    )
 
     class FakeResponse:
         def __enter__(self):
