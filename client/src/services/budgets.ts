@@ -41,6 +41,8 @@ export const budgetsApi = {
   update: (id: number, payload: Partial<BudgetPayload>) =>
     api.patch<Budget>(`/budgets/${id}`, payload),
   delete: (id: number) => api.delete<void>(`/budgets/${id}`),
+  copyFromPrevious: (month: number, year: number) =>
+    api.post<Budget[]>(`/budgets/copy-from-previous?${monthQuery(month, year)}`, {}),
   overview: (month: number, year: number) =>
     api.get<BudgetOverview>(`/budgets/overview?${monthQuery(month, year)}`),
   comparison: (month: number, year: number) =>

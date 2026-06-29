@@ -104,6 +104,7 @@ export function AppShell() {
     message: string;
     variant: "warning" | "error" | "success" | "info";
   } | null>(null);
+  const [budgetAlertCount, setBudgetAlertCount] = useState(0);
   const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
@@ -144,37 +145,53 @@ export function AppShell() {
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    const handleTransactionChange = async (event: Event) => {
-      if (location.pathname === "/budgets") {
+  const refreshBudgetAlerts = async (
+    month: number,
+    year: number,
+    showToast: boolean,
+  ) => {
+    try {
+      const alerts = await budgetsApi.alerts(month, year);
+      setBudgetAlertCount(alerts.length);
+      if (!showToast) {
         return;
       }
+      const alert = alerts.find((item) => {
+        const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
+        if (shownBudgetAlerts.current.has(key)) {
+          return false;
+        }
+        shownBudgetAlerts.current.add(key);
+        return true;
+      });
+      if (alert) {
+        setBudgetToast({
+          title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
+          message: alert.message,
+          variant: alert.severity === "alert" ? "error" : "warning",
+        });
+      }
+    } catch {
+      // Budget alerts should never block navigation or transaction workflows.
+    }
+  };
 
+  useEffect(() => {
+    if (!user?.id) {
+      setBudgetAlertCount(0);
+      return;
+    }
+    const now = new Date();
+    void refreshBudgetAlerts(now.getMonth() + 1, now.getFullYear(), false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const handleTransactionChange = (event: Event) => {
       const detail = (event as CustomEvent<{ month?: number; year?: number }>).detail;
       const now = new Date();
       const month = detail?.month ?? now.getMonth() + 1;
       const year = detail?.year ?? now.getFullYear();
-
-      try {
-        const alerts = await budgetsApi.alerts(month, year);
-        const alert = alerts.find((item) => {
-          const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
-          if (shownBudgetAlerts.current.has(key)) {
-            return false;
-          }
-          shownBudgetAlerts.current.add(key);
-          return true;
-        });
-        if (alert) {
-          setBudgetToast({
-            title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
-            message: alert.message,
-            variant: alert.severity === "alert" ? "error" : "warning",
-          });
-        }
-      } catch {
-        // Budget alerts should never block transaction workflows.
-      }
+      void refreshBudgetAlerts(month, year, location.pathname !== "/budgets");
     };
 
     window.addEventListener("moneymate:transactions-changed", handleTransactionChange);
@@ -222,6 +239,14 @@ export function AppShell() {
             >
               <NavigationIcon path={item.path} />
               <span>{item.label}</span>
+              {item.path === "/budgets" && budgetAlertCount ? (
+                <span
+                  aria-label={`${budgetAlertCount} budget alert${budgetAlertCount === 1 ? "" : "s"}`}
+                  className={styles.navBadge}
+                >
+                  {budgetAlertCount}
+                </span>
+              ) : null}
             </NavLink>
           ))}
         </nav>

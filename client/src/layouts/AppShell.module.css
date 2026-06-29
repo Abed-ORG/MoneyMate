@@ -150,6 +150,22 @@
   stroke-width: 1.8;
 }
 
+.navBadge {
+  display: inline-grid;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 999px;
+  margin-left: auto;
+  background: rgba(245, 158, 11, 0.18);
+  color: #facc15;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0 0.28rem;
+}
+
 .active .navIcon,
 .navLink:hover .navIcon {
   border-color: rgba(var(--mm-accent-rgb), 0.24);

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, CategoryIcon, Modal, Toast } from "../components";
 import {
-  BudgetAlertPanel,
+  BudgetAllocationDonut,
   BudgetCategoryCard,
   BudgetComparisonChart,
-  BudgetComparisonTable,
   BudgetFormModal,
   BudgetSummaryCard,
   DeleteConfirmationModal,
@@ -50,6 +49,16 @@ function currentMonthState() {
   };
 }
 
+function daysRemainingInMonth(month: number, year: number) {
+  const now = new Date();
+  const lastDay = new Date(year, month, 0);
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+  if (isCurrentMonth) {
+    return Math.max(0, lastDay.getDate() - now.getDate() + 1);
+  }
+  return lastDay < now ? 0 : lastDay.getDate();
+}
+
 function FilterIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -80,9 +89,10 @@ export function BudgetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCopyingBudgets, setIsCopyingBudgets] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetSummary | null>(null);
-  const [viewMode, setViewMode] = useState<"visualize" | "list">("visualize");
+  const [viewMode, setViewMode] = useState<"visualize" | "list">("list");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [budgetFilters, setBudgetFilters] = useState<BudgetFilters>({
     statuses: [],
@@ -91,6 +101,7 @@ export function BudgetsPage() {
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
+  const daysRemaining = useMemo(() => daysRemainingInMonth(month, year), [month, year]);
   const selectedHistory = history.find((item) => item.month === month && item.year === year);
   const budgetCategoryOptions = useMemo(
     () => overview?.budgets.map((budget) => ({
@@ -247,6 +258,29 @@ export function BudgetsPage() {
     }
   };
 
+  const copyPreviousMonthBudgets = async () => {
+    setIsCopyingBudgets(true);
+    try {
+      const copied = await budgetsApi.copyFromPrevious(month, year);
+      setToast({
+        title: copied.length ? "Budgets copied" : "Nothing to copy",
+        message: copied.length
+          ? `${copied.length} budget${copied.length === 1 ? "" : "s"} copied into ${monthLabel(month, year)}.`
+          : "No missing budgets were found in the previous month.",
+        variant: copied.length ? "success" : "info",
+      });
+      await loadBudgetData();
+    } catch (err) {
+      setToast({
+        title: "Could not copy budgets",
+        message: getApiErrorMessage(err),
+        variant: "error",
+      });
+    } finally {
+      setIsCopyingBudgets(false);
+    }
+  };
+
   const selectMonth = (nextMonth: number, nextYear: number) => {
     setMonth(nextMonth);
     setYear(nextYear);
@@ -286,6 +320,13 @@ export function BudgetsPage() {
 
       <div className={styles.controlsBar}>
         <MonthSelector month={month} year={year} onChange={selectMonth} />
+        <Button
+          disabled={isCopyingBudgets || isLoading}
+          onClick={() => void copyPreviousMonthBudgets()}
+          variant="secondary"
+        >
+          {isCopyingBudgets ? "Copying..." : "Copy from last month"}
+        </Button>
         <Button onClick={openCreate}>+ Create Budget</Button>
       </div>
 
@@ -306,7 +347,7 @@ export function BudgetsPage() {
               <h2>No budgets for {monthLabel(month, year)}</h2>
               <p>
                 Create your first category budget for this month to unlock progress bars,
-                alerts, comparison charts, and adherence history.
+                comparison charts, and adherence history.
               </p>
               <Button onClick={openCreate}>Create a budget</Button>
             </section>
@@ -332,10 +373,13 @@ export function BudgetsPage() {
               </div>
 
               {viewMode === "visualize" ? (
-                <section className={`${styles.panel} ${styles.comparisonPanel}`}>
-                  <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
-                  <BudgetComparisonTable budgets={overview.budgets} currency={currency} />
-                </section>
+                <div className={styles.visualGrid}>
+                  <BudgetAllocationDonut budgets={overview.budgets} currency={currency} />
+                  <section className={`${styles.panel} ${styles.comparisonPanel}`}>
+                    <h2>Actual vs budgeted</h2>
+                    <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
+                  </section>
+                </div>
               ) : (
                 <section className={styles.workspaceGrid}>
                   <div className={`${styles.panel} ${styles.categoryPanel}`}>
@@ -363,6 +407,7 @@ export function BudgetsPage() {
                           budget={budget}
                           currency={currency}
                           key={budget.budget_id}
+                          daysRemaining={daysRemaining}
                           onDelete={setDeletingBudget}
                           onEdit={openEdit}
                         />
@@ -374,8 +419,6 @@ export function BudgetsPage() {
                       ) : null}
                     </div>
                   </div>
-
-                  <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
                 </section>
               )}
             </>
