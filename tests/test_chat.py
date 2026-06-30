@@ -24,9 +24,12 @@ from app.schemas.user import UserCreate
 from app.services import chat_service
 from app.services.chat_context_service import requested_period
 from app.services.chat_gemini_service import (
+    DEFAULT_CHAT_TIMEOUT_SECONDS,
     GeminiChatClient,
     GeminiChatRateLimitError,
     MODEL_COOLDOWNS,
+    SIMPLE_MAX_OUTPUT_TOKENS,
+    SMART_MAX_OUTPUT_TOKENS,
     retry_after_from_text,
 )
 
@@ -183,8 +186,8 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
         assert body["assistant_message"]["metrics"]["total_income"] == 1000.0
         assert captured["context"]["transactions"]["expenses"] == 200.0
         assert captured["context"]["transactions"]["income"] == 1000.0
-        assert captured["context"]["budgets"][0]["category"] == "Food & Dining"
-        assert captured["context"]["goals"][0]["name"] == "Emergency Fund"
+        assert "budgets" not in captured["context"]
+        assert "goals" not in captured["context"]
         assert captured["tier"] == "smart"
 
         messages = client.get(
@@ -384,6 +387,31 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
             headers=headers,
             json={},
         ).json()["id"]
+        session.add_all(
+            [
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="user",
+                    content="hello " + ("there " * 80),
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content="Hi! " + ("How can I help? " * 80),
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="user",
+                    content="thanks " + ("a lot " * 80),
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content="You're welcome. " + ("Anytime. " * 80),
+                ),
+            ]
+        )
+        session.commit()
 
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
@@ -398,8 +426,117 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
         assert "Sorry" not in content
         assert captured["tier"] == "simple"
         assert captured["context"]["mode"] == "general_conversation"
+        assert len(captured["context"]["conversation_history"]) == 4
+        assert all(
+            len(message["content"]) <= 260
+            for message in captured["context"]["conversation_history"]
+        )
         assert response.json()["assistant_message"]["sources"] == []
         assert response.json()["assistant_message"]["metrics"] == {}
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_non_finance_budge_phrase_stays_simple(monkeypatch):
+    client, session = make_client()
+    captured = {}
+
+    def simple_answer(question, context, tier="smart"):
+        captured["context"] = context
+        captured["tier"] = tier
+        return "I hear you. I can help with MoneyMate finances when needed."
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        simple_answer,
+    )
+    try:
+        _, headers = create_account(session, client, "budge@example.com")
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "I won't budge on this"},
+        )
+
+        assert response.status_code == 200
+        assert captured["tier"] == "simple"
+        assert captured["context"]["mode"] == "general_conversation"
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_simple_tier_receives_recent_history_for_context(monkeypatch):
+    client, session = make_client()
+    captured = {}
+
+    def continuation_answer(question, context, tier="smart"):
+        captured["context"] = context
+        captured["tier"] = tier
+        return "Of course, take your time."
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        continuation_answer,
+    )
+    try:
+        _, headers = create_account(session, client, "thinking@example.com")
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+        session.add_all(
+            [
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=(
+                        "Adding 200.00 USD to your phone goal would move "
+                        "your progress from 22% to 42%. How would you like "
+                        "to proceed?"
+                    ),
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="user",
+                    content="hmmm let me think",
+                ),
+                ChatMessage(
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content="Of course, take your time.",
+                ),
+            ]
+        )
+        session.commit()
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={
+                "question": (
+                    "no i meant let me think on how to proceed"
+                )
+            },
+        )
+
+        assert response.status_code == 200
+        assert captured["tier"] == "simple"
+        assert len(captured["context"]["conversation_history"]) == 3
+        assert any(
+            "How would you like to proceed?" in message["content"]
+            for message in captured["context"]["conversation_history"]
+        )
     finally:
         app.dependency_overrides.clear()
         session.close()
@@ -439,6 +576,55 @@ def test_chat_routes_typo_finance_question_to_smart_model(monkeypatch):
         assert "Food & Dining" in content
         assert captured["tier"] == "smart"
         assert captured["context"]["transactions"]["expenses"] == 200.0
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_budget_question_uses_budget_context_without_goals(monkeypatch):
+    client, session = make_client()
+    captured = {}
+
+    def budget_answer(question, context, tier="smart"):
+        captured["context"] = context
+        captured["tier"] = tier
+        return "Food & Dining has a 300.00 USD budget."
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        budget_answer,
+    )
+    try:
+        user, headers = create_account(
+            session,
+            client,
+            "budget-chat@example.com",
+        )
+        add_financial_data(session, user.id)
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "What is my Food & Dining budget?"},
+        )
+
+        assert response.status_code == 200
+        assert captured["tier"] == "smart"
+        assert captured["context"]["budgets"][0]["category"] == "Food & Dining"
+        assert "transactions" not in captured["context"]
+        assert "goals" not in captured["context"]
+        assert response.json()["assistant_message"]["sources"][0]["type"] == (
+            "budgets"
+        )
+        assert response.json()["assistant_message"]["metrics"] == {
+            "budget_count": 1
+        }
     finally:
         app.dependency_overrides.clear()
         session.close()
@@ -625,6 +811,115 @@ def test_gemini_chat_tries_fallback_model_after_rate_limit(
     assert "gemini-2.5-flash" in calls[0]
     assert "gemini-3.1-flash-lite" in calls[1]
     assert len(calls) == 2
+
+
+def test_gemini_chat_sets_tier_specific_output_limits(monkeypatch):
+    MODEL_COOLDOWNS.clear()
+    bodies = []
+    timeouts = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "Short answer."}]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(req, timeout):
+        bodies.append(json.loads(req.data.decode("utf-8")))
+        timeouts.append(timeout)
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("GEMINI_SIMPLE_MODEL", "gemini-2.5-flash-lite")
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.request.urlopen",
+        fake_urlopen,
+    )
+
+    client = GeminiChatClient()
+    assert client.generate_answer("hi", {}, tier="simple") == "Short answer."
+    assert (
+        client.generate_answer(
+            "How much did I spend?",
+            {"currency": "USD"},
+            tier="smart",
+        )
+        == "Short answer."
+    )
+
+    assert bodies[0]["generationConfig"]["maxOutputTokens"] == (
+        SIMPLE_MAX_OUTPUT_TOKENS
+    )
+    assert bodies[1]["generationConfig"]["maxOutputTokens"] == (
+        SMART_MAX_OUTPUT_TOKENS
+    )
+    assert timeouts == [
+        DEFAULT_CHAT_TIMEOUT_SECONDS,
+        DEFAULT_CHAT_TIMEOUT_SECONDS,
+    ]
+
+
+def test_gemini_chat_uses_configured_timeout_and_retries(monkeypatch):
+    MODEL_COOLDOWNS.clear()
+    calls = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "Recovered answer."}]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(req, timeout):
+        calls.append((req.full_url, timeout))
+        if len(calls) == 1:
+            raise TimeoutError("slow provider")
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("GEMINI_CHAT_TIMEOUT_SECONDS", "45")
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.request.urlopen",
+        fake_urlopen,
+    )
+
+    client = GeminiChatClient()
+    answer = client.generate_answer("Question", {})
+
+    assert answer == "Recovered answer."
+    assert len(calls) == 2
+    assert calls[0][0] == calls[1][0]
+    assert calls[0][1] == 45
+    assert calls[1][1] == 45
 
 
 def test_gemini_chat_skips_model_during_rate_limit_cooldown(monkeypatch):

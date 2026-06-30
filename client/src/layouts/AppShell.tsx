@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, Modal, Toast } from "../components";
 import { useAuth } from "../contexts/AuthContext";
@@ -145,36 +145,39 @@ export function AppShell() {
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
-  const refreshBudgetAlerts = async (
-    month: number,
-    year: number,
-    showToast: boolean,
-  ) => {
-    try {
-      const alerts = await budgetsApi.alerts(month, year);
-      setBudgetAlertCount(alerts.length);
-      if (!showToast) {
-        return;
-      }
-      const alert = alerts.find((item) => {
-        const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
-        if (shownBudgetAlerts.current.has(key)) {
-          return false;
+  const refreshBudgetAlerts = useCallback(
+    async (
+      month: number,
+      year: number,
+      showToast: boolean,
+    ) => {
+      try {
+        const alerts = await budgetsApi.alerts(month, year);
+        setBudgetAlertCount(alerts.length);
+        if (!showToast) {
+          return;
         }
-        shownBudgetAlerts.current.add(key);
-        return true;
-      });
-      if (alert) {
-        setBudgetToast({
-          title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
-          message: alert.message,
-          variant: alert.severity === "alert" ? "error" : "warning",
+        const alert = alerts.find((item) => {
+          const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
+          if (shownBudgetAlerts.current.has(key)) {
+            return false;
+          }
+          shownBudgetAlerts.current.add(key);
+          return true;
         });
+        if (alert) {
+          setBudgetToast({
+            title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
+            message: alert.message,
+            variant: alert.severity === "alert" ? "error" : "warning",
+          });
+        }
+      } catch {
+        // Budget alerts should never block navigation or transaction workflows.
       }
-    } catch {
-      // Budget alerts should never block navigation or transaction workflows.
-    }
-  };
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!user?.id) {
@@ -183,7 +186,7 @@ export function AppShell() {
     }
     const now = new Date();
     void refreshBudgetAlerts(now.getMonth() + 1, now.getFullYear(), false);
-  }, [user?.id]);
+  }, [refreshBudgetAlerts, user?.id]);
 
   useEffect(() => {
     const handleTransactionChange = (event: Event) => {
@@ -198,7 +201,7 @@ export function AppShell() {
     return () => {
       window.removeEventListener("moneymate:transactions-changed", handleTransactionChange);
     };
-  }, [location.pathname]);
+  }, [location.pathname, refreshBudgetAlerts]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

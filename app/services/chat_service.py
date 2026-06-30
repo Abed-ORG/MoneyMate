@@ -31,7 +31,7 @@ from app.services.chat_gemini_service import (
 
 
 MAX_QUESTION_LENGTH = 1200
-RECENT_HISTORY_LIMIT = 8
+RECENT_HISTORY_LIMIT = 6
 FINANCE_KEYWORDS = {
     "account",
     "balance",
@@ -49,6 +49,17 @@ FINANCE_KEYWORDS = {
     "spend",
     "spent",
     "transaction",
+}
+FINANCE_TYPO_KEYWORDS = {
+    "budgt",
+    "budgte",
+    "catgry",
+    "catgory",
+    "expens",
+    "expnse",
+    "savng",
+    "spnd",
+    "spen",
 }
 CONTEXTUAL_FOLLOWUP_WORDS = {
     "about",
@@ -81,7 +92,9 @@ AFFIRMATIVE_REPLIES = {
     "yes please",
     "yesplease",
 }
-FINANCE_TOKEN_SIMILARITY = 0.84
+FINANCE_TOKEN_SIMILARITY = 0.92
+SIMPLE_HISTORY_LIMIT = 4
+SIMPLE_HISTORY_CONTENT_LIMIT = 260
 
 
 class ChatNotFoundError(Exception):
@@ -378,6 +391,8 @@ def is_finance_question(question: str) -> bool:
     for word in words:
         if len(word) < 4:
             continue
+        if word in FINANCE_TYPO_KEYWORDS:
+            return True
         if any(
             SequenceMatcher(None, word, keyword).ratio()
             >= FINANCE_TOKEN_SIMILARITY
@@ -482,12 +497,26 @@ def general_chat_context(history: list[dict[str, str]]) -> dict[str, Any]:
         "allowed_scope": [
             "friendly greetings",
             "thanks and farewells",
+            "brief acknowledgments and clarifications",
             "brief MoneyMate capability questions",
             "polite redirection for requests outside MoneyMate finance",
         ],
+        "response_guidance": (
+            "Use conversation_history, when present, to decide whether the "
+            "current message is a greeting, acknowledgment, clarification, "
+            "or a new non-finance request. Continue the existing exchange "
+            "when the message depends on prior context."
+        ),
     }
-    if history:
-        context["conversation_history"] = history
+    simple_history = history[-SIMPLE_HISTORY_LIMIT:]
+    if simple_history:
+        context["conversation_history"] = [
+            {
+                "role": message["role"],
+                "content": message["content"][:SIMPLE_HISTORY_CONTENT_LIMIT],
+            }
+            for message in simple_history
+        ]
     return context
 
 

@@ -39,8 +39,7 @@
 
 .summaryCard h2,
 .panel h2,
-.budgetCard h3,
-.alertItem h3 {
+.budgetCard h3 {
   margin: 0;
   color: var(--mm-text);
 }
@@ -53,7 +52,6 @@
 .summaryMetrics div,
 .adherenceStrip dl div,
 .budgetStats div,
-.alertItem dl div,
 .historyItem dl div {
   display: grid;
   gap: 0.2rem;
@@ -68,7 +66,6 @@
 .adherenceStrip dt,
 .adherenceStrip p,
 .budgetStats dt,
-.alertItem dt,
 .historyItem dt,
 .emptyText,
 .chartEmpty {
@@ -323,7 +320,6 @@
 }
 
 .budgetStats dd,
-.alertItem dd,
 .historyItem dd {
   margin: 0;
   color: var(--mm-text);
@@ -354,14 +350,12 @@
   white-space: nowrap;
 }
 
-.close_to_budget,
-.warning {
+.close_to_budget {
   border-color: rgba(245, 158, 11, 0.42);
   color: #facc15;
 }
 
 .over_budget,
-.alert,
 .decline {
   border-color: rgba(255, 107, 114, 0.42);
   color: var(--color-error);
@@ -388,30 +382,18 @@
   color: var(--color-error);
 }
 
-.alertList,
 .historyList,
 .formGrid {
   display: grid;
   gap: 1rem;
 }
 
-.alertItem {
-  display: grid;
-  gap: 0.65rem;
-  border: 1px solid currentColor;
-  border-radius: var(--mm-radius-md);
-  background: var(--mm-control-background);
-  padding: 0.9rem;
-}
-
-.alertItem p,
 .confirmText {
   margin: 0;
   color: var(--mm-text-soft);
   line-height: 1.5;
 }
 
-.alertItem dl,
 .historyItem dl {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -743,7 +725,6 @@
   .summaryMetrics,
   .adherenceStrip dl,
   .budgetStats,
-  .alertItem dl,
   .historyItem dl,
   .donutLayout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -768,7 +749,6 @@
   .summaryMetrics,
   .adherenceStrip dl,
   .budgetStats,
-  .alertItem dl,
   .historyItem dl,
   .donutLayout {
     grid-template-columns: 1fr;

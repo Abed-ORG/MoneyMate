@@ -9,7 +9,6 @@ import {
 import { Button, Card, CategoryIcon, FormField, Input, Modal, Select } from "../index";
 import { transactionCategories } from "../../constants/categories";
 import type {
-  BudgetAlert,
   BudgetCategory,
   BudgetHistoryMonth,
   BudgetOverview,
@@ -372,47 +371,6 @@ export function BudgetCategoryCard({
         </div>
       </dl>
     </article>
-  );
-}
-
-export function BudgetAlertPanel({
-  alerts,
-  currency,
-}: {
-  alerts: BudgetAlert[];
-  currency: string;
-}) {
-  if (!alerts.length) {
-    return (
-      <section className={styles.panel}>
-        <h2>Budget alerts</h2>
-        <p className={styles.emptyText}>No warning or alert thresholds have been reached for this month.</p>
-      </section>
-    );
-  }
-
-  return (
-    <section className={styles.panel}>
-      <h2>Budget alerts</h2>
-      <div className={styles.alertList}>
-        {alerts.map((alert) => (
-          <article className={`${styles.alertItem} ${styles[alert.severity]}`} key={`${alert.category_id}-${alert.severity}`}>
-            <span>{alert.severity === "alert" ? "Alert" : "Warning"}</span>
-            <h3>{alert.category_name}</h3>
-            <p>{alert.message}</p>
-            <dl>
-              <div><dt>Budget</dt><dd>{formatCurrency(alert.budgeted_amount, currency)}</dd></div>
-              <div><dt>Spent</dt><dd>{formatCurrency(alert.actual_spending, currency)}</dd></div>
-              <div><dt>Usage</dt><dd>{formatPercent(alert.usage_percentage)}</dd></div>
-              <div>
-                <dt>{toNumber(alert.remaining_amount) < 0 ? "Exceeded" : "Remaining"}</dt>
-                <dd>{formatCurrency(Math.abs(toNumber(alert.remaining_amount)), currency)}</dd>
-              </div>
-            </dl>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
