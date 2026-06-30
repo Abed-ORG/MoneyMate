@@ -528,6 +528,8 @@ export function DashboardPage() {
       </Card>
 
       <Modal
+        bodyClassName={styles.quickAddModalBody}
+        className={styles.quickAddModal}
         isOpen={isQuickAddOpen}
         onClose={() => {
           if (!isSavingTransaction) {
@@ -597,6 +599,7 @@ export function DashboardPage() {
               <Select
                 aria-label="Transaction category"
                 error={quickAddErrors.category}
+                menuPlacement="top"
                 options={categoryOptions}
                 value={quickAddForm.category}
                 onValueChange={(value) =>

@@ -494,6 +494,7 @@
   gap: 0.5rem;
   width: 100%;
   align-items: center;
+  justify-content: space-between;
   border: 0;
   border-radius: var(--mm-radius-sm);
   background: transparent;
@@ -507,8 +508,8 @@
 
 .profileMenuIcon {
   display: inline-grid;
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   flex: 0 0 auto;
   place-items: center;
 }
@@ -520,7 +521,7 @@
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.8;
+  stroke-width: 1.75;
 }
 
 .profileMenu button:hover {

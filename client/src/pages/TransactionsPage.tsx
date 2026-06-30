@@ -882,6 +882,7 @@ export function TransactionsPage() {
         <div className={styles.categoryAiRow}>
           <Select
             aria-label="Transaction category"
+            menuPlacement="top"
             value={form.category}
             options={formCategoryOptions}
             onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
@@ -1128,7 +1129,6 @@ export function TransactionsPage() {
                           onChange={toggleVisibleTransactionSelection}
                           type="checkbox"
                         />
-                        <span>Select</span>
                       </label>
                     </th>
                     <th>Date</th>
@@ -1259,10 +1259,22 @@ export function TransactionsPage() {
         </section>
       </main>
 
-      <Modal isOpen={isAddOpen} title="Add Transaction" onClose={() => setIsAddOpen(false)}>
+      <Modal
+        bodyClassName={styles.transactionFormModal}
+        className={styles.transactionModal}
+        isOpen={isAddOpen}
+        title="Add Transaction"
+        onClose={() => setIsAddOpen(false)}
+      >
         {renderModalForm("add")}
       </Modal>
-      <Modal isOpen={isEditOpen} title="Edit Transaction" onClose={() => setIsEditOpen(false)}>
+      <Modal
+        bodyClassName={styles.transactionFormModal}
+        className={styles.transactionModal}
+        isOpen={isEditOpen}
+        title="Edit Transaction"
+        onClose={() => setIsEditOpen(false)}
+      >
         {renderModalForm("edit")}
       </Modal>
       <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
