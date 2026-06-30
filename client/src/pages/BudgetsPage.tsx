@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, CategoryIcon, Modal, Toast } from "../components";
+import { Button, CategoryIcon, LoadingSpinner, Modal } from "../components";
 import {
   BudgetAllocationDonut,
   BudgetCategoryCard,
@@ -11,6 +11,7 @@ import {
   monthLabel,
 } from "../components/Budgets/BudgetComponents";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { getApiErrorMessage } from "../services/api";
 import { budgetsApi } from "../services/budgets";
 import type {
@@ -22,12 +23,6 @@ import type {
   BudgetStatus,
 } from "../types/budget";
 import styles from "./BudgetsPage.module.css";
-
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
-};
 
 type BudgetFilters = {
   statuses: BudgetStatus[];
@@ -80,6 +75,7 @@ function CheckIcon() {
 export function BudgetsPage() {
   const initialMonth = currentMonthState();
   const { profile } = useAuth();
+  const toast = useToast();
   const [month, setMonth] = useState(initialMonth.month);
   const [year, setYear] = useState(initialMonth.year);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
@@ -87,7 +83,6 @@ export function BudgetsPage() {
   const [history, setHistory] = useState<BudgetHistoryMonth[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCopyingBudgets, setIsCopyingBudgets] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
@@ -189,13 +184,13 @@ export function BudgetsPage() {
       return true;
     });
     if (alert) {
-      setToast({
+      toast.showToast({
         title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
         message: alert.message,
         variant: alert.severity === "alert" ? "error" : "warning",
       });
     }
-  }, [overview]);
+  }, [overview, toast]);
 
   const openCreate = () => {
     setEditingBudget(null);
@@ -214,7 +209,7 @@ export function BudgetsPage() {
       } else {
         await budgetsApi.create(payload);
       }
-      setToast({
+      toast.showToast({
         title: editingBudget ? "Budget updated" : "Budget created",
         message: "Your monthly budget data is up to date.",
         variant: "success",
@@ -228,7 +223,7 @@ export function BudgetsPage() {
         await loadBudgetData();
       }
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "Could not save budget",
         message: getApiErrorMessage(err),
         variant: "error",
@@ -241,7 +236,7 @@ export function BudgetsPage() {
     if (!deletingBudget) return;
     try {
       await budgetsApi.delete(deletingBudget.budget_id);
-      setToast({
+      toast.showToast({
         title: "Budget deleted",
         message: "The budget was removed from this month.",
         variant: "success",
@@ -249,7 +244,7 @@ export function BudgetsPage() {
       setDeletingBudget(null);
       await loadBudgetData();
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "Could not delete budget",
         message: getApiErrorMessage(err),
         variant: "error",
@@ -262,7 +257,7 @@ export function BudgetsPage() {
     setIsCopyingBudgets(true);
     try {
       const copied = await budgetsApi.copyFromPrevious(month, year);
-      setToast({
+      toast.showToast({
         title: copied.length ? "Budgets copied" : "Nothing to copy",
         message: copied.length
           ? `${copied.length} budget${copied.length === 1 ? "" : "s"} copied into ${monthLabel(month, year)}.`
@@ -271,7 +266,7 @@ export function BudgetsPage() {
       });
       await loadBudgetData();
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "Could not copy budgets",
         message: getApiErrorMessage(err),
         variant: "error",
@@ -312,12 +307,6 @@ export function BudgetsPage() {
   const hasBudgets = Boolean(overview?.budgets.length);
   return (
     <section className={styles.page}>
-      {toast ? (
-        <div className={styles.toastDock}>
-          <Toast {...toast} onClose={() => setToast(null)} />
-        </div>
-      ) : null}
-
       <div className={styles.controlsBar}>
         <MonthSelector month={month} year={year} onChange={selectMonth} />
         <Button
@@ -330,7 +319,11 @@ export function BudgetsPage() {
         <Button onClick={openCreate}>+ Create Budget</Button>
       </div>
 
-      {isLoading ? <div className={styles.state}>Loading budget data...</div> : null}
+      {isLoading ? (
+        <div className={styles.state}>
+          <LoadingSpinner label="Loading budget data" />
+        </div>
+      ) : null}
       {error ? (
         <div className={styles.errorState}>
           <p>{error}</p>

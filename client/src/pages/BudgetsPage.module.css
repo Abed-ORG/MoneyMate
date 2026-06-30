@@ -3,14 +3,6 @@
   gap: 1.4rem;
 }
 
-.toastDock {
-  position: fixed;
-  top: 6.25rem;
-  right: clamp(1rem, 3vw, 2rem);
-  z-index: 90;
-  width: min(28rem, calc(100vw - 2rem));
-}
-
 .panel,
 .emptyState,
 .state,
@@ -436,12 +428,6 @@
 }
 
 @media (max-width: 560px) {
-  .toastDock {
-    top: 1rem;
-    right: 0.75rem;
-    width: calc(100vw - 1.5rem);
-  }
-
   .budgetList {
     grid-template-columns: 1fr;
   }

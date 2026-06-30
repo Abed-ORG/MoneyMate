@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Button, Card, FormField, Input, Modal, Select, Toast } from "../components";
+import { Button, Card, FormField, Input, Modal, Select } from "../components";
 import {
   DashboardFilters,
   IncomeExpenseChart,
@@ -9,6 +9,7 @@ import {
 } from "../components/DashboardAnalytics/DashboardAnalytics";
 import { useAuth } from "../contexts/AuthContext";
 import { useDashboardFilters } from "../contexts/DashboardFiltersContext";
+import { useToast } from "../contexts/ToastContext";
 import { analyticsApi } from "../services/analytics";
 import { getApiErrorMessage } from "../services/api";
 import { insightsApi } from "../services/insights";
@@ -35,12 +36,6 @@ type QuickAddForm = {
   category: string;
   vendor: string;
   notes: string;
-};
-
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
 };
 
 const ONBOARDING_STORAGE_KEY = "moneymate.dashboardOnboarding.dismissed";
@@ -127,10 +122,10 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const { filters } = useDashboardFilters();
   const debouncedFilters = useDebouncedValue(filters, 250);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddForm, setQuickAddForm] = useState<QuickAddForm>(
     createEmptyQuickAddForm,
@@ -339,13 +334,13 @@ export function DashboardPage() {
         category: suggestion.category,
       }));
       setQuickAddErrors((current) => ({ ...current, category: undefined }));
-      setToast({
+      toast.showToast({
         title: "Category suggested",
         message: `MoneyMate suggested ${suggestion.category}.`,
         variant: "info",
       });
     } catch (error) {
-      setToast({
+      toast.showToast({
         title: "Could not suggest category",
         message: getApiErrorMessage(error),
         variant: "error",
@@ -363,7 +358,7 @@ export function DashboardPage() {
     setIsSavingTransaction(true);
     try {
       await transactionsApi.create(quickAddPayload(quickAddForm));
-      setToast({
+      toast.showToast({
         title: "Transaction added",
         message: "Your dashboard will refresh with the latest numbers.",
         variant: "success",
@@ -373,7 +368,7 @@ export function DashboardPage() {
       dismissOnboarding();
       setRefreshKey((current) => current + 1);
     } catch (error) {
-      setToast({
+      toast.showToast({
         title: "Could not add transaction",
         message: getApiErrorMessage(error),
         variant: "error",
@@ -385,12 +380,6 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {toast ? (
-        <div className={styles.toastDock}>
-          <Toast {...toast} onClose={() => setToast(null)} />
-        </div>
-      ) : null}
-
       {shouldShowOnboarding ? (
         <div className={styles.onboardingOverlay} role="dialog" aria-modal="true">
           <section className={styles.onboardingCard}>

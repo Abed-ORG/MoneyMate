@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button, Modal, Toast } from "../components";
+import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { budgetsApi } from "../services/budgets";
+import { goalsApi } from "../services/goals";
+import { transactionsApi } from "../services/transactions";
+import type { Budget } from "../types/budget";
+import type { Goal } from "../types/goal";
+import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import {
   getProfileAvatar,
@@ -11,6 +17,13 @@ import {
 import styles from "./AppShell.module.css";
 
 type ThemeMode = "dark" | "light";
+type SearchResult = {
+  id: string;
+  type: "transaction" | "budget" | "goal";
+  title: string;
+  meta: string;
+  path: string;
+};
 
 const THEME_STORAGE_KEY = "moneymate-theme";
 
@@ -93,23 +106,74 @@ function SettingsIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16 16 4 4" />
+    </svg>
+  );
+}
+
+function formatSearchMoney(value: string | number) {
+  const amount = Number(value);
+  if (Number.isNaN(amount)) {
+    return String(value);
+  }
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    style: "currency",
+  }).format(amount);
+}
+
+function transactionResult(transaction: Transaction): SearchResult {
+  return {
+    id: `transaction-${transaction.id}`,
+    type: "transaction",
+    title: transaction.vendor || transaction.category || "Transaction",
+    meta: `${transaction.category} · ${formatSearchMoney(transaction.amount)}`,
+    path: "/transactions",
+  };
+}
+
+function budgetResult(budget: Budget): SearchResult {
+  return {
+    id: `budget-${budget.id}`,
+    type: "budget",
+    title: budget.category_name,
+    meta: `Budget · ${formatSearchMoney(budget.amount)}`,
+    path: "/budgets",
+  };
+}
+
+function goalResult(goal: Goal): SearchResult {
+  return {
+    id: `goal-${goal.id}`,
+    type: "goal",
+    title: goal.name,
+    meta: `Goal · ${formatSearchMoney(goal.current_amount)} saved`,
+    path: "/goals",
+  };
+}
+
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [budgetToast, setBudgetToast] = useState<{
-    title: string;
-    message: string;
-    variant: "warning" | "error" | "success" | "info";
-  } | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [budgetAlertCount, setBudgetAlertCount] = useState(0);
   const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const toast = useToast();
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user?.full_name || "MoneyMate user";
   const initials = getInitials(displayName) || "MM";
@@ -166,7 +230,7 @@ export function AppShell() {
           return true;
         });
         if (alert) {
-          setBudgetToast({
+          toast.showToast({
             title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
             message: alert.message,
             variant: alert.severity === "alert" ? "error" : "warning",
@@ -176,7 +240,7 @@ export function AppShell() {
         // Budget alerts should never block navigation or transaction workflows.
       }
     },
-    [],
+    [toast],
   );
 
   useEffect(() => {
@@ -202,6 +266,85 @@ export function AppShell() {
       window.removeEventListener("moneymate:transactions-changed", handleTransactionChange);
     };
   }, [location.pathname, refreshBudgetAlerts]);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    const query = globalSearch.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setIsSearching(true);
+    const timeout = window.setTimeout(() => {
+      const normalized = query.toLowerCase();
+      void Promise.all([
+        transactionsApi.list({
+          page: 1,
+          pageSize: 5,
+          search: query,
+          sortBy: "date",
+          sortDir: "desc",
+        }),
+        budgetsApi.list(),
+        goalsApi.list(),
+      ])
+        .then(([transactions, budgets, goals]) => {
+          if (cancelled) return;
+          const budgetMatches = budgets
+            .filter((budget) =>
+              `${budget.category_name} ${budget.amount}`.toLowerCase().includes(normalized),
+            )
+            .slice(0, 5)
+            .map(budgetResult);
+          const goalMatches = goals
+            .filter((goal) =>
+              `${goal.name} ${goal.linked_account ?? ""}`.toLowerCase().includes(normalized),
+            )
+            .slice(0, 5)
+            .map(goalResult);
+          setSearchResults([
+            ...transactions.items.slice(0, 5).map(transactionResult),
+            ...budgetMatches,
+            ...goalMatches,
+          ]);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSearchResults([]);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsSearching(false);
+          }
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [globalSearch]);
+
+  const openSearchResult = (result: SearchResult) => {
+    setGlobalSearch("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
+    navigate(result.path);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -265,12 +408,6 @@ export function AppShell() {
       ) : null}
 
       <div className={styles.contentWrap}>
-        {budgetToast ? (
-          <div className={styles.toastDock}>
-            <Toast {...budgetToast} onClose={() => setBudgetToast(null)} />
-          </div>
-        ) : null}
-
         <header className={styles.header}>
           <div className={styles.headerLeft}>
             <button
@@ -295,6 +432,43 @@ export function AppShell() {
               <span />
             </button>
             <h1>{pageTitle}</h1>
+          </div>
+          <div className={styles.globalSearch} ref={searchRef}>
+            <SearchIcon />
+            <input
+              aria-label="Search transactions, budgets, and goals"
+              onChange={(event) => {
+                setGlobalSearch(event.target.value);
+                setIsSearchOpen(true);
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              placeholder="Search money..."
+              type="search"
+              value={globalSearch}
+            />
+            {isSearchOpen && globalSearch.trim().length >= 2 ? (
+              <div className={styles.searchPanel}>
+                {isSearching ? (
+                  <div className={styles.searchLoading}>
+                    <LoadingSpinner label="Searching" />
+                  </div>
+                ) : searchResults.length ? (
+                  searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => openSearchResult(result)}
+                      type="button"
+                    >
+                      <span>{result.type}</span>
+                      <strong>{result.title}</strong>
+                      <small>{result.meta}</small>
+                    </button>
+                  ))
+                ) : (
+                  <p>No matches found.</p>
+                )}
+              </div>
+            ) : null}
           </div>
           <div className={styles.headerActions}>
             <button
