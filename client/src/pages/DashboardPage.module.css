@@ -1,7 +1,36 @@
 .page {
+  position: relative;
   display: grid;
   gap: 0.9rem;
   min-width: 0;
+}
+
+.toastDock {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  width: min(24rem, calc(100vw - 2rem));
+}
+
+.dashboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  padding: 0.2rem 0 0.35rem;
+}
+
+.dashboardHeader h2 {
+  margin: 0.15rem 0 0;
+  color: var(--mm-text);
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+  letter-spacing: 0;
+}
+
+.dashboardHeader button {
+  flex: 0 0 auto;
 }
 
 .analyticsGrid {
@@ -102,6 +131,185 @@
   font-size: 0.85rem;
 }
 
+.onboardingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.56);
+  backdrop-filter: blur(0.35rem);
+}
+
+.onboardingCard {
+  display: grid;
+  width: min(34rem, 100%);
+  min-height: 12rem;
+  grid-template-columns: 8.75rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.36);
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at top left, rgba(var(--mm-accent-rgb), 0.17), transparent 46%),
+    var(--mm-surface);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.46);
+}
+
+.onboardingCard h2,
+.onboardingCard p {
+  margin: 0;
+}
+
+.onboardingCard h2 {
+  color: var(--mm-text);
+  font-size: 1.65rem;
+  letter-spacing: 0;
+}
+
+.onboardingCard p {
+  margin-top: 0.35rem;
+  color: var(--mm-text-soft);
+}
+
+.onboardingLogoPanel {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  border-right: 1px solid rgba(var(--mm-accent-rgb), 0.24);
+  background:
+    radial-gradient(circle at 50% 44%, rgba(var(--mm-accent-rgb), 0.2), transparent 58%),
+    rgba(var(--mm-bg-rgb), 0.32);
+}
+
+.onboardingLogoPanel img {
+  width: 4.25rem;
+  height: 4.25rem;
+  object-fit: contain;
+  filter: var(--mm-logo-filter);
+}
+
+.onboardingContent {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 1fr auto;
+  gap: 1.2rem;
+  padding: clamp(1.1rem, 3vw, 1.45rem);
+}
+
+.moneyMateLoader {
+  position: relative;
+  display: grid;
+  width: 5.25rem;
+  height: 5.25rem;
+  place-items: center;
+}
+
+.moneyMateLoader::before {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(var(--mm-accent-rgb), 0.18);
+  border-top-color: var(--mm-accent);
+  border-right-color: rgba(var(--mm-accent-rgb), 0.62);
+  border-radius: 999px;
+  content: "";
+  animation: logoRingSpin 1s linear infinite;
+}
+
+.moneyMateLoader span {
+  position: absolute;
+  inset: 0.48rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.22);
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.3);
+  box-shadow: 0 0 1.8rem rgba(var(--mm-accent-rgb), 0.16);
+}
+
+.moneyMateLoader img {
+  position: relative;
+  z-index: 1;
+  width: 2.65rem;
+  height: 2.65rem;
+  object-fit: contain;
+  filter: var(--mm-logo-filter);
+}
+
+.insightLoader {
+  width: 3.7rem;
+  height: 3.7rem;
+  margin: 0.15rem 0;
+}
+
+.insightLoader img {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.onboardingActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-self: end;
+  gap: 0.65rem;
+}
+
+.formGrid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.categoryAiRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.65rem;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.aiCategoryButton {
+  display: inline-grid;
+  min-height: 2.45rem;
+  width: 2.65rem;
+  place-items: center;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-control-background);
+  color: var(--mm-accent-soft);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.aiCategoryButton:hover {
+  border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
+  box-shadow: var(--mm-shadow-glow);
+  transform: translateY(-1px);
+}
+
+.aiCategoryButton svg {
+  width: 1.18rem;
+  height: 1.18rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding-top: 0.3rem;
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -113,9 +321,44 @@
   }
 }
 
+@keyframes logoRingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 980px) {
   .analyticsGrid,
   .insightList {
     grid-template-columns: 1fr;
+  }
+
+  .dashboardHeader,
+  .modalActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboardHeader button,
+  .modalActions button {
+    width: 100%;
+  }
+
+  .onboardingCard {
+    grid-template-columns: 1fr;
+  }
+
+  .onboardingLogoPanel {
+    min-height: 7rem;
+    border-right: 0;
+    border-bottom: 1px solid rgba(var(--mm-accent-rgb), 0.24);
+  }
+
+  .onboardingActions {
+    justify-content: stretch;
+  }
+
+  .onboardingActions button {
+    width: 100%;
   }
 }
