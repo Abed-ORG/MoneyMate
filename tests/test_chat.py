@@ -615,7 +615,11 @@ def test_chat_budget_question_uses_budget_context_without_goals(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "What is my Food & Dining budget for June 2026?"},
+            json={
+                "question": (
+                    "What is my Food & Dining budget for June 2026?"
+                )
+            },
         )
 
         assert response.status_code == 200
