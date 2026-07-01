@@ -644,23 +644,42 @@ export function LandingPage() {
           </Link>
           <p>Track smarter, spend better, and grow with confidence.</p>
         </div>
-        <div className={styles.footerLinks}>
-          <a href="#about" onClick={(event) => scrollToSection(event, "about")}>
-            About Us
-          </a>
-          <a
-            href="#features"
-            onClick={(event) => scrollToSection(event, "features")}
-          >
-            Features
-          </a>
-          <a href="#faq" onClick={(event) => scrollToSection(event, "faq")}>
-            FAQ
-          </a>
-          <a href="#contact" onClick={(event) => scrollToSection(event, "contact")}>
-            Contact
-          </a>
-        </div>
+        <nav className={styles.footerColumns} aria-label="Footer navigation">
+          <div className={styles.footerColumn}>
+            <h3>Product</h3>
+            <a
+              href="#features"
+              onClick={(event) => scrollToSection(event, "features")}
+            >
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              onClick={(event) => scrollToSection(event, "how-it-works")}
+            >
+              How It Works
+            </a>
+            <a href="#faq" onClick={(event) => scrollToSection(event, "faq")}>
+              FAQ
+            </a>
+          </div>
+          <div className={styles.footerColumn}>
+            <h3>Company</h3>
+            <a href="#about" onClick={(event) => scrollToSection(event, "about")}>
+              About Us
+            </a>
+            <a href="#contact" onClick={(event) => scrollToSection(event, "contact")}>
+              Contact
+            </a>
+            <a href="/register">Careers</a>
+          </div>
+          <div className={styles.footerColumn}>
+            <h3>Legal</h3>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/cookies">Cookie Policy</a>
+          </div>
+        </nav>
       </footer>
     </main>
   );
