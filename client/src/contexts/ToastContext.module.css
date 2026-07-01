@@ -1,0 +1,22 @@
+.toastStack {
+  position: fixed;
+  top: 5.15rem;
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 120;
+  display: grid;
+  width: min(28rem, calc(100vw - 2rem));
+  gap: 0.65rem;
+  pointer-events: none;
+}
+
+.toastStack > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 840px) {
+  .toastStack {
+    top: 1rem;
+    right: 0.75rem;
+    width: calc(100vw - 1.5rem);
+  }
+}

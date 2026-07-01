@@ -1,18 +1,14 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
+  Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { Button, Card, CategoryIcon, FormField, Input, Modal, Select } from "../index";
 import { transactionCategories } from "../../constants/categories";
 import type {
-  BudgetAlert,
   BudgetCategory,
   BudgetHistoryMonth,
   BudgetOverview,
@@ -48,6 +44,16 @@ type DeleteConfirmationModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
+};
+
+type BudgetAllocationSlice = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type TooltipPayload<T> = {
+  payload?: T;
 };
 
 const monthOptions = Array.from({ length: 12 }, (_, index) => ({
@@ -92,6 +98,56 @@ function statusLabel(status: BudgetSummary["status"]) {
   if (status === "close_to_budget") return "Close to budget";
   if (status === "on_budget") return "Exactly on budget";
   return "Under budget";
+}
+
+function budgetCardToneClass(budget: BudgetSummary) {
+  if (budget.status === "under_budget") {
+    return "";
+  }
+  if (budget.progress_state === "red") {
+    return styles.budgetCard_red;
+  }
+  if (budget.progress_state === "yellow") {
+    return styles.budgetCard_yellow;
+  }
+  return styles.budgetCard_green;
+}
+
+function usageContextLabel(daysRemaining: number) {
+  if (daysRemaining === 0) return "month ended";
+  if (daysRemaining === 1) return "1 day left";
+  return `${daysRemaining} days left`;
+}
+
+function getDonutCategoryName(entry: unknown) {
+  if (entry && typeof entry === "object" && "name" in entry) {
+    return String((entry as BudgetAllocationSlice).name);
+  }
+  return null;
+}
+
+function BudgetAllocationTooltip({
+  active,
+  currency,
+  payload,
+  total,
+}: {
+  active?: boolean;
+  currency: string;
+  payload?: TooltipPayload<BudgetAllocationSlice>[];
+  total: number;
+}) {
+  const item = payload?.[0]?.payload;
+  if (!active || !item) {
+    return null;
+  }
+  return (
+    <div className={styles.tooltip}>
+      <strong>{item.name}</strong>
+      <span>{formatCurrency(item.value, currency)}</span>
+      <span>{formatPercent((item.value / total) * 100)} of budget</span>
+    </div>
+  );
 }
 
 function DotsIcon() {
@@ -212,11 +268,13 @@ export function BudgetProgressBar({ budget }: { budget: BudgetSummary }) {
 export function BudgetCategoryCard({
   budget,
   currency,
+  daysRemaining,
   onDelete,
   onEdit,
 }: {
   budget: BudgetSummary;
   currency: string;
+  daysRemaining: number;
   onDelete: (budget: BudgetSummary) => void;
   onEdit: (budget: BudgetSummary) => void;
 }) {
@@ -241,13 +299,18 @@ export function BudgetCategoryCard({
   }, [isActionOpen]);
 
   return (
-    <article className={styles.budgetCard}>
+    <article className={`${styles.budgetCard} ${budgetCardToneClass(budget)}`}>
       <header>
         <span className={styles.categoryIcon}>
           <CategoryIcon category={budget.category_name} />
         </span>
-        <div>
+        <div className={styles.budgetCardTitle}>
           <h3>{budget.category_name}</h3>
+          <p>
+            <strong>{formatPercent(budget.usage_percentage)}</strong>
+            {" of "}
+            {formatCurrency(budget.budgeted_amount, currency)}
+          </p>
         </div>
         <div className={styles.cardActions} ref={actionMenuRef}>
           <span className={`${styles.statusBadge} ${styles[budget.status]}`}>
@@ -291,66 +354,23 @@ export function BudgetCategoryCard({
       <BudgetProgressBar budget={budget} />
       <dl className={styles.budgetStats}>
         <div>
-          <dt>Budgeted</dt>
-          <dd>{formatCurrency(budget.budgeted_amount, currency)}</dd>
-        </div>
-        <div>
           <dt>Spent</dt>
           <dd>{formatCurrency(budget.actual_spending, currency)}</dd>
         </div>
         <div>
-          <dt>{exceeded ? "Exceeded" : "Remaining"}</dt>
+          <dt>{exceeded ? "Over by" : "Remaining"}</dt>
           <dd className={exceeded ? styles.negative : styles.positive}>
             {formatCurrency(Math.abs(toNumber(budget.remaining_amount)), currency)}
           </dd>
         </div>
         <div>
-          <dt>Used</dt>
-          <dd>{formatPercent(budget.usage_percentage)}</dd>
+          <dt>Context</dt>
+          <dd>
+            {usageContextLabel(daysRemaining)}
+          </dd>
         </div>
       </dl>
     </article>
-  );
-}
-
-export function BudgetAlertPanel({
-  alerts,
-  currency,
-}: {
-  alerts: BudgetAlert[];
-  currency: string;
-}) {
-  if (!alerts.length) {
-    return (
-      <section className={styles.panel}>
-        <h2>Budget alerts</h2>
-        <p className={styles.emptyText}>No warning or alert thresholds have been reached for this month.</p>
-      </section>
-    );
-  }
-
-  return (
-    <section className={styles.panel}>
-      <h2>Budget alerts</h2>
-      <div className={styles.alertList}>
-        {alerts.map((alert) => (
-          <article className={`${styles.alertItem} ${styles[alert.severity]}`} key={`${alert.category_id}-${alert.severity}`}>
-            <span>{alert.severity === "alert" ? "Alert" : "Warning"}</span>
-            <h3>{alert.category_name}</h3>
-            <p>{alert.message}</p>
-            <dl>
-              <div><dt>Budget</dt><dd>{formatCurrency(alert.budgeted_amount, currency)}</dd></div>
-              <div><dt>Spent</dt><dd>{formatCurrency(alert.actual_spending, currency)}</dd></div>
-              <div><dt>Usage</dt><dd>{formatPercent(alert.usage_percentage)}</dd></div>
-              <div>
-                <dt>{toNumber(alert.remaining_amount) < 0 ? "Exceeded" : "Remaining"}</dt>
-                <dd>{formatCurrency(Math.abs(toNumber(alert.remaining_amount)), currency)}</dd>
-              </div>
-            </dl>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -361,105 +381,147 @@ export function BudgetComparisonChart({
   budgets: BudgetSummary[];
   currency: string;
 }) {
-  const data = budgets.map((budget) => ({
-    category: budget.category_name,
-    budgeted: toNumber(budget.budgeted_amount),
-    actual: toNumber(budget.actual_spending),
-  }));
-
-  if (!data.length) {
+  if (!budgets.length) {
     return <div className={styles.chartEmpty}>Create a budget to see budget versus actual spending.</div>;
   }
 
+  const maxBudgeted = Math.max(
+    ...budgets.map((budget) => toNumber(budget.budgeted_amount)),
+    1,
+  );
+
   return (
-    <div className={styles.chartWrap}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(73, 197, 182, 0.22)" strokeDasharray="4 4" vertical={false} />
-          <XAxis
-            axisLine={false}
-            dataKey="category"
-            interval={0}
-            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
-            tickLine={false}
-          />
-          <YAxis
-            axisLine={false}
-            tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
-            tickFormatter={(value) => formatCurrency(value, currency)}
-            tickLine={false}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "var(--mm-surface-strong)",
-              border: "1px solid var(--mm-border-strong)",
-              borderRadius: "12px",
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-              color: "var(--mm-text)",
-            }}
-            cursor={{ fill: "rgba(73, 197, 182, 0.08)" }}
-            formatter={(value, name) => [
-              formatCurrency(Number(value), currency),
-              name === "actual" ? "Actual spending" : "Budgeted",
-            ]}
-            labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
-          />
-          <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
-          <Bar dataKey="budgeted" fill="#17635c" name="Budgeted" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="actual" fill="#49c5b6" name="Actual spending" radius={[6, 6, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className={styles.verticalBars}>
+      {budgets.map((budget) => {
+        const budgeted = toNumber(budget.budgeted_amount);
+        const actual = toNumber(budget.actual_spending);
+        const trackHeight = Math.max(12, Math.min(100, (budgeted / maxBudgeted) * 100));
+        const fillHeight = budgeted > 0 ? Math.min(100, (actual / budgeted) * 100) : 0;
+        const isOverBudget = actual > budgeted;
+        return (
+          <article className={styles.verticalBarItem} key={budget.budget_id}>
+            <div className={styles.verticalBarValues}>
+              <strong>{formatCurrency(actual, currency)}</strong>
+              <span>{formatCurrency(budgeted, currency)}</span>
+            </div>
+            <div className={styles.verticalBarPlot}>
+              <div
+                aria-label={`${budget.category_name}: ${formatCurrency(actual, currency)} actual of ${formatCurrency(budgeted, currency)} budgeted`}
+                className={`${styles.verticalBarTrack} ${styles[budget.progress_state]} ${
+                  isOverBudget ? styles.overBudgetBar : ""
+                }`}
+                role="img"
+                style={{ height: `${trackHeight}%` }}
+              >
+                <span style={{ height: `${Math.max(2, fillHeight)}%` }} />
+                {isOverBudget ? <em>{formatPercent(budget.usage_percentage)}</em> : null}
+              </div>
+            </div>
+            <div className={styles.verticalBarLabel}>
+              <span className={styles.tableCategoryIcon}>
+                <CategoryIcon category={budget.category_name} />
+              </span>
+              <strong>{budget.category_name}</strong>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
 
-export function BudgetComparisonTable({
+export function BudgetAllocationDonut({
   budgets,
   currency,
 }: {
   budgets: BudgetSummary[];
   currency: string;
 }) {
-  if (!budgets.length) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const data = budgets
+    .map((budget) => ({
+      name: budget.category_name,
+      value: toNumber(budget.budgeted_amount),
+      color: budget.category_color || "#49c5b6",
+    }))
+    .filter((item) => item.value > 0);
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  if (!data.length) {
     return null;
   }
 
   return (
-    <div className={styles.tableWrap}>
-      <table className={styles.comparisonTable}>
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Budgeted</th>
-            <th>Actual</th>
-            <th>Variance</th>
-            <th>Variance %</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {budgets.map((budget) => (
-            <tr key={budget.budget_id}>
-              <td>
-                <span className={styles.tableCategory}>
-                  <span className={styles.tableCategoryIcon}>
-                    <CategoryIcon category={budget.category_name} />
-                  </span>
-                  {budget.category_name}
-                </span>
-              </td>
-              <td>{formatCurrency(budget.budgeted_amount, currency)}</td>
-              <td>{formatCurrency(budget.actual_spending, currency)}</td>
-              <td className={toNumber(budget.variance_amount) < 0 ? styles.negative : styles.positive}>
-                {formatCurrency(budget.variance_amount, currency)}
-              </td>
-              <td>{formatPercent(budget.variance_percentage)}</td>
-              <td><span className={`${styles.statusBadge} ${styles[budget.status]}`}>{statusLabel(budget.status)}</span></td>
-            </tr>
+    <section className={styles.allocationPanel}>
+      <h2>Budget mix</h2>
+      <div className={styles.donutLayout}>
+        <div className={styles.donutWrap}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                innerRadius="58%"
+                isAnimationActive={false}
+                nameKey="name"
+                onClick={(entry) => {
+                  const categoryName = getDonutCategoryName(entry);
+                  if (categoryName) {
+                    setSelected((current) =>
+                      current === categoryName ? null : categoryName,
+                    );
+                  }
+                }}
+                outerRadius="82%"
+                paddingAngle={2}
+              >
+                {data.map((entry) => (
+                  <Cell
+                    fill={entry.color}
+                    key={entry.name}
+                    opacity={selected && selected !== entry.name ? 0.42 : 1}
+                    stroke={
+                      selected === entry.name
+                        ? "var(--mm-text)"
+                        : "var(--mm-bg-deep)"
+                    }
+                    strokeWidth={selected === entry.name ? 3 : 1}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                content={<BudgetAllocationTooltip currency={currency} total={total} />}
+                wrapperStyle={{ outline: "none", zIndex: 20 }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className={styles.donutTotal}>
+            <span>Total</span>
+            <strong>{formatCurrency(total, currency)}</strong>
+          </div>
+        </div>
+        <div className={styles.allocationLegend}>
+          {data.map((item) => (
+            <button
+              className={
+                selected === item.name ? styles.allocationLegendActive : ""
+              }
+              key={item.name}
+              onClick={() =>
+                setSelected((current) =>
+                  current === item.name ? null : item.name,
+                )
+              }
+              type="button"
+            >
+              <span style={{ backgroundColor: item.color }} />
+              <strong>{item.name}</strong>
+              <em>{formatPercent((item.value / total) * 100)}</em>
+            </button>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
+    </section>
   );
 }
 

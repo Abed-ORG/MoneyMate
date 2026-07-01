@@ -34,11 +34,31 @@ function toInputDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function getDefaultDashboardFilters(): DashboardFilters {
+export function dashboardRangePreset(
+  range: "thisMonth" | "last30" | "thisYear",
+) {
   const now = new Date();
+  const end = now;
+  let start = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  if (range === "last30") {
+    start = new Date(now);
+    start.setDate(now.getDate() - 29);
+  }
+
+  if (range === "thisYear") {
+    start = new Date(now.getFullYear(), 0, 1);
+  }
+
   return {
-    startDate: toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)),
-    endDate: toInputDate(now),
+    startDate: toInputDate(start),
+    endDate: toInputDate(end),
+  };
+}
+
+export function getDefaultDashboardFilters(): DashboardFilters {
+  return {
+    ...dashboardRangePreset("thisMonth"),
     categoryIds: [],
     accountIds: [],
     trendAggregation: "daily",

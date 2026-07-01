@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 from datetime import datetime, timezone
+from typing import Any
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -28,7 +31,7 @@ from app.services.chat_gemini_service import (
 
 
 MAX_QUESTION_LENGTH = 1200
-RECENT_HISTORY_LIMIT = 8
+RECENT_HISTORY_LIMIT = 6
 FINANCE_KEYWORDS = {
     "account",
     "balance",
@@ -47,39 +50,34 @@ FINANCE_KEYWORDS = {
     "spent",
     "transaction",
 }
-SOCIAL_MESSAGE_WORDS = {
-    "afternoon",
-    "are",
-    "bye",
-    "doing",
-    "evening",
-    "good",
-    "goodbye",
-    "hello",
-    "help",
-    "hey",
-    "hi",
-    "morning",
-    "night",
-    "ok",
-    "okay",
-    "thanks",
-    "thank",
-    "there",
-    "yo",
-    "you",
+FINANCE_TYPO_KEYWORDS = {
+    "budgt",
+    "budgte",
+    "catgry",
+    "catgory",
+    "expens",
+    "expnse",
+    "savng",
+    "spnd",
+    "spen",
 }
-SOCIAL_MESSAGE_PHRASES = {
-    "good afternoon",
-    "good evening",
-    "good morning",
-    "hello",
-    "hey",
-    "hi",
-    "how are you",
-    "thanks",
-    "thank you",
-    "whats up",
+CONTEXTUAL_FOLLOWUP_WORDS = {
+    "about",
+    "biggest",
+    "compare",
+    "highest",
+    "least",
+    "lowest",
+    "same",
+    "smallest",
+    "that",
+    "them",
+    "these",
+    "this",
+    "those",
+    "top",
+    "what",
+    "why",
 }
 AFFIRMATIVE_REPLIES = {
     "absolutely",
@@ -94,10 +92,38 @@ AFFIRMATIVE_REPLIES = {
     "yes please",
     "yesplease",
 }
+FINANCE_TOKEN_SIMILARITY = 0.92
+SIMPLE_HISTORY_LIMIT = 4
+SIMPLE_HISTORY_CONTENT_LIMIT = 260
 
 
 class ChatNotFoundError(Exception):
     pass
+
+
+class ChatProviderUnavailableError(Exception):
+    def __init__(
+        self,
+        message: str,
+        conversation: ChatConversationRead,
+        user_message: ChatMessageRead,
+        retryable: bool = True,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.conversation = conversation
+        self.user_message = user_message
+        self.retryable = retryable
+
+    def detail(self) -> dict[str, Any]:
+        return jsonable_encoder(
+            {
+                "message": self.message,
+                "retryable": self.retryable,
+                "conversation": self.conversation,
+                "user_message": self.user_message,
+            }
+        )
 
 
 def utc_now() -> datetime:
@@ -357,14 +383,23 @@ def recent_conversation_history(
     ]
 
 
-def format_money(value: float | int | None, currency: str) -> str:
-    amount = float(value or 0)
-    return f"{amount:,.2f} {currency}"
-
-
 def is_finance_question(question: str) -> bool:
-    text = question.casefold()
-    return any(keyword in text for keyword in FINANCE_KEYWORDS)
+    text = normalize_social_text(question)
+    if any(keyword in text for keyword in FINANCE_KEYWORDS):
+        return True
+    words = text.replace("'", "").split()
+    for word in words:
+        if len(word) < 4:
+            continue
+        if word in FINANCE_TYPO_KEYWORDS:
+            return True
+        if any(
+            SequenceMatcher(None, word, keyword).ratio()
+            >= FINANCE_TOKEN_SIMILARITY
+            for keyword in FINANCE_KEYWORDS
+        ):
+            return True
+    return False
 
 
 def normalize_social_text(question: str) -> str:
@@ -372,27 +407,6 @@ def normalize_social_text(question: str) -> str:
     text = re.sub(r"[^a-z0-9\s']", " ", text)
     text = re.sub(r"(.)\1{2,}", r"\1", text)
     return " ".join(text.split())
-
-
-def is_social_message(question: str) -> bool:
-    text = normalize_social_text(question)
-    if not text or len(text) > 120 or is_finance_question(question):
-        return False
-    if text in SOCIAL_MESSAGE_PHRASES:
-        return True
-    words = text.replace("'", "").split()
-    return bool(words) and all(word in SOCIAL_MESSAGE_WORDS for word in words)
-
-
-def social_answer(question: str) -> str:
-    text = normalize_social_text(question)
-    if "thank" in text or "thanks" in text:
-        return "You're welcome! I'm here whenever you need me."
-    if "bye" in text or "goodbye" in text:
-        return "Bye for now! I'll be here when you want to chat again."
-    return (
-        "Hi! I'm here and happy to help. What would you like to look at today?"
-    )
 
 
 def is_affirmative_reply(question: str) -> bool:
@@ -435,6 +449,38 @@ def resolve_followup_question(
     )
 
 
+def is_contextual_finance_followup(
+    question: str,
+    history: list[dict[str, str]],
+) -> bool:
+    text = normalize_social_text(question)
+    if not text or len(text) > 160 or is_finance_question(text):
+        return False
+    words = set(text.replace("'", "").split())
+    if not words.intersection(CONTEXTUAL_FOLLOWUP_WORDS):
+        return False
+    return any(
+        is_finance_question(message["content"]) for message in history[-4:]
+    )
+
+
+def resolve_contextual_finance_followup(
+    question: str,
+    history: list[dict[str, str]],
+) -> str:
+    recent_messages = [
+        f"{message['role']}: {message['content']}"
+        for message in history[-4:]
+    ]
+    recent_text = "\n".join(recent_messages)
+    return (
+        "Use the same MoneyMate financial topic and date period from this "
+        "recent conversation to answer the follow-up.\n"
+        f"{recent_text}\n"
+        f"Follow-up: {question}"
+    )
+
+
 def context_for_gemini(
     context: dict,
     history: list[dict[str, str]],
@@ -444,135 +490,87 @@ def context_for_gemini(
     return {**context, "conversation_history": history}
 
 
-def fallback_answer(
+def general_chat_context(history: list[dict[str, str]]) -> dict[str, Any]:
+    context: dict[str, Any] = {
+        "mode": "general_conversation",
+        "assistant": "MoneyMate",
+        "allowed_scope": [
+            "friendly greetings",
+            "thanks and farewells",
+            "brief acknowledgments and clarifications",
+            "brief MoneyMate capability questions",
+            "polite redirection for requests outside MoneyMate finance",
+        ],
+        "response_guidance": (
+            "Use conversation_history, when present, to decide whether the "
+            "current message is a greeting, acknowledgment, clarification, "
+            "or a new non-finance request. Continue the existing exchange "
+            "when the message depends on prior context."
+        ),
+    }
+    simple_history = history[-SIMPLE_HISTORY_LIMIT:]
+    if simple_history:
+        context["conversation_history"] = [
+            {
+                "role": message["role"],
+                "content": message["content"][:SIMPLE_HISTORY_CONTENT_LIMIT],
+            }
+            for message in simple_history
+        ]
+    return context
+
+
+def build_chat_context(
+    db: Session,
+    user_id: int,
     question: str,
-    context: dict,
-    _exc: GeminiChatError,
-    history: list[dict[str, str]] | None = None,
-) -> str:
-    history = history or []
-    if is_social_message(question):
-        return social_answer(question)
-
+    history: list[dict[str, str]],
+) -> tuple[dict[str, Any], str, list[dict[str, Any]], dict[str, Any]]:
     effective_question = resolve_followup_question(question, history)
-    if not is_finance_question(effective_question):
-        return (
-            "Sorry, I can help with MoneyMate finance questions like "
-            "spending, budgets, savings goals, and net position. Try asking "
-            "me something like **How much did I spend this month?**"
-        )
-
-    currency = context.get("currency", "USD")
-    period = context.get("period", {})
-    transactions = context.get("transactions", {})
-    categories = transactions.get("category_totals") or []
-    period_label = period.get("label", "this period")
-    question_text = effective_question.casefold()
-    transaction_count = int(transactions.get("transaction_count") or 0)
-
-    if not transaction_count:
-        return (
-            f"I don't have any transactions for **{period_label}** yet, so "
-            "I can't calculate that accurately. Once you add transactions, "
-            "I can help you review your spending, budgets, and savings goals."
-        )
-
-    if "category" in question_text and any(
-        word in question_text for word in ["most", "highest", "top", "biggest"]
+    if not is_finance_question(effective_question) and (
+        is_contextual_finance_followup(question, history)
     ):
-        if not categories:
-            return (
-                f"I don't see any expenses recorded for **{period_label}** "
-                "yet, so there isn't a top spending category to show."
-            )
-        top_category = categories[0]
+        effective_question = resolve_contextual_finance_followup(
+            question,
+            history,
+        )
+    if is_finance_question(effective_question):
+        context = build_financial_context(db, user_id, effective_question)
         return (
-            f"For **{period_label}**, you spent the most on "
-            f"**{top_category['category']}**: "
-            f"**{format_money(top_category['total'], currency)}** "
-            f"({top_category['percentage_of_expenses']:.0f}% "
-            "of your expenses)."
+            context_for_gemini(context, history),
+            "smart",
+            sources_from_context(context),
+            metrics_from_context(context),
         )
+    return general_chat_context(history), "simple", [], {}
 
-    if any(word in question_text for word in ["budget", "within", "over"]):
-        budgets = context.get("budgets") or []
-        if not budgets:
-            return (
-                f"I don't see any budgets set for **{period_label}** yet. "
-                "Add a category budget and I can track whether you are "
-                "on pace."
-            )
-        over_budget = [item for item in budgets if item["remaining"] < 0]
-        if over_budget:
-            names = ", ".join(item["category"] for item in over_budget[:2])
-            return (
-                f"For **{period_label}**, you are over budget in **{names}**. "
-                "Your total spending is "
-                f"**{format_money(transactions.get('expenses'), currency)}**."
-            )
-        return (
-            f"You are currently within all of your budgets for "
-            f"**{period_label}**. Your spending so far is "
-            f"**{format_money(transactions.get('expenses'), currency)}**."
-        )
 
-    if any(word in question_text for word in ["goal", "saving", "savings"]):
-        goals = context.get("goals") or []
-        if not goals:
-            return (
-                "You don't have an active savings goal yet. Add one and I "
-                "can help you track its progress."
-            )
-        goal = goals[0]
-        return (
-            f"Your **{goal['name']}** goal is "
-            f"**{goal['progress_percentage']:.0f}%** complete: "
-            f"**{format_money(goal['current_amount'], currency)}** saved and "
-            f"**{format_money(goal['remaining_amount'], currency)}** "
-            "remaining."
-        )
+def mark_user_message_failed(
+    db: Session,
+    conversation: ChatConversation,
+    user_message: ChatMessage,
+    exc: GeminiChatError,
+) -> None:
+    user_message.status = "assistant_failed"
+    user_message.error_code = exc.code
+    conversation.updated_at = utc_now()
+    db.commit()
+    db.refresh(user_message)
+    db.refresh(conversation)
 
-    if any(word in question_text for word in ["income", "earn"]):
-        return (
-            f"For **{period_label}**, your income is "
-            f"**{format_money(transactions.get('income'), currency)}**."
-        )
 
-    if any(word in question_text for word in ["net", "position", "balance"]):
-        return (
-            f"For **{period_label}**, your net position is "
-            f"**{format_money(transactions.get('net_amount'), currency)}** "
-            f"from **{format_money(transactions.get('income'), currency)}** "
-            "income and "
-            f"**{format_money(transactions.get('expenses'), currency)}** "
-            "expenses."
-        )
-
-    if any(word in question_text for word in ["spend", "spent", "expense"]):
-        return (
-            f"For **{period_label}**, you spent "
-            f"**{format_money(transactions.get('expenses'), currency)}** "
-            f"across **{transaction_count}** transactions."
-        )
-
-    lines = [
-        (
-            f"Based on your MoneyMate data for **{period_label}**, income was "
-            f"**{format_money(transactions.get('income'), currency)}**, "
-            "expenses were "
-            f"**{format_money(transactions.get('expenses'), currency)}**, "
-            "and net was "
-            f"**{format_money(transactions.get('net_amount'), currency)}**."
-        )
-    ]
-    if categories:
-        top_category = categories[0]
-        lines.append(
-            f"Your top spending category was **{top_category['category']}** "
-            f"at **{format_money(top_category['total'], currency)}**."
-        )
-
-    return "\n\n".join(lines)
+def raise_provider_unavailable(
+    db: Session,
+    conversation: ChatConversation,
+    user_message: ChatMessage,
+    exc: GeminiChatError,
+) -> None:
+    mark_user_message_failed(db, conversation, user_message, exc)
+    raise ChatProviderUnavailableError(
+        "MoneyMate AI is temporarily unavailable. Please retry in a moment.",
+        conversation_to_schema(db, conversation),
+        message_to_schema(user_message),
+    ) from exc
 
 
 def send_message(
@@ -586,31 +584,27 @@ def send_message(
     conversation = get_conversation(db, user_id, conversation_id)
     user_message = add_user_message(db, conversation, question)
     history = recent_conversation_history(db, conversation.id, user_message.id)
-    effective_question = resolve_followup_question(question, history)
-    if is_social_message(question):
-        answer = social_answer(question)
-        assistant = add_assistant_message(db, conversation, answer, [], {})
-        return ChatSendMessageResponse(
-            conversation=conversation_to_schema(db, conversation),
-            user_message=message_to_schema(user_message),
-            assistant_message=message_to_schema(assistant),
-        )
-
-    context = build_financial_context(db, user_id, effective_question)
+    context, tier, sources, metrics = build_chat_context(
+        db,
+        user_id,
+        question,
+        history,
+    )
     try:
         answer = gemini_chat_client.generate_answer(
             question,
-            context_for_gemini(context, history),
+            context,
+            tier=tier,
         )
     except GeminiChatError as exc:
-        answer = fallback_answer(question, context, exc, history)
+        raise_provider_unavailable(db, conversation, user_message, exc)
 
     assistant = add_assistant_message(
         db,
         conversation,
         answer,
-        sources_from_context(context),
-        metrics_from_context(context),
+        sources,
+        metrics,
     )
     return ChatSendMessageResponse(
         conversation=conversation_to_schema(db, conversation),
@@ -638,36 +632,20 @@ def retry_message(
     if not user_message:
         raise ChatNotFoundError
     history = recent_conversation_history(db, conversation.id, user_message.id)
-    effective_question = resolve_followup_question(
+    context, tier, sources, metrics = build_chat_context(
+        db,
+        user_id,
         user_message.content,
         history,
     )
-    if is_social_message(user_message.content):
-        user_message.status = "complete"
-        user_message.error_code = None
-        assistant = add_assistant_message(
-            db,
-            conversation,
-            social_answer(user_message.content),
-            [],
-            {},
-        )
-        db.commit()
-        db.refresh(user_message)
-        return ChatSendMessageResponse(
-            conversation=conversation_to_schema(db, conversation),
-            user_message=message_to_schema(user_message),
-            assistant_message=message_to_schema(assistant),
-        )
-
-    context = build_financial_context(db, user_id, effective_question)
     try:
         answer = gemini_chat_client.generate_answer(
             user_message.content,
-            context_for_gemini(context, history),
+            context,
+            tier=tier,
         )
     except GeminiChatError as exc:
-        answer = fallback_answer(user_message.content, context, exc, history)
+        raise_provider_unavailable(db, conversation, user_message, exc)
 
     user_message.status = "complete"
     user_message.error_code = None
@@ -675,8 +653,8 @@ def retry_message(
         db,
         conversation,
         answer,
-        sources_from_context(context),
-        metrics_from_context(context),
+        sources,
+        metrics,
     )
     db.commit()
     db.refresh(user_message)

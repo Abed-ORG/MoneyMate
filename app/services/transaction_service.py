@@ -5,7 +5,7 @@ from io import StringIO
 from uuid import uuid4
 
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.account import Account as AccountModel
 from app.models.category import Category as CategoryModel
@@ -222,6 +222,10 @@ def list_transactions(
 ) -> TransactionListResponse:
     rows = (
         db.query(TransactionModel)
+        .options(
+            joinedload(TransactionModel.account),
+            joinedload(TransactionModel.category),
+        )
         .join(AccountModel)
         .outerjoin(CategoryModel)
         .filter(AccountModel.user_id == user_id)
