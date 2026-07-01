@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Button, Card, FormField, Select } from "../components";
+import { Button, Card, FormField, LoadingSpinner, Select } from "../components";
 import { getMonthlyReport, type MonthlyReport } from "../services/reports";
 import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./MonthlyReportPage.module.css";
@@ -141,7 +141,7 @@ export function MonthlyReportPage() {
 
       {loading || !report ? (
         <Card className={styles.state}>
-          <p>Loading monthly report...</p>
+          <LoadingSpinner label="Loading monthly report" />
         </Card>
       ) : (
         <>

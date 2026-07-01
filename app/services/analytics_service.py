@@ -516,6 +516,14 @@ def build_dashboard_analytics(
         summary=NetPositionSummary(
             current=current_totals,
             previous=previous_totals,
+            income_change=calculate_percentage_change(
+                current_totals.total_income,
+                previous_totals.total_income,
+            ),
+            expenses_change=calculate_percentage_change(
+                current_totals.total_expenses,
+                previous_totals.total_expenses,
+            ),
             net_change=calculate_percentage_change(
                 current_totals.net_amount,
                 previous_totals.net_amount,

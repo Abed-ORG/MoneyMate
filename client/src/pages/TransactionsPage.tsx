@@ -4,11 +4,12 @@ import {
   CategoryIcon,
   FormField,
   Input,
+  LoadingSpinner,
   Modal,
   Select,
-  Toast,
   type SelectOption,
 } from "../components";
+import { useToast } from "../contexts/ToastContext";
 import { transactionCategories } from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
@@ -20,12 +21,6 @@ import type {
   TransactionPayload,
 } from "../types/transaction";
 import styles from "./TransactionsPage.module.css";
-
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
-};
 
 type FormState = {
   date: string;
@@ -354,13 +349,13 @@ function SparklesIcon() {
 }
 
 export function TransactionsPage() {
+  const toast = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<TransactionListParams>(defaultFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [datePreset, setDatePreset] = useState("custom");
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -616,7 +611,7 @@ export function TransactionsPage() {
           : selected
             ? await transactionsApi.update(selected.id, payload)
             : null;
-      setToast({
+      toast.showToast({
         title: mode === "add" ? "Transaction added" : "Transaction updated",
         message: "Your transaction list is up to date.",
         variant: "success",
@@ -627,7 +622,7 @@ export function TransactionsPage() {
       if (saved) setSelectedId(saved.id);
       await loadTransactions();
     } catch (err) {
-      setToast({ title: "Could not save transaction", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not save transaction", getApiErrorMessage(err));
     }
   };
 
@@ -635,12 +630,12 @@ export function TransactionsPage() {
     if (!selected) return;
     try {
       await transactionsApi.delete(selected.id);
-      setToast({ title: "Transaction deleted", message: "The transaction was removed.", variant: "success" });
+      toast.success("Transaction deleted", "The transaction was removed.");
       setSelectedId(null);
       setIsDeleteOpen(false);
       await loadTransactions();
     } catch (err) {
-      setToast({ title: "Could not delete transaction", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not delete transaction", getApiErrorMessage(err));
     }
   };
 
@@ -659,13 +654,13 @@ export function TransactionsPage() {
         notes: form.notes.trim(),
       });
       setForm((current) => ({ ...current, category: suggestion.category }));
-      setToast({
+      toast.showToast({
         title: "AI suggestion ready",
         message: `MoneyMate suggested ${suggestion.category}.`,
         variant: "info",
       });
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "AI suggestion failed",
         message: getApiErrorMessage(err),
         variant: "warning",
@@ -680,11 +675,10 @@ export function TransactionsPage() {
     await transactionsApi.bulkRecategorize({
       transaction_ids: selectedTransactionIds,
     });
-    setToast({
-      title: "Selected transactions recategorized",
-      message: "AI suggestions were refreshed for the selected transactions.",
-      variant: "success",
-    });
+    toast.success(
+      "Selected transactions recategorized",
+      "AI suggestions were refreshed for the selected transactions.",
+    );
     setSelectedTransactionIds([]);
     await loadTransactions();
   };
@@ -700,7 +694,7 @@ export function TransactionsPage() {
       file.type === "text/html" ||
       file.type === "application/vnd.ms-excel";
     if (!isSupported) {
-      setToast({ title: "Unsupported file", message: "Please upload a CSV or MoneyMate Excel template file.", variant: "warning" });
+      toast.warning("Unsupported file", "Please upload a CSV or MoneyMate Excel template file.");
       return;
     }
     try {
@@ -773,7 +767,7 @@ export function TransactionsPage() {
     try {
       const response = await transactionsApi.bulk(transactions);
       setCsvErrors(response.errors);
-      setToast({
+      toast.showToast({
         title: "Upload finished",
         message: `Imported: ${response.imported}. Failed: ${response.failed}.`,
         variant: response.failed ? "warning" : "success",
@@ -784,7 +778,7 @@ export function TransactionsPage() {
         await loadTransactions();
       }
     } catch (err) {
-      setToast({ title: "Upload failed", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Upload failed", getApiErrorMessage(err));
     }
   };
 
@@ -819,7 +813,7 @@ export function TransactionsPage() {
       });
       setAiReview({ transaction, suggestion });
     } catch (err) {
-      setToast({ title: "AI suggestion failed", message: getApiErrorMessage(err), variant: "warning" });
+      toast.warning("AI suggestion failed", getApiErrorMessage(err));
     }
   };
 
@@ -829,7 +823,7 @@ export function TransactionsPage() {
       await transactionsApi.correctCategory(aiReview.transaction.id, {
         category: aiReview.suggestion.category,
       });
-      setToast({
+      toast.showToast({
         title: "Category updated",
         message: `AI category ${aiReview.suggestion.category} was applied.`,
         variant: "success",
@@ -837,7 +831,7 @@ export function TransactionsPage() {
       setAiReview(null);
       await loadTransactions();
     } catch (err) {
-      setToast({ title: "Could not apply category", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not apply category", getApiErrorMessage(err));
     }
   };
 
@@ -888,6 +882,7 @@ export function TransactionsPage() {
         <div className={styles.categoryAiRow}>
           <Select
             aria-label="Transaction category"
+            menuPlacement="top"
             value={form.category}
             options={formCategoryOptions}
             onValueChange={(value) => setForm((current) => ({ ...current, category: value }))}
@@ -914,12 +909,6 @@ export function TransactionsPage() {
 
   return (
     <section className={styles.page}>
-      {toast ? (
-        <div className={styles.toastDock}>
-          <Toast {...toast} onClose={() => setToast(null)} />
-        </div>
-      ) : null}
-
       <div className={styles.actionBar}>
         <Button variant="secondary" onClick={openImportModal}>
           <CloudUploadIcon />
@@ -1117,7 +1106,11 @@ export function TransactionsPage() {
             </div>
           </header>
 
-          {isLoading ? <div className={styles.state}>Loading transactions...</div> : null}
+          {isLoading ? (
+            <div className={styles.state}>
+              <LoadingSpinner label="Loading transactions" />
+            </div>
+          ) : null}
           {error ? <div className={styles.stateError}>{error}</div> : null}
           {!isLoading && !error && transactions.length === 0 ? (
             <div className={styles.state}>No transactions match your filters.</div>
@@ -1136,7 +1129,6 @@ export function TransactionsPage() {
                           onChange={toggleVisibleTransactionSelection}
                           type="checkbox"
                         />
-                        <span>Select</span>
                       </label>
                     </th>
                     <th>Date</th>
@@ -1267,10 +1259,22 @@ export function TransactionsPage() {
         </section>
       </main>
 
-      <Modal isOpen={isAddOpen} title="Add Transaction" onClose={() => setIsAddOpen(false)}>
+      <Modal
+        bodyClassName={styles.transactionFormModal}
+        className={styles.transactionModal}
+        isOpen={isAddOpen}
+        title="Add Transaction"
+        onClose={() => setIsAddOpen(false)}
+      >
         {renderModalForm("add")}
       </Modal>
-      <Modal isOpen={isEditOpen} title="Edit Transaction" onClose={() => setIsEditOpen(false)}>
+      <Modal
+        bodyClassName={styles.transactionFormModal}
+        className={styles.transactionModal}
+        isOpen={isEditOpen}
+        title="Edit Transaction"
+        onClose={() => setIsEditOpen(false)}
+      >
         {renderModalForm("edit")}
       </Modal>
       <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
