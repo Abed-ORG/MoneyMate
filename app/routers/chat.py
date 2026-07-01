@@ -14,6 +14,7 @@ from app.schemas.chat import (
 )
 from app.services.chat_service import (
     ChatNotFoundError,
+    ChatProviderUnavailableError,
     archive_conversation,
     create_conversation,
     get_conversation,
@@ -156,6 +157,11 @@ def create_chat_message(
         )
     except ChatNotFoundError:
         raise not_found()
+    except ChatProviderUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=exc.detail(),
+        )
 
 
 @router.post(
@@ -177,3 +183,8 @@ def retry_chat_message(
         )
     except ChatNotFoundError:
         raise not_found()
+    except ChatProviderUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=exc.detail(),
+        )

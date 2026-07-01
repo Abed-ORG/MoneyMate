@@ -143,6 +143,13 @@
   font-size: 0.82rem;
 }
 
+.loaderState {
+  display: grid;
+  min-height: 8rem;
+  place-items: center;
+  padding: 1rem;
+}
+
 .deleteConversation,
 .iconButton,
 .sendButton {

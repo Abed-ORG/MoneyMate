@@ -8,7 +8,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Button, Card, FormField, Input, Modal, Toast } from "../components";
+import { Button, Card, FormField, Input, LoadingSpinner, Modal } from "../components";
+import { useToast } from "../contexts/ToastContext";
 import { goalsApi } from "../services/goals";
 import { goalAiApi, type GoalProjectionPoint } from "../services/insights";
 import type { Goal, GoalPayload, GoalUpdatePayload } from "../types/goal";
@@ -21,12 +22,6 @@ const emptyForm = {
   deadline: "",
   linkedAccount: "",
   currentAmount: "",
-};
-
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
 };
 
 function money(value: number | string) {
@@ -142,7 +137,9 @@ function ProgressRing({ value, size = 76, strokeWidth = 8 }: { value: number; si
 }
 
 export function GoalsPage() {
+  const toast = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [isLoadingGoals, setIsLoadingGoals] = useState(true);
   const [form, setForm] = useState(emptyForm);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [contribution, setContribution] = useState("");
@@ -156,17 +153,19 @@ export function GoalsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isContributeOpen, setIsContributeOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
 
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    void goalsApi.list().then((items) => {
-      setGoals(items);
-      if (!selectedId && items.length > 0) {
-        setSelectedId(items[0].id);
-      }
-    });
+    setIsLoadingGoals(true);
+    void goalsApi.list()
+      .then((items) => {
+        setGoals(items);
+        if (!selectedId && items.length > 0) {
+          setSelectedId(items[0].id);
+        }
+      })
+      .finally(() => setIsLoadingGoals(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -262,9 +261,9 @@ export function GoalsPage() {
       setSelectedId(created.id);
       setForm(emptyForm);
       setIsAddOpen(false);
-      setToast({ title: "Goal created", message: `${created.name} has been added.`, variant: "success" });
+      toast.success("Goal created", `${created.name} has been added.`);
     } catch {
-      setToast({ title: "Could not create goal", message: "Something went wrong.", variant: "error" });
+      toast.error("Could not create goal", "Something went wrong.");
     }
   }
 
@@ -273,9 +272,9 @@ export function GoalsPage() {
     try {
       await refresh(goalsApi.update(selectedGoal.id, formToUpdatePayload()));
       setIsEditOpen(false);
-      setToast({ title: "Goal updated", message: "Changes saved.", variant: "success" });
+      toast.success("Goal updated", "Changes saved.");
     } catch {
-      setToast({ title: "Could not update goal", message: "Something went wrong.", variant: "error" });
+      toast.error("Could not update goal", "Something went wrong.");
     }
   }
 
@@ -288,9 +287,9 @@ export function GoalsPage() {
         setSelectedId(goals.length > 1 ? goals.find((g) => g.id !== selectedGoal.id)?.id ?? null : null);
       }
       setIsDeleteOpen(false);
-      setToast({ title: "Goal deleted", message: "The goal was removed.", variant: "success" });
+      toast.success("Goal deleted", "The goal was removed.");
     } catch {
-      setToast({ title: "Could not delete goal", message: "Something went wrong.", variant: "error" });
+      toast.error("Could not delete goal", "Something went wrong.");
     }
   }
 
@@ -305,9 +304,9 @@ export function GoalsPage() {
       );
       setContribution("");
       setIsContributeOpen(false);
-      setToast({ title: "Contribution logged", message: "Goal progress updated.", variant: "success" });
+      toast.success("Contribution logged", "Goal progress updated.");
     } catch {
-      setToast({ title: "Could not log contribution", message: "Something went wrong.", variant: "error" });
+      toast.error("Could not log contribution", "Something went wrong.");
     }
   }
 
@@ -460,12 +459,6 @@ export function GoalsPage() {
 
   return (
     <section className={styles.page}>
-      {toast ? (
-        <div className={styles.toastDock}>
-          <Toast {...toast} onClose={() => setToast(null)} />
-        </div>
-      ) : null}
-
       <div className={styles.actionBar}>
         <Button onClick={openAddModal}>
           <AddIcon />
@@ -473,6 +466,13 @@ export function GoalsPage() {
         </Button>
       </div>
 
+      {isLoadingGoals ? (
+        <Card className={styles.panel}>
+          <LoadingSpinner label="Loading goals" />
+        </Card>
+      ) : null}
+
+      {!isLoadingGoals ? (
       <div className={styles.grid}>
         <Card className={styles.panel}>
           <div className={styles.panelHeader}>
@@ -537,7 +537,6 @@ export function GoalsPage() {
             </div>
           )}
         </Card>
-
         <section className={styles.listSection}>
           {goals.length === 0 ? (
             <Card className={styles.emptyGoalCard}>
@@ -650,7 +649,7 @@ export function GoalsPage() {
           })}
         </section>
       </div>
-
+      ) : null}
       {selectedGoal && selectedGoal.contributions.length > 0 ? (
         <Card className={styles.panel}>
           <h2>Contribution history</h2>

@@ -39,8 +39,7 @@
 
 .summaryCard h2,
 .panel h2,
-.budgetCard h3,
-.alertItem h3 {
+.budgetCard h3 {
   margin: 0;
   color: var(--mm-text);
 }
@@ -53,7 +52,6 @@
 .summaryMetrics div,
 .adherenceStrip dl div,
 .budgetStats div,
-.alertItem dl div,
 .historyItem dl div {
   display: grid;
   gap: 0.2rem;
@@ -68,7 +66,6 @@
 .adherenceStrip dt,
 .adherenceStrip p,
 .budgetStats dt,
-.alertItem dt,
 .historyItem dt,
 .emptyText,
 .chartEmpty {
@@ -114,15 +111,68 @@
 
 .budgetCard {
   display: grid;
-  gap: 1rem;
+  gap: 0.9rem;
   padding: 1rem;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.budgetCard:hover {
+  transform: translateY(-1px);
+}
+
+.budgetCard_green {
+  border-color: rgba(var(--mm-accent-rgb), 0.58);
+  box-shadow:
+    var(--mm-shadow-card),
+    0 0 1.2rem rgba(var(--mm-accent-rgb), 0.1);
+}
+
+.budgetCard_yellow {
+  border-color: rgba(250, 204, 21, 0.68);
+  box-shadow:
+    var(--mm-shadow-card),
+    0 0 1.2rem rgba(250, 204, 21, 0.12);
+}
+
+.budgetCard_red {
+  border-color: rgba(255, 107, 114, 0.68);
+  box-shadow:
+    var(--mm-shadow-card),
+    0 0 1.2rem rgba(255, 107, 114, 0.12);
 }
 
 .budgetCard header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.8rem;
-  align-items: center;
+  align-items: start;
+}
+
+.budgetCardTitle {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.budgetCardTitle h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.budgetCardTitle p {
+  margin: 0;
+  color: var(--mm-text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.budgetCardTitle p strong {
+  color: var(--mm-text);
+  font-size: 1.05rem;
 }
 
 .categoryIcon,
@@ -155,7 +205,7 @@
 .cardActions {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
   gap: 0.55rem;
 }
@@ -245,7 +295,9 @@
   height: 100%;
   min-width: 0.2rem;
   border-radius: inherit;
+  animation: progressFill 520ms ease-out both;
   transition: width 220ms ease;
+  transform-origin: left center;
 }
 
 .green span {
@@ -256,27 +308,30 @@
   background: linear-gradient(90deg, #eab308, #facc15);
 }
 
-.orange span {
-  background: linear-gradient(90deg, #f97316, #fb923c);
-}
-
 .red span {
   background: linear-gradient(90deg, #ef4444, #ff6b72);
 }
 
 .budgetStats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
   margin: 0;
 }
 
 .budgetStats dd,
-.alertItem dd,
 .historyItem dd {
   margin: 0;
   color: var(--mm-text);
   font-weight: 800;
+}
+
+.budgetStats dd span {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--mm-text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .statusBadge,
@@ -292,23 +347,23 @@
   font-size: 0.78rem;
   font-weight: 800;
   padding: 0.35rem 0.6rem;
+  white-space: nowrap;
 }
 
-.close_to_budget,
-.warning {
+.close_to_budget {
   border-color: rgba(245, 158, 11, 0.42);
   color: #facc15;
 }
 
 .over_budget,
-.alert,
 .decline {
   border-color: rgba(255, 107, 114, 0.42);
   color: var(--color-error);
 }
 
 .on_budget {
-  color: var(--mm-text);
+  border-color: rgba(255, 107, 114, 0.42);
+  color: #ff6b72;
 }
 
 .improvement {
@@ -327,30 +382,18 @@
   color: var(--color-error);
 }
 
-.alertList,
 .historyList,
 .formGrid {
   display: grid;
   gap: 1rem;
 }
 
-.alertItem {
-  display: grid;
-  gap: 0.65rem;
-  border: 1px solid currentColor;
-  border-radius: var(--mm-radius-md);
-  background: var(--mm-control-background);
-  padding: 0.9rem;
-}
-
-.alertItem p,
 .confirmText {
   margin: 0;
   color: var(--mm-text-soft);
   line-height: 1.5;
 }
 
-.alertItem dl,
 .historyItem dl {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -358,7 +401,6 @@
   margin: 0;
 }
 
-.chartWrap,
 .chartEmpty {
   width: 100%;
   height: 22rem;
@@ -373,34 +415,268 @@
   text-align: center;
 }
 
-.tableWrap {
+.verticalBars {
+  display: grid;
   overflow-x: auto;
+  min-height: 22rem;
+  grid-auto-columns: minmax(7.2rem, 1fr);
+  grid-auto-flow: column;
+  align-items: end;
+  gap: 0.8rem;
+  padding: 0.4rem 0.2rem 0.65rem;
+  scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
+  scrollbar-width: thin;
 }
 
-.comparisonTable {
-  width: 100%;
-  min-width: 48rem;
-  border-collapse: collapse;
+.verticalBars::-webkit-scrollbar {
+  height: 0.55rem;
 }
 
-.comparisonTable th,
-.comparisonTable td {
+.verticalBars::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.45);
+}
+
+.verticalBars::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(var(--mm-bg-rgb), 0.45);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--mm-accent-rgb), 0.82),
+    rgba(var(--mm-accent-rgb), 0.48)
+  );
+}
+
+.verticalBarItem {
+  display: grid;
+  min-width: 0;
+  height: 100%;
+  grid-template-rows: auto minmax(13rem, 1fr) auto;
+  gap: 0.55rem;
+}
+
+.verticalBarValues {
+  display: grid;
+  min-height: 2.5rem;
+  align-content: end;
+  gap: 0.1rem;
+  text-align: center;
+}
+
+.verticalBarValues strong {
+  color: var(--mm-text);
+  font-size: 0.9rem;
+}
+
+.verticalBarValues span {
+  color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.verticalBarPlot {
+  display: flex;
+  min-height: 13rem;
+  align-items: end;
+  justify-content: center;
   border-bottom: 1px solid var(--mm-border);
+  background:
+    linear-gradient(rgba(248, 255, 249, 0.035) 1px, transparent 1px)
+    0 0 / 100% 25%;
+}
+
+.verticalBarTrack {
+  position: relative;
+  display: flex;
+  width: min(4.3rem, 68%);
+  min-height: 1.2rem;
+  align-items: end;
+  overflow: hidden;
+  border: 1px solid rgba(248, 255, 249, 0.16);
+  border-radius: 0.75rem 0.75rem 0.25rem 0.25rem;
+  background: rgba(var(--mm-bg-rgb), 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.verticalBarTrack span {
+  display: block;
+  width: 100%;
+  min-height: 0.3rem;
+  animation: verticalBarFill 620ms ease-out both;
+  transform-origin: bottom center;
+}
+
+.verticalBarTrack em {
+  position: absolute;
+  top: 0.35rem;
+  right: 50%;
+  transform: translateX(50%);
+  color: var(--mm-text);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.verticalBarTrack.green span {
+  background: linear-gradient(180deg, var(--mm-accent), #49c5b6);
+}
+
+.verticalBarTrack.yellow span {
+  background: linear-gradient(180deg, #facc15, #eab308);
+}
+
+.verticalBarTrack.red span {
+  background: linear-gradient(180deg, #ff6b72, #ef4444);
+}
+
+.overBudgetBar {
+  box-shadow:
+    0 0 0 1px rgba(255, 107, 114, 0.4),
+    0 0 1.15rem rgba(255, 107, 114, 0.12);
+}
+
+.verticalBarLabel {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.35rem;
   color: var(--mm-text-soft);
-  padding: 0.8rem;
-  text-align: left;
+  text-align: center;
+}
+
+.verticalBarLabel strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--mm-text);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.comparisonTable th {
-  color: var(--mm-text);
-  font-size: 0.82rem;
+.allocationPanel {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background: var(--mm-card-background);
+  box-shadow: var(--mm-shadow-card);
+  padding: 1rem;
 }
 
-.tableCategory {
-  display: inline-flex;
+.allocationPanel h2 {
+  margin: 0;
+  color: var(--mm-text);
+}
+
+.donutLayout {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.75fr) minmax(12rem, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.donutWrap {
+  position: relative;
+  height: 16rem;
+  min-width: 0;
+}
+
+.donutWrap :global(.recharts-wrapper),
+.donutWrap :global(.recharts-surface) {
+  outline: none;
+}
+
+.donutTotal {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  width: 7rem;
+  transform: translate(-50%, -50%);
+  color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  pointer-events: none;
+  text-align: center;
+  z-index: 0;
+}
+
+.donutTotal strong {
+  color: var(--mm-text);
+  font-size: 1rem;
+}
+
+.allocationLegend {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.allocationLegend button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.55rem;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--mm-radius-sm);
+  background: transparent;
+  color: var(--mm-text-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 0.45rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.allocationLegend button:hover,
+.allocationLegendActive {
+  border-color: var(--mm-border-strong) !important;
+  background: rgba(var(--mm-accent-rgb), 0.1) !important;
+  color: var(--mm-text) !important;
+}
+
+.allocationLegend span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+}
+
+.allocationLegend strong {
+  overflow: hidden;
+  color: var(--mm-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allocationLegend em {
+  color: var(--mm-text-muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.tooltip {
+  display: grid;
+  gap: 0.22rem;
+  max-width: min(18rem, 84vw);
+  border: 1px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius-md);
+  background: var(--mm-surface-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+  color: var(--mm-text);
+  padding: 0.7rem 0.8rem;
+}
+
+.tooltip strong {
+  color: var(--mm-accent-soft);
+}
+
+.tooltip span {
+  color: var(--mm-text-soft);
+  font-size: 0.86rem;
 }
 
 .tableCategoryIcon {
@@ -449,8 +725,8 @@
   .summaryMetrics,
   .adherenceStrip dl,
   .budgetStats,
-  .alertItem dl,
-  .historyItem dl {
+  .historyItem dl,
+  .donutLayout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -473,14 +749,34 @@
   .summaryMetrics,
   .adherenceStrip dl,
   .budgetStats,
-  .alertItem dl,
-  .historyItem dl {
+  .historyItem dl,
+  .donutLayout {
     grid-template-columns: 1fr;
   }
 
   .modalActions {
     align-items: stretch;
     flex-direction: column-reverse;
+  }
+}
+
+@keyframes progressFill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes verticalBarFill {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
   }
 }
 

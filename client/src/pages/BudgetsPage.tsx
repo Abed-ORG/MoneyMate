@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, CategoryIcon, Modal, Toast } from "../components";
+import { Button, CategoryIcon, LoadingSpinner, Modal } from "../components";
 import {
-  BudgetAlertPanel,
+  BudgetAllocationDonut,
   BudgetCategoryCard,
   BudgetComparisonChart,
-  BudgetComparisonTable,
   BudgetFormModal,
   BudgetSummaryCard,
   DeleteConfirmationModal,
@@ -12,6 +11,7 @@ import {
   monthLabel,
 } from "../components/Budgets/BudgetComponents";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { getApiErrorMessage } from "../services/api";
 import { budgetsApi } from "../services/budgets";
 import type {
@@ -23,12 +23,6 @@ import type {
   BudgetStatus,
 } from "../types/budget";
 import styles from "./BudgetsPage.module.css";
-
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
-};
 
 type BudgetFilters = {
   statuses: BudgetStatus[];
@@ -48,6 +42,16 @@ function currentMonthState() {
     month: now.getMonth() + 1,
     year: now.getFullYear(),
   };
+}
+
+function daysRemainingInMonth(month: number, year: number) {
+  const now = new Date();
+  const lastDay = new Date(year, month, 0);
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+  if (isCurrentMonth) {
+    return Math.max(0, lastDay.getDate() - now.getDate() + 1);
+  }
+  return lastDay < now ? 0 : lastDay.getDate();
 }
 
 function FilterIcon() {
@@ -71,6 +75,7 @@ function CheckIcon() {
 export function BudgetsPage() {
   const initialMonth = currentMonthState();
   const { profile } = useAuth();
+  const toast = useToast();
   const [month, setMonth] = useState(initialMonth.month);
   const [year, setYear] = useState(initialMonth.year);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
@@ -78,11 +83,11 @@ export function BudgetsPage() {
   const [history, setHistory] = useState<BudgetHistoryMonth[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCopyingBudgets, setIsCopyingBudgets] = useState(false);
   const [editingBudget, setEditingBudget] = useState<BudgetSummary | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetSummary | null>(null);
-  const [viewMode, setViewMode] = useState<"visualize" | "list">("visualize");
+  const [viewMode, setViewMode] = useState<"visualize" | "list">("list");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [budgetFilters, setBudgetFilters] = useState<BudgetFilters>({
     statuses: [],
@@ -91,6 +96,7 @@ export function BudgetsPage() {
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
+  const daysRemaining = useMemo(() => daysRemainingInMonth(month, year), [month, year]);
   const selectedHistory = history.find((item) => item.month === month && item.year === year);
   const budgetCategoryOptions = useMemo(
     () => overview?.budgets.map((budget) => ({
@@ -178,13 +184,13 @@ export function BudgetsPage() {
       return true;
     });
     if (alert) {
-      setToast({
+      toast.showToast({
         title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
         message: alert.message,
         variant: alert.severity === "alert" ? "error" : "warning",
       });
     }
-  }, [overview]);
+  }, [overview, toast]);
 
   const openCreate = () => {
     setEditingBudget(null);
@@ -203,7 +209,7 @@ export function BudgetsPage() {
       } else {
         await budgetsApi.create(payload);
       }
-      setToast({
+      toast.showToast({
         title: editingBudget ? "Budget updated" : "Budget created",
         message: "Your monthly budget data is up to date.",
         variant: "success",
@@ -217,7 +223,7 @@ export function BudgetsPage() {
         await loadBudgetData();
       }
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "Could not save budget",
         message: getApiErrorMessage(err),
         variant: "error",
@@ -230,7 +236,7 @@ export function BudgetsPage() {
     if (!deletingBudget) return;
     try {
       await budgetsApi.delete(deletingBudget.budget_id);
-      setToast({
+      toast.showToast({
         title: "Budget deleted",
         message: "The budget was removed from this month.",
         variant: "success",
@@ -238,12 +244,35 @@ export function BudgetsPage() {
       setDeletingBudget(null);
       await loadBudgetData();
     } catch (err) {
-      setToast({
+      toast.showToast({
         title: "Could not delete budget",
         message: getApiErrorMessage(err),
         variant: "error",
       });
       throw err;
+    }
+  };
+
+  const copyPreviousMonthBudgets = async () => {
+    setIsCopyingBudgets(true);
+    try {
+      const copied = await budgetsApi.copyFromPrevious(month, year);
+      toast.showToast({
+        title: copied.length ? "Budgets copied" : "Nothing to copy",
+        message: copied.length
+          ? `${copied.length} budget${copied.length === 1 ? "" : "s"} copied into ${monthLabel(month, year)}.`
+          : "No missing budgets were found in the previous month.",
+        variant: copied.length ? "success" : "info",
+      });
+      await loadBudgetData();
+    } catch (err) {
+      toast.showToast({
+        title: "Could not copy budgets",
+        message: getApiErrorMessage(err),
+        variant: "error",
+      });
+    } finally {
+      setIsCopyingBudgets(false);
     }
   };
 
@@ -278,18 +307,23 @@ export function BudgetsPage() {
   const hasBudgets = Boolean(overview?.budgets.length);
   return (
     <section className={styles.page}>
-      {toast ? (
-        <div className={styles.toastDock}>
-          <Toast {...toast} onClose={() => setToast(null)} />
-        </div>
-      ) : null}
-
       <div className={styles.controlsBar}>
         <MonthSelector month={month} year={year} onChange={selectMonth} />
+        <Button
+          disabled={isCopyingBudgets || isLoading}
+          onClick={() => void copyPreviousMonthBudgets()}
+          variant="secondary"
+        >
+          {isCopyingBudgets ? "Copying..." : "Copy from last month"}
+        </Button>
         <Button onClick={openCreate}>+ Create Budget</Button>
       </div>
 
-      {isLoading ? <div className={styles.state}>Loading budget data...</div> : null}
+      {isLoading ? (
+        <div className={styles.state}>
+          <LoadingSpinner label="Loading budget data" />
+        </div>
+      ) : null}
       {error ? (
         <div className={styles.errorState}>
           <p>{error}</p>
@@ -306,7 +340,7 @@ export function BudgetsPage() {
               <h2>No budgets for {monthLabel(month, year)}</h2>
               <p>
                 Create your first category budget for this month to unlock progress bars,
-                alerts, comparison charts, and adherence history.
+                comparison charts, and adherence history.
               </p>
               <Button onClick={openCreate}>Create a budget</Button>
             </section>
@@ -332,10 +366,13 @@ export function BudgetsPage() {
               </div>
 
               {viewMode === "visualize" ? (
-                <section className={`${styles.panel} ${styles.comparisonPanel}`}>
-                  <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
-                  <BudgetComparisonTable budgets={overview.budgets} currency={currency} />
-                </section>
+                <div className={styles.visualGrid}>
+                  <BudgetAllocationDonut budgets={overview.budgets} currency={currency} />
+                  <section className={`${styles.panel} ${styles.comparisonPanel}`}>
+                    <h2>Actual vs budgeted</h2>
+                    <BudgetComparisonChart budgets={overview.budgets} currency={currency} />
+                  </section>
+                </div>
               ) : (
                 <section className={styles.workspaceGrid}>
                   <div className={`${styles.panel} ${styles.categoryPanel}`}>
@@ -363,6 +400,7 @@ export function BudgetsPage() {
                           budget={budget}
                           currency={currency}
                           key={budget.budget_id}
+                          daysRemaining={daysRemaining}
                           onDelete={setDeletingBudget}
                           onEdit={openEdit}
                         />
@@ -374,8 +412,6 @@ export function BudgetsPage() {
                       ) : null}
                     </div>
                   </div>
-
-                  <BudgetAlertPanel alerts={overview.alerts} currency={currency} />
                 </section>
               )}
             </>
