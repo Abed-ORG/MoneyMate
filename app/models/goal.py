@@ -20,6 +20,7 @@ class Goal(Base):
     name = Column(String, nullable=False)
     target_amount = Column(Numeric(14, 2), nullable=False)
     current_amount = Column(Numeric(14, 2), default=0)
+    start_date = Column(DateTime, nullable=True)
     target_date = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
     linked_account = Column(String, nullable=True)

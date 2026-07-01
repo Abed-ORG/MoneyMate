@@ -3,6 +3,8 @@ from decimal import Decimal
 import json
 from urllib.error import HTTPError
 
+import pytest
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -351,7 +353,7 @@ def test_chat_validation_and_provider_failure_fallback(monkeypatch):
         assert body["user_message"]["status"] == "complete"
         assert body["assistant_message"]["role"] == "assistant"
         assert (
-            "MoneyMate calculated"
+            "within all of your budgets"
             in body["assistant_message"]["content"]
         )
         messages = client.get(
@@ -404,6 +406,42 @@ def test_chat_greeting_gets_friendly_reply_without_finance_refusal(
         session.close()
 
 
+def test_chat_answers_top_category_when_gemini_is_unavailable(monkeypatch):
+    client, session = make_client()
+
+    def unavailable_answer(question, context):
+        raise GeminiChatRateLimitError("limited")
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        unavailable_answer,
+    )
+    try:
+        user, headers = create_account(session, client, "category@example.com")
+        add_financial_data(session, user.id)
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": "Which category did I spend the most on?"},
+        )
+
+        assert response.status_code == 200
+        content = response.json()["assistant_message"]["content"]
+        assert "Food & Dining" in content
+        assert "120.00 USD" in content
+        assert "temporarily unavailable" not in content
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
 def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
     monkeypatch,
 ):
@@ -446,8 +484,7 @@ def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
 
         assert response.status_code == 200
         content = response.json()["assistant_message"]["content"]
-        assert "MoneyMate calculated" in content
-        assert "For **June 2026**" in content
+        assert "within all of your budgets" in content
         assert "Hello! How can I help" not in content
         assert response.json()["assistant_message"]["metrics"][
             "total_expenses"
@@ -457,8 +494,14 @@ def test_chat_affirmative_followup_continues_previous_offer_when_ai_fails(
         session.close()
 
 
-def test_gemini_chat_tries_fallback_model_after_rate_limit(monkeypatch):
+def test_gemini_chat_stops_after_rate_limit_to_keep_chat_responsive(
+    monkeypatch,
+):
     calls = []
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.SERVICE_COOLDOWN_UNTIL",
+        0.0,
+    )
 
     class FakeResponse:
         def __enter__(self):
@@ -508,19 +551,23 @@ def test_gemini_chat_tries_fallback_model_after_rate_limit(monkeypatch):
     )
 
     client = GeminiChatClient()
-    answer = client.generate_answer(
-        "How much did I spend this month?",
-        {"currency": "USD", "transactions": {"expenses": 509.5}},
-    )
+    with pytest.raises(GeminiChatRateLimitError):
+        client.generate_answer(
+            "How much did I spend this month?",
+            {"currency": "USD", "transactions": {"expenses": 509.5}},
+        )
 
-    assert answer == "You spent 509.50 USD in June 2026."
     assert "gemini-2.5-flash" in calls[0]
-    assert "gemini-3.1-flash-lite" in calls[1]
+    assert len(calls) == 1
 
 
 def test_gemini_chat_skips_model_during_rate_limit_cooldown(monkeypatch):
     MODEL_COOLDOWNS.clear()
     calls = []
+    monkeypatch.setattr(
+        "app.services.chat_gemini_service.SERVICE_COOLDOWN_UNTIL",
+        0.0,
+    )
 
     class FakeResponse:
         def __enter__(self):

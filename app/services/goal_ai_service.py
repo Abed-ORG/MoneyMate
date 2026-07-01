@@ -76,22 +76,32 @@ def _call_gemini_json(
 # -- Goal: AI Savings Calculator --------------------------------------------
 
 
+def _months_between(
+    start: date | None, end: date | None
+) -> int:
+    """Compute whole months between start date and end date."""
+    if not end:
+        return 12
+    end_dt = datetime.combine(end, datetime.min.time())
+    start_dt = (
+        datetime.combine(start, datetime.min.time())
+        if start
+        else datetime.now()
+    )
+    total_days = (end_dt - start_dt).days
+    return max(round(total_days / 30.44), 1)
+
+
 def _fallback_required_monthly(
     target: Decimal,
     current: Decimal,
+    start_date: date | None,
     deadline: date | None,
 ) -> Decimal:
     needed = max(target - current, Decimal("0"))
     if needed <= 0:
         return Decimal("0")
-    if not deadline:
-        # No deadline: assume 12 months as a sensible default
-        return max(needed / Decimal("12"), Decimal("0"))
-    remaining_days = (
-        datetime.combine(deadline, datetime.min.time())
-        - datetime.now()
-    ).days
-    months = max(remaining_days / 30.0, 1)
+    months = _months_between(start_date, deadline)
     return max(needed / Decimal(str(months)), Decimal("0"))
 
 
@@ -103,21 +113,23 @@ def calculate_goal_savings(
         heuristic = _fallback_required_monthly(
             request_data.target_amount,
             request_data.current_amount,
+            request_data.start_date,
             request_data.deadline,
         )
         return GoalAICalculationResponse(
             required_monthly=heuristic,
             provider="heuristic",
-            rationale=(
-                "Calculated based on remaining amount "
-                "and months until deadline."
-            ),
         )
 
     prompt = (
         "You are a financial planning assistant. "
         "Calculate the required monthly contribution "
         "to reach a savings goal."
+        + (
+            f" The start date is {request_data.start_date}."
+            if request_data.start_date
+            else " The start date is today."
+        )
         + (
             f" The deadline is {request_data.deadline}."
             if request_data.deadline
@@ -128,7 +140,8 @@ def calculate_goal_savings(
         "\nReturn strict JSON with keys: "
         "required_monthly (number, the monthly amount needed), "
         "rationale (string, a brief explanation).\n"
-        "Assume contributions are made monthly starting now."
+        "Use the time between start date and deadline "
+        "to calculate the number of months available."
     )
     result = _call_gemini_json(prompt)
     if result and "required_monthly" in result:
@@ -142,15 +155,12 @@ def calculate_goal_savings(
     heuristic = _fallback_required_monthly(
         request_data.target_amount,
         request_data.current_amount,
+        request_data.start_date,
         request_data.deadline,
     )
     return GoalAICalculationResponse(
         required_monthly=heuristic,
         provider="heuristic",
-        rationale=(
-            "Gemini unavailable; calculated based on "
-            "remaining amount and months until deadline."
-        ),
     )
 
 

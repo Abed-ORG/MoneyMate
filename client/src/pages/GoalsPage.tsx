@@ -17,6 +17,7 @@ import styles from "./GoalsPage.module.css";
 const emptyForm = {
   name: "",
   targetAmount: "",
+  startDate: "",
   deadline: "",
   linkedAccount: "",
   currentAmount: "",
@@ -47,7 +48,6 @@ export function GoalsPage() {
   const [contribution, setContribution] = useState("");
   const [projections, setProjections] = useState<GoalProjectionPoint[]>([]);
   const [requiredMonthly, setRequiredMonthly] = useState(0);
-  const [aiProvider, setAiProvider] = useState("heuristic");
   const [aiRationale, setAiRationale] = useState("");
 
   // Modals
@@ -98,13 +98,14 @@ export function GoalsPage() {
     const current = Number(selectedGoal.current_amount);
     const deadline = selectedGoal.deadline ?? null;
 
-    void goalAiApi.calculateSavings({ target_amount: target, current_amount: current, deadline }).then((res) => {
+    const startDate = selectedGoal.start_date ?? null;
+
+    void goalAiApi.calculateSavings({ target_amount: target, current_amount: current, start_date: startDate, deadline }).then((res) => {
       setRequiredMonthly(res.required_monthly);
-      setAiProvider(res.provider);
       setAiRationale(res.rationale ?? "");
     });
 
-    void goalAiApi.projection({ target_amount: target, current_amount: current, deadline }).then((res) => {
+    void goalAiApi.projection({ target_amount: target, current_amount: current, start_date: startDate, deadline }).then((res) => {
       setProjections(res.projections);
     });
   }, [selectedGoal]);
@@ -118,6 +119,7 @@ export function GoalsPage() {
     return {
       name: form.name,
       target_amount: Number(form.targetAmount),
+      start_date: form.startDate || undefined,
       deadline: form.deadline || undefined,
       linked_account: form.linkedAccount || undefined,
       current_amount: Number(form.currentAmount || 0),
@@ -128,6 +130,7 @@ export function GoalsPage() {
     return {
       name: form.name,
       target_amount: form.targetAmount ? Number(form.targetAmount) : undefined,
+      start_date: form.startDate || undefined,
       deadline: form.deadline || undefined,
       linked_account: form.linkedAccount || undefined,
       current_amount: form.currentAmount ? Number(form.currentAmount) : undefined,
@@ -138,6 +141,7 @@ export function GoalsPage() {
     return {
       name: goal.name,
       targetAmount: String(goal.target_amount),
+      startDate: goal.start_date ? goal.start_date.slice(0, 10) : "",
       deadline: goal.deadline ? goal.deadline.slice(0, 10) : "",
       linkedAccount: goal.linked_account ?? "",
       currentAmount: String(goal.current_amount),
@@ -257,6 +261,13 @@ export function GoalsPage() {
           onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
         />
       </FormField>
+      <FormField label="Start date" helperText="When you plan to start saving">
+        <Input
+          type="date"
+          value={form.startDate}
+          onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+        />
+      </FormField>
       <FormField label="Deadline">
         <Input
           type="date"
@@ -307,6 +318,13 @@ export function GoalsPage() {
           type="number"
           value={form.currentAmount}
           onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
+        />
+      </FormField>
+      <FormField label="Start date" helperText="When you plan to start saving">
+        <Input
+          type="date"
+          value={form.startDate}
+          onChange={(e) => setForm({ ...form, startDate: e.target.value })}
         />
       </FormField>
       <FormField label="Deadline">
@@ -374,7 +392,6 @@ export function GoalsPage() {
                 {aiRationale ? (
                   <p className={styles.aiRationale}>{aiRationale}</p>
                 ) : null}
-                <span className={styles.aiProvider}>Source: {aiProvider}</span>
               </div>
             </>
           ) : (

@@ -84,6 +84,15 @@ function NavigationIcon({ path }: { path: string }) {
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+      <path d="M19.4 13.2a7.7 7.7 0 0 0 .1-2.4l2.1-1.2-2-3.5-2.4.8a7.7 7.7 0 0 0-2.1-1.2l-.4-2.5H11l-.4 2.5a7.7 7.7 0 0 0-2.1 1.2l-2.4-.8-2 3.5 2.1 1.2a7.7 7.7 0 0 0 0 2.4L4.1 14.4l2 3.5 2.4-.8a7.7 7.7 0 0 0 2.1 1.2l.4 2.5h4l.4-2.5a7.7 7.7 0 0 0 2.1-1.2l2.4.8 2-3.5-2.1-1.2Z" />
+    </svg>
+  );
+}
+
 export function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -307,6 +316,9 @@ export function AppShell() {
                     role="menuitem"
                     type="button"
                   >
+                    <span className={styles.profileMenuIcon}>
+                      <SettingsIcon />
+                    </span>
                     Settings
                   </button>
                   <button
