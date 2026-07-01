@@ -14,13 +14,13 @@ import {
   Input,
   Modal,
   Select,
-  Toast,
 } from "../components";
 import {
   normalizeCategory,
   spendingCategories,
 } from "../constants/categories";
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { api, getApiErrorMessage } from "../services/api";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import { transactionsApi } from "../services/transactions";
@@ -34,12 +34,6 @@ const supportedAvatarTypes = new Set([
   "image/webp",
 ]);
 const maxAvatarSize = 2 * 1024 * 1024;
-
-type Notice = {
-  title: string;
-  message: string;
-  variant: "success" | "error";
-};
 
 type SettingsSection =
   | "personal"
@@ -182,6 +176,7 @@ function fileToDataUrl(file: File) {
 
 export function SettingsPage() {
   const { profile, refreshAccount, setProfile, user } = useAuth();
+  const toast = useToast();
   const [activeSection, setActiveSection] = useState<SettingsSection>("personal");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -196,7 +191,6 @@ export function SettingsPage() {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [notice, setNotice] = useState<Notice | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -234,20 +228,27 @@ export function SettingsPage() {
 
   const addCustomCategory = async () => {
     if (!newCategoryName.trim()) return false;
-    if (editingCategory) {
-      const updated = await transactionsApi.updateCategory(editingCategory.id, {
-        name: newCategoryName.trim(),
-        color: newCategoryColor,
-        is_default: editingCategory.is_default,
-      });
-      setCustomCategories((current) => current.map((category) => (category.id === updated.id ? updated : category)));
-    } else {
-      const created = await transactionsApi.createCategory({
-        name: newCategoryName.trim(),
-        color: newCategoryColor,
-        is_default: false,
-      });
-      setCustomCategories((current) => [...current, created]);
+    try {
+      if (editingCategory) {
+        const updated = await transactionsApi.updateCategory(editingCategory.id, {
+          name: newCategoryName.trim(),
+          color: newCategoryColor,
+          is_default: editingCategory.is_default,
+        });
+        setCustomCategories((current) => current.map((category) => (category.id === updated.id ? updated : category)));
+        toast.success("Category updated", `${updated.name} is ready to use.`);
+      } else {
+        const created = await transactionsApi.createCategory({
+          name: newCategoryName.trim(),
+          color: newCategoryColor,
+          is_default: false,
+        });
+        setCustomCategories((current) => [...current, created]);
+        toast.success("Category created", `${created.name} is ready to use.`);
+      }
+    } catch (error) {
+      toast.error("Category not saved", getApiErrorMessage(error));
+      return false;
     }
     setNewCategoryName("");
     setNewCategoryColor("#49c5b6");
@@ -270,9 +271,14 @@ export function SettingsPage() {
   };
 
   const deleteCustomCategory = async (id: string) => {
-    await transactionsApi.deleteCategory(id);
-    setCustomCategories((current) => current.filter((item) => item.id !== id));
-    setCategoryToDelete(null);
+    try {
+      await transactionsApi.deleteCategory(id);
+      setCustomCategories((current) => current.filter((item) => item.id !== id));
+      toast.success("Category deleted", "The category was removed.");
+      setCategoryToDelete(null);
+    } catch (error) {
+      toast.error("Category not deleted", getApiErrorMessage(error));
+    }
   };
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -282,21 +288,13 @@ export function SettingsPage() {
     }
 
     if (!supportedAvatarTypes.has(file.type)) {
-      setNotice({
-        title: "Photo not selected",
-        message: "Choose a PNG, JPG, JPEG, or WEBP image.",
-        variant: "error",
-      });
+      toast.error("Photo not selected", "Choose a PNG, JPG, JPEG, or WEBP image.");
       event.target.value = "";
       return;
     }
 
     if (file.size > maxAvatarSize) {
-      setNotice({
-        title: "Photo is too large",
-        message: "Choose an image smaller than 2 MB.",
-        variant: "error",
-      });
+      toast.error("Photo is too large", "Choose an image smaller than 2 MB.");
       event.target.value = "";
       return;
     }
@@ -306,16 +304,13 @@ export function SettingsPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setNotice(null);
     } catch (error) {
-      setNotice({
-        title: "Photo not selected",
-        message:
-          error instanceof Error
-            ? error.message
-            : "The selected image could not be read.",
-        variant: "error",
-      });
+      toast.error(
+        "Photo not selected",
+        error instanceof Error
+          ? error.message
+          : "The selected image could not be read.",
+      );
     }
   };
 
@@ -324,11 +319,7 @@ export function SettingsPage() {
 
     if (!fullName.trim() || !email.trim()) {
       setActiveSection("personal");
-      setNotice({
-        title: "Profile not saved",
-        message: "Enter your full name and email address.",
-        variant: "error",
-      });
+      toast.error("Profile not saved", "Enter your full name and email address.");
       return;
     }
     if (
@@ -337,20 +328,12 @@ export function SettingsPage() {
       Number(monthlyIncome) < 0
     ) {
       setActiveSection("financial");
-      setNotice({
-        title: "Profile not saved",
-        message: "Enter a valid monthly income.",
-        variant: "error",
-      });
+      toast.error("Profile not saved", "Enter a valid monthly income.");
       return;
     }
     if (selectedCategories.length === 0) {
       setActiveSection("categories");
-      setNotice({
-        title: "Profile not saved",
-        message: "Choose at least one spending category.",
-        variant: "error",
-      });
+      toast.error("Profile not saved", "Choose at least one spending category.");
       return;
     }
     setIsSaving(true);
@@ -373,17 +356,12 @@ export function SettingsPage() {
 
       setProfile(updatedProfile);
       await refreshAccount();
-      setNotice({
-        title: "Profile saved",
-        message: "Your account, photo, and financial preferences are up to date.",
-        variant: "success",
-      });
+      toast.success(
+        "Profile saved",
+        "Your account, photo, and financial preferences are up to date.",
+      );
     } catch (error) {
-      setNotice({
-        title: "Profile not saved",
-        message: getApiErrorMessage(error),
-        variant: "error",
-      });
+      toast.error("Profile not saved", getApiErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
@@ -397,11 +375,7 @@ export function SettingsPage() {
     const confirmPassword = String(data.get("confirmPassword") ?? "");
 
     if (newPassword !== confirmPassword) {
-      setNotice({
-        title: "Password not changed",
-        message: "The new passwords do not match.",
-        variant: "error",
-      });
+      toast.error("Password not changed", "The new passwords do not match.");
       return;
     }
 
@@ -412,17 +386,9 @@ export function SettingsPage() {
         new_password: newPassword,
       });
       form.reset();
-      setNotice({
-        title: "Password changed",
-        message: "Your password was updated successfully.",
-        variant: "success",
-      });
+      toast.success("Password changed", "Your password was updated successfully.");
     } catch (error) {
-      setNotice({
-        title: "Password not changed",
-        message: getApiErrorMessage(error),
-        variant: "error",
-      });
+      toast.error("Password not changed", getApiErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
@@ -440,17 +406,6 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      {notice ? (
-        <div className={styles.toastWrap}>
-          <Toast
-            message={notice.message}
-            onClose={() => setNotice(null)}
-            title={notice.title}
-            variant={notice.variant}
-          />
-        </div>
-      ) : null}
-
       <div className={styles.profileOverview}>
         <section className={styles.profileCardWrap} aria-label="Profile card">
           <div className={styles.profileCard}>

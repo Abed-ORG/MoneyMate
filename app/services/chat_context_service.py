@@ -6,6 +6,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.account import Account
@@ -74,10 +75,46 @@ def previous_period(
     return previous_end - timedelta(days=days - 1), previous_end
 
 
+def latest_transaction_month(db: Session, user_id: int) -> date | None:
+    latest_occurred_at = (
+        db.query(func.max(Transaction.occurred_at))
+        .join(Account)
+        .filter(Account.user_id == user_id)
+        .scalar()
+    )
+    if latest_occurred_at is None:
+        return None
+    return latest_occurred_at.date().replace(day=1)
+
+
 def question_areas(question: str) -> set[str]:
     text = question.casefold()
-    areas: set[str] = {"summary"}
-    if any(word in text for word in ["spend", "expense", "category"]):
+    areas: set[str] = set()
+    if any(
+        word in text
+        for word in [
+            "overview",
+            "summary",
+            "overall",
+            "finances",
+            "financial",
+            "money",
+            "how am i doing",
+            "tell me more",
+        ]
+    ):
+        areas.add("summary")
+    if any(
+        word in text
+        for word in [
+            "spend",
+            "spent",
+            "expense",
+            "category",
+            "catgry",
+            "catgory",
+        ]
+    ):
         areas.add("transactions")
         areas.add("categories")
     if any(word in text for word in ["income", "earn"]):
@@ -90,6 +127,8 @@ def question_areas(question: str) -> set[str]:
         areas.add("goals")
     if any(word in text for word in ["compare", "last", "previous"]):
         areas.add("comparison")
+    if not areas:
+        areas.add("transactions")
     return areas
 
 
@@ -341,8 +380,19 @@ def build_financial_context(
     start_date, end_date = requested_period(question, today)
     previous_start, previous_end = previous_period(start_date, end_date)
     areas = question_areas(question)
-    transactions = transactions_for_period(db, user_id, start_date, end_date)
-    if not transactions:
+    include_summary = "summary" in areas
+    include_transactions = bool(
+        {"transactions", "categories", "summary"} & areas
+    )
+    include_budgets = "budgets" in areas or include_summary
+    include_goals = "goals" in areas or include_summary
+    include_comparisons = "comparison" in areas or include_summary
+    transactions = (
+        transactions_for_period(db, user_id, start_date, end_date)
+        if include_transactions or include_budgets
+        else []
+    )
+    if (include_transactions or include_budgets) and not transactions:
         latest_month_start = latest_transaction_month(db, user_id)
         if latest_month_start and latest_month_start != start_date:
             start_date = latest_month_start
@@ -354,19 +404,29 @@ def build_financial_context(
                     - timedelta(days=1)
                 )
             previous_start, previous_end = previous_period(
-                start_date, end_date
+                start_date,
+                end_date,
             )
             transactions = transactions_for_period(
-                db, user_id, start_date, end_date
+                db,
+                user_id,
+                start_date,
+                end_date,
             )
-    previous_transactions = transactions_for_period(
-        db,
-        user_id,
-        previous_start,
-        previous_end,
+    transaction_summary = (
+        summarize_transactions(transactions)
+        if include_transactions
+        else None
     )
-    transaction_summary = summarize_transactions(transactions)
-    previous_summary = summarize_transactions(previous_transactions)
+    previous_summary = None
+    if include_transactions and include_comparisons:
+        previous_transactions = transactions_for_period(
+            db,
+            user_id,
+            previous_start,
+            previous_end,
+        )
+        previous_summary = summarize_transactions(previous_transactions)
     context: dict[str, Any] = {
         "currency": get_currency(db, user_id),
         "question_areas": sorted(areas),
@@ -383,9 +443,13 @@ def build_financial_context(
             "start_date": previous_start.isoformat(),
             "end_date": previous_end.isoformat(),
         },
-        "transactions": transaction_summary,
-        "previous_transactions": previous_summary,
-        "comparisons": {
+        "insufficient_data": [],
+    }
+    if transaction_summary is not None:
+        context["transactions"] = transaction_summary
+    if transaction_summary is not None and previous_summary is not None:
+        context["previous_transactions"] = previous_summary
+        context["comparisons"] = {
             "expenses": calculate_change(
                 transaction_summary["expenses"],
                 previous_summary["expenses"],
@@ -398,29 +462,28 @@ def build_financial_context(
                 transaction_summary["net_amount"],
                 previous_summary["net_amount"],
             ),
-        },
-        "budgets": [],
-        "goals": [],
-        "insufficient_data": [],
-    }
-    if "budgets" in areas or "summary" in areas:
+        }
+    if include_budgets:
         context["budgets"] = summarize_budgets(
             db,
             user_id,
             start_date,
             transactions,
         )
-    if "goals" in areas or "summary" in areas:
+    if include_goals:
         context["goals"] = summarize_goals(db, user_id)
-    if transaction_summary["transaction_count"] == 0:
+    if (
+        transaction_summary is not None
+        and transaction_summary["transaction_count"] == 0
+    ):
         context["insufficient_data"].append(
             "No transactions were found for the selected period."
         )
-    if "budgets" in areas and not context["budgets"]:
+    if include_budgets and not context.get("budgets"):
         context["insufficient_data"].append(
             "No budgets were found for the selected period."
         )
-    if "goals" in areas and not context["goals"]:
+    if include_goals and not context.get("goals"):
         context["insufficient_data"].append(
             "No active savings goals were found."
         )
@@ -429,14 +492,16 @@ def build_financial_context(
 
 def sources_from_context(context: dict[str, Any]) -> list[dict[str, Any]]:
     period = context["period"]
-    sources = [
-        {
-            "type": "transactions",
-            "label": f"{period['label']} transactions",
-            "start_date": period["start_date"],
-            "end_date": period["end_date"],
-        }
-    ]
+    sources = []
+    if context.get("transactions"):
+        sources.append(
+            {
+                "type": "transactions",
+                "label": f"{period['label']} transactions",
+                "start_date": period["start_date"],
+                "end_date": period["end_date"],
+            }
+        )
     if context.get("budgets"):
         sources.append(
             {
@@ -452,11 +517,22 @@ def sources_from_context(context: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def metrics_from_context(context: dict[str, Any]) -> dict[str, Any]:
-    transactions = context["transactions"]
-    return {
-        "total_expenses": transactions["expenses"],
-        "total_income": transactions["income"],
-        "net_amount": transactions["net_amount"],
-        "transaction_count": transactions["transaction_count"],
-        "comparisons": context["comparisons"],
-    }
+    metrics: dict[str, Any] = {}
+    transactions = context.get("transactions")
+    if transactions:
+        metrics.update(
+            {
+                "total_expenses": transactions["expenses"],
+                "total_income": transactions["income"],
+                "net_amount": transactions["net_amount"],
+                "transaction_count": transactions["transaction_count"],
+            }
+        )
+    if context.get("comparisons"):
+        metrics["comparisons"] = context["comparisons"]
+    if context.get("budgets"):
+        metrics["budget_count"] = len(context["budgets"])
+    if context.get("goals"):
+        metrics["goal_count"] = len(context["goals"])
+    return metrics
+  

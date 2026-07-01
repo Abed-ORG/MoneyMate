@@ -293,15 +293,62 @@
   text-transform: uppercase;
 }
 
+.kpiLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .summaryCard strong {
   color: var(--mm-text);
   font-size: 1.45rem;
   letter-spacing: 0;
 }
 
-.summaryCard p {
+.summaryCard p,
+.kpiTrend {
   color: var(--mm-text-soft);
   font-size: 0.82rem;
+}
+
+.kpiTrend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.kpiTrend span {
+  display: inline-grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.35);
+  font-size: 0.88rem;
+  letter-spacing: 0;
+}
+
+.kpiTrend svg {
+  width: 0.78rem;
+  height: 0.78rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.trendUp {
+  color: #54d683;
+}
+
+.trendDown {
+  color: #ff7a84;
+}
+
+.trendFlat {
+  color: var(--mm-text-muted);
 }
 
 .positive {
@@ -479,13 +526,111 @@
   display: grid;
   min-height: 12rem;
   place-content: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   border: 1px dashed var(--mm-border);
   border-radius: var(--mm-radius-md);
   background: rgba(var(--mm-bg-rgb), 0.16);
   color: var(--mm-text-muted);
   padding: 1rem;
   text-align: center;
+}
+
+.loadingLogo {
+  position: relative;
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  justify-self: center;
+  place-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.loadingLogo::before {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(var(--mm-accent-rgb), 0.18);
+  border-top-color: var(--mm-accent);
+  border-right-color: rgba(var(--mm-accent-rgb), 0.62);
+  border-radius: 999px;
+  content: "";
+  animation: logoRingSpin 1s linear infinite;
+}
+
+.loadingLogo span {
+  position: absolute;
+  inset: 0.45rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.22);
+  border-radius: 999px;
+  background: rgba(var(--mm-bg-rgb), 0.28);
+  box-shadow: 0 0 1.6rem rgba(var(--mm-accent-rgb), 0.12);
+}
+
+.loadingLogo img {
+  position: relative;
+  z-index: 1;
+  width: 2.45rem;
+  height: 2.45rem;
+  object-fit: contain;
+  filter: var(--mm-logo-filter);
+}
+
+.summaryLoadingLogo {
+  display: grid;
+  place-items: center;
+}
+
+.summaryLoadingLogo .loadingLogo {
+  width: 3.4rem;
+  height: 3.4rem;
+  margin: 0;
+}
+
+.summaryLoadingLogo .loadingLogo img {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.statusIllustration {
+  position: relative;
+  display: grid;
+  width: 8.5rem;
+  height: 4.6rem;
+  justify-self: center;
+  align-items: end;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.statusIllustration span,
+.statusIllustration i,
+.statusIllustration b {
+  display: block;
+  border-radius: 0.55rem 0.55rem 0.25rem 0.25rem;
+  background: linear-gradient(180deg, rgba(var(--mm-accent-rgb), 0.36), rgba(var(--mm-accent-rgb), 0.1));
+}
+
+.statusIllustration span:nth-child(1),
+.statusIllustration i {
+  height: 42%;
+}
+
+.statusIllustration span:nth-child(2) {
+  height: 72%;
+}
+
+.statusIllustration span:nth-child(3),
+.statusIllustration b {
+  height: 56%;
+}
+
+.statusIllustration i,
+.statusIllustration b {
+  transform: rotate(-6deg);
+}
+
+.statusIllustration b {
+  transform: rotate(7deg);
 }
 
 .statusBlock strong {
@@ -500,24 +645,6 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.skeletonLine,
-.skeletonValue {
-  display: block;
-  border-radius: 999px;
-  background: rgba(var(--mm-accent-rgb), 0.12);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.skeletonLine {
-  width: 64%;
-  height: 0.72rem;
-}
-
-.skeletonValue {
-  width: 48%;
-  height: 1.45rem;
-}
-
 @keyframes pulse {
   0%,
   100% {
@@ -526,6 +653,12 @@
 
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes logoRingSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

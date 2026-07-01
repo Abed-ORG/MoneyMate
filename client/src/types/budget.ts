@@ -1,6 +1,6 @@
 export type BudgetAlertLevel = "warning" | "alert";
 export type BudgetStatus = "under_budget" | "close_to_budget" | "on_budget" | "over_budget";
-export type BudgetProgressState = "green" | "yellow" | "orange" | "red";
+export type BudgetProgressState = "green" | "yellow" | "red";
 export type BudgetTrend = "improvement" | "decline" | "no_change";
 
 export type MoneyValue = number | string;

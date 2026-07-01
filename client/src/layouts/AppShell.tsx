@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Button, Modal, Toast } from "../components";
+import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { budgetsApi } from "../services/budgets";
+import { goalsApi } from "../services/goals";
+import { transactionsApi } from "../services/transactions";
+import type { Budget } from "../types/budget";
+import type { Goal } from "../types/goal";
+import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import {
   getProfileAvatar,
@@ -11,6 +17,13 @@ import {
 import styles from "./AppShell.module.css";
 
 type ThemeMode = "dark" | "light";
+type SearchResult = {
+  id: string;
+  type: "transaction" | "budget" | "goal";
+  title: string;
+  meta: string;
+  path: string;
+};
 
 const THEME_STORAGE_KEY = "moneymate-theme";
 
@@ -104,10 +117,70 @@ function MoonIcon() {
 function SettingsIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
-      <path d="M19.4 13.2a7.7 7.7 0 0 0 .1-2.4l2.1-1.2-2-3.5-2.4.8a7.7 7.7 0 0 0-2.1-1.2l-.4-2.5H11l-.4 2.5a7.7 7.7 0 0 0-2.1 1.2l-2.4-.8-2 3.5 2.1 1.2a7.7 7.7 0 0 0 0 2.4L4.1 14.4l2 3.5 2.4-.8a7.7 7.7 0 0 0 2.1 1.2l.4 2.5h4l.4-2.5a7.7 7.7 0 0 0 2.1-1.2l2.4.8 2-3.5-2.1-1.2Z" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.38 1.08V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.08-.38H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .38-1.08V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.2.37.57.6 1 .6h.09a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1 .6Z" />
     </svg>
   );
+}
+
+function LogoutIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16 16 4 4" />
+    </svg>
+  );
+}
+
+function formatSearchMoney(value: string | number) {
+  const amount = Number(value);
+  if (Number.isNaN(amount)) {
+    return String(value);
+  }
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    style: "currency",
+  }).format(amount);
+}
+
+function transactionResult(transaction: Transaction): SearchResult {
+  return {
+    id: `transaction-${transaction.id}`,
+    type: "transaction",
+    title: transaction.vendor || transaction.category || "Transaction",
+    meta: `${transaction.category} · ${formatSearchMoney(transaction.amount)}`,
+    path: "/transactions",
+  };
+}
+
+function budgetResult(budget: Budget): SearchResult {
+  return {
+    id: `budget-${budget.id}`,
+    type: "budget",
+    title: budget.category_name,
+    meta: `Budget · ${formatSearchMoney(budget.amount)}`,
+    path: "/budgets",
+  };
+}
+
+function goalResult(goal: Goal): SearchResult {
+  return {
+    id: `goal-${goal.id}`,
+    type: "goal",
+    title: goal.name,
+    meta: `Goal · ${formatSearchMoney(goal.current_amount)} saved`,
+    path: "/goals",
+  };
 }
 
 export function AppShell() {
@@ -116,16 +189,18 @@ export function AppShell() {
   const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [budgetToast, setBudgetToast] = useState<{
-    title: string;
-    message: string;
-    variant: "warning" | "error" | "success" | "info";
-  } | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [budgetAlertCount, setBudgetAlertCount] = useState(0);
   const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const toast = useToast();
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user?.full_name || "MoneyMate user";
   const initials = getInitials(displayName) || "MM";
@@ -161,19 +236,18 @@ export function AppShell() {
     setIsProfileMenuOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    const handleTransactionChange = async (event: Event) => {
-      if (location.pathname === "/budgets") {
-        return;
-      }
-
-      const detail = (event as CustomEvent<{ month?: number; year?: number }>).detail;
-      const now = new Date();
-      const month = detail?.month ?? now.getMonth() + 1;
-      const year = detail?.year ?? now.getFullYear();
-
+  const refreshBudgetAlerts = useCallback(
+    async (
+      month: number,
+      year: number,
+      showToast: boolean,
+    ) => {
       try {
         const alerts = await budgetsApi.alerts(month, year);
+        setBudgetAlertCount(alerts.length);
+        if (!showToast) {
+          return;
+        }
         const alert = alerts.find((item) => {
           const key = `${year}-${month}-${item.category_id}-${item.severity}-${item.usage_percentage}`;
           if (shownBudgetAlerts.current.has(key)) {
@@ -183,22 +257,121 @@ export function AppShell() {
           return true;
         });
         if (alert) {
-          setBudgetToast({
+          toast.showToast({
             title: alert.severity === "alert" ? "Budget exceeded" : "Budget warning",
             message: alert.message,
             variant: alert.severity === "alert" ? "error" : "warning",
           });
         }
       } catch {
-        // Budget alerts should never block transaction workflows.
+        // Budget alerts should never block navigation or transaction workflows.
       }
+    },
+    [toast],
+  );
+
+  useEffect(() => {
+    if (!user?.id) {
+      setBudgetAlertCount(0);
+      return;
+    }
+    const now = new Date();
+    void refreshBudgetAlerts(now.getMonth() + 1, now.getFullYear(), false);
+  }, [refreshBudgetAlerts, user?.id]);
+
+  useEffect(() => {
+    const handleTransactionChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ month?: number; year?: number }>).detail;
+      const now = new Date();
+      const month = detail?.month ?? now.getMonth() + 1;
+      const year = detail?.year ?? now.getFullYear();
+      void refreshBudgetAlerts(month, year, location.pathname !== "/budgets");
     };
 
     window.addEventListener("moneymate:transactions-changed", handleTransactionChange);
     return () => {
       window.removeEventListener("moneymate:transactions-changed", handleTransactionChange);
     };
-  }, [location.pathname]);
+  }, [location.pathname, refreshBudgetAlerts]);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    const query = globalSearch.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setIsSearching(true);
+    const timeout = window.setTimeout(() => {
+      const normalized = query.toLowerCase();
+      void Promise.all([
+        transactionsApi.list({
+          page: 1,
+          pageSize: 5,
+          search: query,
+          sortBy: "date",
+          sortDir: "desc",
+        }),
+        budgetsApi.list(),
+        goalsApi.list(),
+      ])
+        .then(([transactions, budgets, goals]) => {
+          if (cancelled) return;
+          const budgetMatches = budgets
+            .filter((budget) =>
+              `${budget.category_name} ${budget.amount}`.toLowerCase().includes(normalized),
+            )
+            .slice(0, 5)
+            .map(budgetResult);
+          const goalMatches = goals
+            .filter((goal) =>
+              `${goal.name} ${goal.linked_account ?? ""}`.toLowerCase().includes(normalized),
+            )
+            .slice(0, 5)
+            .map(goalResult);
+          setSearchResults([
+            ...transactions.items.slice(0, 5).map(transactionResult),
+            ...budgetMatches,
+            ...goalMatches,
+          ]);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSearchResults([]);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsSearching(false);
+          }
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [globalSearch]);
+
+  const openSearchResult = (result: SearchResult) => {
+    setGlobalSearch("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
+    navigate(result.path);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -239,6 +412,14 @@ export function AppShell() {
             >
               <NavigationIcon path={item.path} />
               <span>{item.label}</span>
+              {item.path === "/budgets" && budgetAlertCount ? (
+                <span
+                  aria-label={`${budgetAlertCount} budget alert${budgetAlertCount === 1 ? "" : "s"}`}
+                  className={styles.navBadge}
+                >
+                  {budgetAlertCount}
+                </span>
+              ) : null}
             </NavLink>
           ))}
         </nav>
@@ -254,12 +435,6 @@ export function AppShell() {
       ) : null}
 
       <div className={styles.contentWrap}>
-        {budgetToast ? (
-          <div className={styles.toastDock}>
-            <Toast {...budgetToast} onClose={() => setBudgetToast(null)} />
-          </div>
-        ) : null}
-
         <header className={styles.header}>
           <div className={styles.headerLeft}>
             <button
@@ -284,6 +459,43 @@ export function AppShell() {
               <span />
             </button>
             <h1>{pageTitle}</h1>
+          </div>
+          <div className={styles.globalSearch} ref={searchRef}>
+            <SearchIcon />
+            <input
+              aria-label="Search transactions, budgets, and goals"
+              onChange={(event) => {
+                setGlobalSearch(event.target.value);
+                setIsSearchOpen(true);
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              placeholder="Search money..."
+              type="search"
+              value={globalSearch}
+            />
+            {isSearchOpen && globalSearch.trim().length >= 2 ? (
+              <div className={styles.searchPanel}>
+                {isSearching ? (
+                  <div className={styles.searchLoading}>
+                    <LoadingSpinner label="Searching" />
+                  </div>
+                ) : searchResults.length ? (
+                  searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => openSearchResult(result)}
+                      type="button"
+                    >
+                      <span>{result.type}</span>
+                      <strong>{result.title}</strong>
+                      <small>{result.meta}</small>
+                    </button>
+                  ))
+                ) : (
+                  <p>No matches found.</p>
+                )}
+              </div>
+            ) : null}
           </div>
           <div className={styles.headerActions}>
             <button
@@ -329,10 +541,10 @@ export function AppShell() {
                     role="menuitem"
                     type="button"
                   >
+                    <span>Settings</span>
                     <span className={styles.profileMenuIcon}>
                       <SettingsIcon />
                     </span>
-                    Settings
                   </button>
                   <button
                     className={styles.logoutMenuButton}
@@ -343,7 +555,10 @@ export function AppShell() {
                     role="menuitem"
                     type="button"
                   >
-                    Logout
+                    <span>Logout</span>
+                    <span className={styles.profileMenuIcon}>
+                      <LogoutIcon />
+                    </span>
                   </button>
                 </div>
               ) : null}

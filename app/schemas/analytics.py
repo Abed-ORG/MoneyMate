@@ -35,6 +35,8 @@ class AnalyticsPercentageChange(BaseModel):
 class NetPositionSummary(BaseModel):
     current: AnalyticsTotals
     previous: AnalyticsTotals
+    income_change: AnalyticsPercentageChange
+    expenses_change: AnalyticsPercentageChange
     net_change: AnalyticsPercentageChange
 
 

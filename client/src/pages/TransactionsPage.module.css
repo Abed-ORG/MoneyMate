@@ -11,15 +11,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.toastDock {
-  position: fixed;
-  top: 6.25rem;
-  right: clamp(1rem, 3vw, 2rem);
-  z-index: 90;
-  width: min(28rem, calc(100vw - 2rem));
-  pointer-events: auto;
-}
-
 .actionBar {
   display: flex;
   grid-column: 1 / -1;
@@ -165,6 +156,14 @@
 
 .exportModal {
   width: min(44rem, 100%);
+}
+
+.transactionModal {
+  overflow: visible;
+}
+
+.transactionFormModal {
+  overflow: visible;
 }
 
 .exportForm {
@@ -346,7 +345,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   cursor: pointer;
 }
 
@@ -1137,12 +1135,6 @@
 }
 
 @media (max-width: 560px) {
-  .toastDock {
-    top: 1rem;
-    right: 0.75rem;
-    width: calc(100vw - 1.5rem);
-  }
-
   .filters,
   .quickAdd,
   .importCard {

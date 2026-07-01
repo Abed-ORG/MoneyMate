@@ -617,13 +617,6 @@
   justify-content: flex-end;
 }
 
-.toastWrap {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 50;
-}
-
 @media (max-width: 920px) {
   .page {
     grid-template-columns: 1fr;
@@ -726,10 +719,6 @@
     width: 100%;
   }
 
-  .toastWrap {
-    right: 0.75rem;
-    left: 0.75rem;
-  }
 }
 
 

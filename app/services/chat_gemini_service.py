@@ -4,9 +4,10 @@ import json
 import logging
 import os
 import re
+import socket
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib import error, request
 
 from app.services.gemini_transport import (
@@ -19,15 +20,26 @@ from app.services.gemini_transport import (
 configure_gemini_tls()
 
 logger = logging.getLogger(__name__)
-DEFAULT_FALLBACK_MODELS = (
+ChatModelTier = Literal["smart", "simple"]
+DEFAULT_SMART_FALLBACK_MODELS = (
+    "gemini-2.5-flash",
     "gemini-3.1-flash-lite",
     "gemini-2.5-flash-lite",
-    "gemini-2.0-flash-lite",
+)
+DEFAULT_SIMPLE_MODEL = "gemini-2.5-flash-lite"
+DEFAULT_SIMPLE_FALLBACK_MODELS = (
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
 )
 DEFAULT_MODEL_COOLDOWN_SECONDS = 60.0
 MAX_MODEL_COOLDOWN_SECONDS = 600.0
+DEFAULT_CHAT_TIMEOUT_SECONDS = 30
+MIN_CHAT_TIMEOUT_SECONDS = 10
+MAX_CHAT_TIMEOUT_SECONDS = 60
+TIMEOUT_RETRY_ATTEMPTS = 2
+SIMPLE_MAX_OUTPUT_TOKENS = 180
+SMART_MAX_OUTPUT_TOKENS = 500
 MODEL_COOLDOWNS: dict[str, float] = {}
-SERVICE_COOLDOWN_UNTIL = 0.0
 
 
 class GeminiChatError(Exception):
@@ -104,6 +116,9 @@ to interpret short follow-ups like "yes please" or "why not"; keep the answer
 grounded in the current structured financial context.
 For greetings, thanks, farewells, and simple friendly check-ins, respond
 warmly and briefly. Do not apologize or refuse those messages.
+When the user is acknowledging, hesitating, or clarifying something from the
+recent conversation, continue naturally from conversation_history. Do not
+restart with a generic greeting unless the user is actually greeting you.
 When a request needs help outside MoneyMate finance, apologize warmly,
 say you can help with the user's MoneyMate finances, and invite a spending,
 budget, savings, goal, or net position question.
@@ -118,7 +133,7 @@ Avoid legal, tax, investment, credit, or professional financial advice.
 
 @dataclass
 class GeminiChatClient:
-    timeout_seconds: int = 10
+    timeout_seconds: int = DEFAULT_CHAT_TIMEOUT_SECONDS
 
     @property
     def api_key(self) -> str:
@@ -129,19 +144,59 @@ class GeminiChatClient:
         return gemini_model_name()
 
     @property
+    def simple_model(self) -> str:
+        return (
+            os.getenv("GEMINI_SIMPLE_MODEL", DEFAULT_SIMPLE_MODEL).strip()
+            or DEFAULT_SIMPLE_MODEL
+        ).removeprefix("models/")
+
+    @property
     def fallback_models(self) -> list[str]:
-        configured = os.getenv("GEMINI_FALLBACK_MODELS", "").strip()
-        raw_models = (
-            configured.split(",") if configured else DEFAULT_FALLBACK_MODELS
+        return self._configured_models(
+            "GEMINI_FALLBACK_MODELS",
+            DEFAULT_SMART_FALLBACK_MODELS,
         )
+
+    @property
+    def simple_fallback_models(self) -> list[str]:
+        return self._configured_models(
+            "GEMINI_SIMPLE_FALLBACK_MODELS",
+            DEFAULT_SIMPLE_FALLBACK_MODELS,
+        )
+
+    @property
+    def request_timeout_seconds(self) -> int:
+        configured = os.getenv("GEMINI_CHAT_TIMEOUT_SECONDS", "").strip()
+        if configured:
+            try:
+                timeout = int(configured)
+            except ValueError:
+                timeout = self.timeout_seconds
+        else:
+            timeout = self.timeout_seconds
+        return max(
+            MIN_CHAT_TIMEOUT_SECONDS,
+            min(timeout, MAX_CHAT_TIMEOUT_SECONDS),
+        )
+
+    def _configured_models(
+        self,
+        env_name: str,
+        defaults: tuple[str, ...],
+    ) -> list[str]:
+        configured = os.getenv(env_name, "").strip()
+        raw_models = configured.split(",") if configured else defaults
         return [
             model.removeprefix("models/").strip()
             for model in raw_models
             if model.strip()
         ]
 
-    def model_candidates(self) -> list[str]:
-        candidates = [self.model, *self.fallback_models]
+    def model_candidates(self, tier: ChatModelTier = "smart") -> list[str]:
+        if tier == "simple":
+            candidates = [self.simple_model, *self.simple_fallback_models]
+        else:
+            candidates = [self.model, *self.fallback_models]
         unique = []
         for model in candidates:
             if model and model not in unique:
@@ -171,65 +226,75 @@ class GeminiChatClient:
         wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
         MODEL_COOLDOWNS[model] = time.monotonic() + wait_seconds
 
-    def service_cooldown_remaining(self) -> float:
-        return max(0.0, SERVICE_COOLDOWN_UNTIL - time.monotonic())
-
-    def cool_down_service(self, seconds: float | None = None) -> None:
-        global SERVICE_COOLDOWN_UNTIL
-
-        wait_seconds = seconds or DEFAULT_MODEL_COOLDOWN_SECONDS
-        wait_seconds = max(1.0, min(wait_seconds, MAX_MODEL_COOLDOWN_SECONDS))
-        SERVICE_COOLDOWN_UNTIL = time.monotonic() + wait_seconds
-
     def generate_answer(
         self,
         question: str,
         context: dict[str, Any],
+        tier: ChatModelTier = "smart",
     ) -> str:
         if not self.api_key:
             raise GeminiChatConfigError("Gemini API key is not configured.")
-        if not self.model:
+        if not self.model and tier == "smart":
             raise GeminiChatConfigError("Gemini model is not configured.")
-
-        cooldown_remaining = self.service_cooldown_remaining()
-        if cooldown_remaining:
-            raise GeminiChatRateLimitError(
-                "Gemini is temporarily unavailable.",
-                cooldown_remaining,
+        if not self.simple_model and tier == "simple":
+            raise GeminiChatConfigError(
+                "Gemini simple model is not configured."
             )
 
         last_error: GeminiChatError | None = None
-        for model in self.model_candidates():
-            try:
-                return self._generate_answer_with_model(
-                    model,
-                    question,
-                    context,
-                )
-            except GeminiChatRateLimitError as exc:
-                self.cool_down_model(model, exc.retry_after_seconds)
-                self.cool_down_service(exc.retry_after_seconds)
-                logger.warning(
-                    (
-                        "Gemini chat is temporarily unavailable after model "
-                        "%s failed: %s"
-                    ),
-                    model,
-                    exc,
-                )
-                raise exc
-            except GeminiChatTimeoutError as exc:
-                self.cool_down_model(model)
-                self.cool_down_service()
-                logger.warning("Gemini chat model %s timed out.", model)
-                raise exc
-            except GeminiChatConfigError as exc:
-                logger.warning(
-                    "Gemini chat model %s is not available: %s",
-                    model,
-                    exc,
-                )
-                last_error = exc
+        for model in self.model_candidates(tier):
+            for attempt in range(1, TIMEOUT_RETRY_ATTEMPTS + 1):
+                try:
+                    return self._generate_answer_with_model(
+                        model,
+                        question,
+                        context,
+                        tier,
+                    )
+                except GeminiChatTimeoutError as exc:
+                    last_error = exc
+                    if attempt < TIMEOUT_RETRY_ATTEMPTS:
+                        logger.warning(
+                            (
+                                "Gemini chat model %s timed out; retrying "
+                                "attempt %d/%d."
+                            ),
+                            model,
+                            attempt + 1,
+                            TIMEOUT_RETRY_ATTEMPTS,
+                        )
+                        continue
+                    self.cool_down_model(model)
+                    logger.warning("Gemini chat model %s timed out.", model)
+                    break
+                except GeminiChatRateLimitError as exc:
+                    self.cool_down_model(model, exc.retry_after_seconds)
+                    logger.warning(
+                        (
+                            "Gemini chat model %s is temporarily "
+                            "unavailable: %s"
+                        ),
+                        model,
+                        exc,
+                    )
+                    last_error = exc
+                    break
+                except GeminiChatConfigError as exc:
+                    logger.warning(
+                        "Gemini chat model %s is not available: %s",
+                        model,
+                        exc,
+                    )
+                    last_error = exc
+                    break
+                except GeminiChatError as exc:
+                    logger.warning(
+                        "Gemini chat model %s failed: %s",
+                        model,
+                        exc,
+                    )
+                    last_error = exc
+                    break
         if last_error:
             raise last_error
         raise GeminiChatRateLimitError("Gemini is temporarily unavailable.")
@@ -239,6 +304,7 @@ class GeminiChatClient:
         model: str,
         question: str,
         context: dict[str, Any],
+        tier: ChatModelTier,
     ) -> str:
         prompt = (
             "Structured financial context follows as JSON. "
@@ -261,7 +327,11 @@ class GeminiChatClient:
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 900,
+                "maxOutputTokens": (
+                    SIMPLE_MAX_OUTPUT_TOKENS
+                    if tier == "simple"
+                    else SMART_MAX_OUTPUT_TOKENS
+                ),
             },
         }
         req = request.Request(
@@ -273,10 +343,10 @@ class GeminiChatClient:
         try:
             with request.urlopen(
                 req,
-                timeout=self.timeout_seconds,
+                timeout=self.request_timeout_seconds,
             ) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except TimeoutError as exc:
+        except (TimeoutError, socket.timeout) as exc:
             raise GeminiChatTimeoutError("Gemini timed out.") from exc
         except error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")

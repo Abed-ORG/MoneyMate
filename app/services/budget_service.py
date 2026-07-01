@@ -122,12 +122,10 @@ def resolve_category(
 
 
 def get_progress_state(usage_percentage: Decimal) -> ProgressState:
-    if usage_percentage < Decimal("50"):
+    if usage_percentage < Decimal("75"):
         return "green"
-    if usage_percentage < Decimal("80"):
+    if usage_percentage <= Decimal("90"):
         return "yellow"
-    if usage_percentage < Decimal("100"):
-        return "orange"
     return "red"
 
 
@@ -391,6 +389,50 @@ def delete_budget(db: Session, user_id: int, budget_id: int) -> None:
     db.commit()
 
 
+def copy_budgets_from_previous_month(
+    db: Session,
+    user_id: int,
+    month: int,
+    year: int,
+) -> list[BudgetRead]:
+    source_year, source_month = previous_month(year, month)
+    source_budgets = (
+        db.query(Budget)
+        .filter(
+            Budget.user_id == user_id,
+            Budget.month == source_month,
+            Budget.year == source_year,
+        )
+        .order_by(Budget.id.asc())
+        .all()
+    )
+    copied: list[Budget] = []
+    for source in source_budgets:
+        if find_duplicate_budget(
+            db,
+            user_id,
+            source.category_id,
+            month,
+            year,
+        ):
+            continue
+        budget = Budget(
+            user_id=user_id,
+            category_id=source.category_id,
+            amount=quantize_money(source.amount),
+            month=month,
+            year=year,
+        )
+        db.add(budget)
+        copied.append(budget)
+    if not copied:
+        return []
+    db.commit()
+    for budget in copied:
+        db.refresh(budget)
+    return [budget_to_schema(budget) for budget in copied]
+
+
 def spending_by_category(
     db: Session,
     user_id: int,
@@ -511,7 +553,7 @@ def calculate_monthly_overview(
             else Decimal("0.00")
         )
         alert_level = None
-        if usage >= Decimal("100"):
+        if usage > Decimal("100"):
             alert_level = "alert"
         elif usage >= Decimal("80"):
             alert_level = "warning"
@@ -567,7 +609,7 @@ def calculate_monthly_overview(
             categories_over_budget=sum(
                 1
                 for item in summaries
-                if item.usage_percentage >= Decimal("100")
+                if item.usage_percentage > Decimal("100")
             ),
         ),
         budgets=summaries,

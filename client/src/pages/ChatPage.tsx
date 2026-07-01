@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button, Modal } from "../components";
+import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiErrorMessage } from "../services/api";
 import { chatApi, ChatProviderError } from "../services/chat";
@@ -556,7 +556,11 @@ export function ChatPage() {
           </Button>
         </div>
         <div className={styles.conversationList}>
-          {isLoadingConversations ? <p className={styles.status}>Loading...</p> : null}
+          {isLoadingConversations ? (
+            <div className={styles.loaderState}>
+              <LoadingSpinner label="Loading conversations" />
+            </div>
+          ) : null}
           {conversationError ? (
             <p className={styles.errorState}>{conversationError}</p>
           ) : null}
@@ -609,7 +613,11 @@ export function ChatPage() {
               Load older messages
             </Button>
           ) : null}
-          {isLoadingMessages ? <p className={styles.status}>Loading messages...</p> : null}
+          {isLoadingMessages ? (
+            <div className={styles.loaderState}>
+              <LoadingSpinner label="Loading messages" />
+            </div>
+          ) : null}
           {!isLoadingMessages && !isSending && !messages.length ? (
             <div className={styles.emptyState}>
               <img

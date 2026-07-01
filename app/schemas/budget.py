@@ -11,7 +11,7 @@ BudgetStatus = Literal[
     "on_budget",
     "over_budget",
 ]
-ProgressState = Literal["green", "yellow", "orange", "red"]
+ProgressState = Literal["green", "yellow", "red"]
 TrendDirection = Literal["improvement", "decline", "no_change"]
 
 

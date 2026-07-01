@@ -17,6 +17,7 @@ from app.services.budget_service import (
     BudgetAlreadyExistsError,
     BudgetNotFoundError,
     InvalidBudgetCategoryError,
+    copy_budgets_from_previous_month,
     create_budget,
     delete_budget,
     get_budget_alerts,
@@ -111,6 +112,21 @@ def read_budget_alerts(
     db: Session = Depends(get_db),
 ):
     return get_budget_alerts(db, current_user.id, month, year)
+
+
+@router.post("/copy-from-previous", response_model=list[BudgetRead])
+def copy_previous_month_budgets(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=1900, le=2200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return copy_budgets_from_previous_month(
+        db,
+        current_user.id,
+        month,
+        year,
+    )
 
 
 @router.get("/history", response_model=BudgetHistoryResponse)

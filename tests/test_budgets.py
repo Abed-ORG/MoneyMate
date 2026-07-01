@@ -140,7 +140,7 @@ def test_budget_crud_duplicate_prevention_and_calculations(monkeypatch):
         assert Decimal(str(summary["actual_spending"])) == Decimal("85.00")
         assert Decimal(str(summary["usage_percentage"])) == Decimal("85.00")
         assert summary["alert_level"] == "warning"
-        assert summary["progress_state"] == "orange"
+        assert summary["progress_state"] == "yellow"
         assert summary["status"] == "close_to_budget"
 
         updated = client.patch(
@@ -221,6 +221,55 @@ def test_new_user_budget_has_zero_spent_until_user_adds_expense(monkeypatch):
         assert Decimal(str(updated_summary["remaining_amount"])) == Decimal(
             "87.66"
         )
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_budget_exactly_reached_is_on_budget_not_over_budget(monkeypatch):
+    client, session = make_client(monkeypatch)
+    try:
+        user, headers = create_account(
+            session,
+            client,
+            "exact@example.com",
+            ["Healthcare"],
+        )
+        healthcare = client.get(
+            "/budgets/categories",
+            headers=headers,
+        ).json()[0]
+        created = client.post(
+            "/budgets",
+            headers=headers,
+            json={
+                "category_id": healthcare["id"],
+                "amount": 200,
+                "month": 6,
+                "year": 2026,
+            },
+        )
+        assert created.status_code == 201
+
+        add_transaction(
+            user.id,
+            datetime(2026, 6, 12, tzinfo=timezone.utc),
+            "-200.00",
+            "Healthcare",
+        )
+        overview = client.get(
+            "/budgets/overview?month=6&year=2026",
+            headers=headers,
+        )
+
+        assert overview.status_code == 200
+        body = overview.json()
+        summary = body["budgets"][0]
+        assert summary["status"] == "on_budget"
+        assert summary["alert_level"] == "warning"
+        assert Decimal(str(summary["remaining_amount"])) == Decimal("0.00")
+        assert Decimal(str(summary["usage_percentage"])) == Decimal("100.00")
+        assert body["totals"]["categories_over_budget"] == 0
     finally:
         app.dependency_overrides.clear()
         session.close()
@@ -356,10 +405,68 @@ def test_budget_history_and_threshold_boundaries(monkeypatch):
             "-50.00"
         )
 
-        assert get_progress_state(Decimal("49.99")) == "green"
-        assert get_progress_state(Decimal("50")) == "yellow"
-        assert get_progress_state(Decimal("80")) == "orange"
-        assert get_progress_state(Decimal("100")) == "red"
+        assert get_progress_state(Decimal("74.99")) == "green"
+        assert get_progress_state(Decimal("75")) == "yellow"
+        assert get_progress_state(Decimal("90")) == "yellow"
+        assert get_progress_state(Decimal("90.01")) == "red"
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_copy_budgets_from_previous_month_skips_existing(monkeypatch):
+    client, session = make_client(monkeypatch)
+    try:
+        _, headers = create_account(
+            session,
+            client,
+            "copy@example.com",
+            ["Food & Dining", "Shopping"],
+        )
+        categories = client.get("/budgets/categories", headers=headers).json()
+        food = next(
+            item
+            for item in categories
+            if item["name"] == "Food & Dining"
+        )
+        shopping = next(
+            item
+            for item in categories
+            if item["name"] == "Shopping"
+        )
+
+        for category, amount, month in [
+            (food, 100, 5),
+            (shopping, 75, 5),
+            (food, 120, 6),
+        ]:
+            response = client.post(
+                "/budgets",
+                headers=headers,
+                json={
+                    "category_id": category["id"],
+                    "amount": amount,
+                    "month": month,
+                    "year": 2026,
+                },
+            )
+            assert response.status_code == 201
+
+        copied = client.post(
+            "/budgets/copy-from-previous?month=6&year=2026",
+            headers=headers,
+        )
+
+        assert copied.status_code == 200
+        assert [item["category_name"] for item in copied.json()] == [
+            "Shopping"
+        ]
+        overview = client.get(
+            "/budgets/overview?month=6&year=2026",
+            headers=headers,
+        )
+        assert overview.status_code == 200
+        assert len(overview.json()["budgets"]) == 2
     finally:
         app.dependency_overrides.clear()
         session.close()

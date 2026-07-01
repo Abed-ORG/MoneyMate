@@ -20,6 +20,8 @@ export type AnalyticsPercentageChange = {
 export type NetPositionSummary = {
   current: AnalyticsTotals;
   previous: AnalyticsTotals;
+  income_change: AnalyticsPercentageChange;
+  expenses_change: AnalyticsPercentageChange;
   net_change: AnalyticsPercentageChange;
 };
 

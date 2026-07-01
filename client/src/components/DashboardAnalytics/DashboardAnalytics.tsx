@@ -15,12 +15,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiMinus, FiRefreshCw, FiTrendingDown, FiTrendingUp } from "react-icons/fi";
 import { Button, Card, CategoryIcon, Modal, Select } from "..";
 import { Input } from "../Input/Input";
 import { formatCurrency } from "../Budgets/BudgetComponents";
 import { spendingCategories } from "../../constants/categories";
 import {
+  dashboardRangePreset,
   useDashboardFilters,
   type DashboardFilters as DashboardFiltersState,
 } from "../../contexts/DashboardFiltersContext";
@@ -206,40 +207,37 @@ function getPieCategoryName(entry: unknown) {
 }
 
 function setQuickRange(
-  range: "thisMonth" | "lastMonth" | "last3" | "last6" | "last12",
+  range: "thisMonth" | "last30" | "thisYear",
   setFilters: Dispatch<SetStateAction<DashboardFiltersState>>,
 ) {
-  const now = new Date();
-  let start = new Date(now.getFullYear(), now.getMonth(), 1);
-  let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  if (range === "lastMonth") {
-    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    end = new Date(now.getFullYear(), now.getMonth(), 0);
-  }
-
-  if (range === "last3" || range === "last6" || range === "last12") {
-    const monthsBack = range === "last3" ? 2 : range === "last6" ? 5 : 11;
-    start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
-  }
-
-  const toInputDate = (value: Date) => {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, "0");
-    const day = String(value.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
   setFilters((current) => ({
     ...current,
-    startDate: toInputDate(start),
-    endDate: toInputDate(end),
+    ...dashboardRangePreset(range),
   }));
 }
 
 function StatusBlock({ state, message }: StatusBlockProps) {
   return (
     <div className={`${styles.statusBlock} ${styles[state]}`} role="status">
-      <strong>{state === "error" ? "Could not load this section" : "No data yet"}</strong>
+      {state === "loading" ? (
+        <div className={styles.loadingLogo} aria-hidden="true">
+          <span />
+          <img src="/moneymate-logo.png" alt="" />
+        </div>
+      ) : (
+        <div className={styles.statusIllustration} aria-hidden="true">
+          <i />
+          <span />
+          <b />
+        </div>
+      )}
+      <strong>
+        {state === "loading"
+          ? "Loading"
+          : state === "error"
+            ? "Could not load this section"
+            : "No data yet"}
+      </strong>
       <span>{message}</span>
     </div>
   );
@@ -361,11 +359,9 @@ export function DashboardFilters({
               );
             }}
             options={[
-              { value: "thisMonth", label: "This month" },
-              { value: "lastMonth", label: "Last month" },
-              { value: "last3", label: "Last 3 months" },
-              { value: "last6", label: "Last 6 months" },
-              { value: "last12", label: "Last 12 months" },
+              { value: "thisMonth", label: "This Month" },
+              { value: "last30", label: "Last 30 Days" },
+              { value: "thisYear", label: "This Year" },
             ]}
             value={quickRange}
           />
@@ -464,9 +460,12 @@ export function NetPositionSummary({ data, isLoading, error }: AnalyticsProps) {
       <section className={styles.summaryGrid} aria-label="Financial summary">
         {[0, 1, 2, 3].map((item) => (
           <Card className={styles.summaryCard} key={item}>
-            <span className={styles.skeletonLine} />
-            <span className={styles.skeletonValue} />
-            <span className={styles.skeletonLine} />
+            <div className={styles.summaryLoadingLogo}>
+              <div className={styles.loadingLogo} aria-hidden="true">
+                <span />
+                <img src="/moneymate-logo.png" alt="" />
+              </div>
+            </div>
           </Card>
         ))}
       </section>
@@ -489,33 +488,65 @@ export function NetPositionSummary({ data, isLoading, error }: AnalyticsProps) {
   const { currency, summary } = data;
   const net = toNumber(summary.current.net_amount);
   const netClass = net > 0 ? styles.positive : net < 0 ? styles.negative : styles.neutral;
-  const change = summary.net_change.value
-    ? `${summary.net_change.value}%`
-    : summary.net_change.label;
+  const cards = [
+    {
+      label: "Total income",
+      value: summary.current.total_income,
+      className: styles.positive,
+      change: summary.income_change,
+    },
+    {
+      label: "Total expenses",
+      value: summary.current.total_expenses,
+      className: styles.negative,
+      change: summary.expenses_change,
+    },
+    {
+      label: "Net amount",
+      value: summary.current.net_amount,
+      className: netClass,
+      change: summary.net_change,
+    },
+  ];
+
+  const trendContent = (change: typeof summary.net_change) => {
+    const isUp = change.direction === "increase" || change.direction === "new";
+    const isDown = change.direction === "decrease";
+    const trendClass = isUp
+      ? styles.trendUp
+      : isDown
+        ? styles.trendDown
+        : styles.trendFlat;
+    const TrendIcon = isUp ? FiTrendingUp : isDown ? FiTrendingDown : FiMinus;
+    return (
+      <p className={`${styles.kpiTrend} ${trendClass}`}>
+        <span aria-hidden="true">
+          <TrendIcon />
+        </span>
+        {change.value ? `${change.value}% vs previous period` : change.label}
+      </p>
+    );
+  };
 
   return (
     <section className={styles.summaryGrid} aria-label="Financial summary">
+      {cards.map((card) => (
+        <Card className={styles.summaryCard} key={card.label}>
+          <span className={styles.kpiLabel}>{card.label}</span>
+          <strong className={card.className}>
+            {formatCurrency(card.value, currency)}
+          </strong>
+          {trendContent(card.change)}
+        </Card>
+      ))}
       <Card className={styles.summaryCard}>
-        <span>Total income</span>
-        <strong className={styles.positive}>
-          {formatCurrency(summary.current.total_income, currency)}
-        </strong>
-      </Card>
-      <Card className={styles.summaryCard}>
-        <span>Total expenses</span>
-        <strong className={styles.negative}>
-          {formatCurrency(summary.current.total_expenses, currency)}
-        </strong>
-      </Card>
-      <Card className={styles.summaryCard}>
-        <span>Net amount</span>
+        <span className={styles.kpiLabel}>Net change</span>
         <strong className={netClass}>
-          {formatCurrency(summary.current.net_amount, currency)}
+          {summary.net_change.value
+            ? `${summary.net_change.value}%`
+            : summary.net_change.label}
         </strong>
-      </Card>
-      <Card className={styles.summaryCard}>
-        <span>Net change</span>
-        <strong className={netClass}>{change}</strong>
+        {trendContent(summary.net_change)}
       </Card>
     </section>
   );
