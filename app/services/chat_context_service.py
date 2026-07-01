@@ -535,4 +535,3 @@ def metrics_from_context(context: dict[str, Any]) -> dict[str, Any]:
     if context.get("goals"):
         metrics["goal_count"] = len(context["goals"])
     return metrics
-  
