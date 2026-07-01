@@ -403,7 +403,10 @@ def build_financial_context(
                     date(start_date.year, start_date.month + 1, 1)
                     - timedelta(days=1)
                 )
-            previous_start, previous_end = previous_period(start_date, end_date)
+            previous_start, previous_end = previous_period(
+                start_date,
+                end_date,
+            )
             transactions = transactions_for_period(
                 db,
                 user_id,
