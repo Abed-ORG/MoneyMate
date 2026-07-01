@@ -393,8 +393,10 @@
 }
 
 .tableWrap {
-  overflow: visible;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tableWrap::-webkit-scrollbar {
@@ -403,7 +405,7 @@
 
 .table {
   width: 100%;
-  min-width: 0;
+  min-width: 42rem;
   table-layout: auto;
   border-collapse: collapse;
 }
@@ -1158,12 +1160,8 @@
     grid-template-columns: 1fr;
   }
 
-  .tableWrap {
-    overflow-x: visible;
-  }
-
   .table {
-    min-width: 0;
+    min-width: 36rem;
   }
 
   .table th,

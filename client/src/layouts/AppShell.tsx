@@ -84,6 +84,23 @@ function NavigationIcon({ path }: { path: string }) {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M20 14.8A8.2 8.2 0 0 1 9.2 4a8.2 8.2 0 1 0 10.8 10.8Z" />
+    </svg>
+  );
+}
+
 function SettingsIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -271,23 +288,19 @@ export function AppShell() {
           <div className={styles.headerActions}>
             <button
               aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} mode`}
+              aria-pressed={themeMode === "dark"}
               className={styles.themeButton}
               onClick={() =>
                 setThemeMode((current) => (current === "dark" ? "light" : "dark"))
               }
               type="button"
             >
-              {themeMode === "dark" ? (
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                </svg>
-              ) : (
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 7 7 0 1 0 20 15.5Z" />
-                </svg>
-              )}
-              <span>{themeMode === "dark" ? "Light" : "Dark"}</span>
+              <span className={styles.themeButtonIcon}>
+                {themeMode === "dark" ? <MoonIcon /> : <SunIcon />}
+              </span>
+              <span className={styles.themeButtonText}>
+                {themeMode === "dark" ? "Light" : "Dark"}
+              </span>
             </button>
             <div className={styles.userArea} ref={profileMenuRef}>
               <button
@@ -339,7 +352,9 @@ export function AppShell() {
         </header>
 
         <main className={styles.main}>
-          <Outlet />
+          <div key={location.pathname} className={styles.pageTransition}>
+            <Outlet />
+          </div>
         </main>
       </div>
 
