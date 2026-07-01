@@ -342,6 +342,23 @@ def build_financial_context(
     previous_start, previous_end = previous_period(start_date, end_date)
     areas = question_areas(question)
     transactions = transactions_for_period(db, user_id, start_date, end_date)
+    if not transactions:
+        latest_month_start = latest_transaction_month(db, user_id)
+        if latest_month_start and latest_month_start != start_date:
+            start_date = latest_month_start
+            if start_date.month == 12:
+                end_date = date(start_date.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = (
+                    date(start_date.year, start_date.month + 1, 1)
+                    - timedelta(days=1)
+                )
+            previous_start, previous_end = previous_period(
+                start_date, end_date
+            )
+            transactions = transactions_for_period(
+                db, user_id, start_date, end_date
+            )
     previous_transactions = transactions_for_period(
         db,
         user_id,
