@@ -481,31 +481,39 @@
   bottom: clamp(1rem, 2.4vw, 1.6rem);
   z-index: 50;
   display: grid;
-  width: 4rem;
-  height: 4rem;
+  width: 4.4rem;
+  height: 4.4rem;
   place-items: center;
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.42);
+  border: 0;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 36% 24%, rgba(255, 255, 255, 0.2), transparent 46%),
-    linear-gradient(135deg, rgba(var(--mm-accent-rgb), 0.92), rgba(35, 113, 70, 0.88));
+  background: transparent;
   cursor: pointer;
-  padding: 0.42rem;
+  padding: 0;
+  filter:
+    drop-shadow(0 0 0.7rem rgba(var(--mm-accent-rgb), 0.28))
+    drop-shadow(0 1rem 1.6rem rgba(0, 0, 0, 0.34));
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.aiChatLauncher::before {
+  position: absolute;
+  inset: 0.18rem;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(var(--mm-accent-rgb), 0.16);
   box-shadow:
     0 0 0 0.45rem rgba(var(--mm-accent-rgb), 0.08),
-    0 1rem 2.4rem rgba(0, 0, 0, 0.34);
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+    0 0 1.4rem rgba(var(--mm-accent-rgb), 0.22);
+  content: "";
 }
 
 .aiChatLauncher:hover,
 .aiChatLauncher[aria-expanded="true"] {
-  border-color: rgba(var(--mm-accent-rgb), 0.72);
-  box-shadow:
-    0 0 0 0.5rem rgba(var(--mm-accent-rgb), 0.11),
-    0 1.1rem 2.6rem rgba(0, 0, 0, 0.38);
+  filter:
+    drop-shadow(0 0 0.95rem rgba(var(--mm-accent-rgb), 0.38))
+    drop-shadow(0 1.1rem 1.8rem rgba(0, 0, 0, 0.38));
   transform: translateY(-2px);
 }
 
@@ -517,8 +525,8 @@
 .aiChatLauncher img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0.35rem 0.7rem rgba(0, 0, 0, 0.22));
+  object-fit: cover;
+  filter: drop-shadow(0 0.5rem 0.9rem rgba(0, 0, 0, 0.28));
 }
 
 .aiChatPopup {
@@ -722,8 +730,8 @@
   }
 
   .aiChatLauncher {
-    width: 3.45rem;
-    height: 3.45rem;
+    width: 3.8rem;
+    height: 3.8rem;
   }
 
   .aiChatPopup {

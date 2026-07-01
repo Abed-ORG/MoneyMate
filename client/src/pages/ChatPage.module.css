@@ -762,15 +762,11 @@
   width: 2.55rem;
   height: 2.55rem;
   place-items: center;
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.2);
+  border: 1px solid var(--mm-border);
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 40% 35%, rgba(var(--mm-accent-rgb), 0.16), transparent 62%),
-    rgba(18, 70, 40, 0.52);
-  box-shadow:
-    inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
-    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
-  color: var(--mm-accent-soft);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+  color: var(--mm-text-soft);
 }
 
 .suggestionIcon svg {
@@ -798,16 +794,15 @@
 
 .inputRow {
   display: grid;
-  align-items: center;
+  align-items: end;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.55rem;
 }
 
 .inputRow textarea {
   width: 100%;
-  height: 2.65rem;
   min-height: 2.65rem;
-  max-height: 2.65rem;
+  max-height: 9rem;
   resize: none;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
@@ -815,8 +810,13 @@
   color: var(--mm-text);
   padding: 0.72rem 0.8rem;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  line-height: 1.2;
-  overflow: auto;
+  line-height: 1.25;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.inputRow textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .sendButton {

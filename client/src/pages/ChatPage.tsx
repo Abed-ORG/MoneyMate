@@ -352,6 +352,17 @@ function AssistantMark() {
 }
 
 function SuggestionIcon({ type }: { type: string }) {
+  if (type === "spending") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M7 7h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h8" />
+        <path d="M16 13h4" />
+        <circle cx="16" cy="13" r="1" />
+        <path d="M9 9h4" />
+      </svg>
+    );
+  }
+
   if (type === "category") {
     return (
       <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -453,6 +464,7 @@ export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
   );
   const [showJumpLatest, setShowJumpLatest] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const questionInputRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldStickToBottom = useRef(true);
 
   const validationMessage = useMemo(() => {
@@ -470,6 +482,18 @@ export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
         node.scrollTop = node.scrollHeight;
       }
     });
+  }, []);
+
+  const resizeQuestionInput = useCallback(() => {
+    const input = questionInputRef.current;
+    if (!input) {
+      return;
+    }
+    input.style.height = "auto";
+    const maxHeight = 144;
+    input.style.height = `${Math.min(input.scrollHeight, maxHeight)}px`;
+    input.style.overflowY =
+      input.scrollHeight > maxHeight ? "auto" : "hidden";
   }, []);
 
   const loadConversations = useCallback(async () => {
@@ -527,6 +551,10 @@ export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
       setShowJumpLatest(true);
     }
   }, [isSending, messages, scrollToBottom]);
+
+  useEffect(() => {
+    resizeQuestionInput();
+  }, [draft, resizeQuestionInput]);
 
   const handleScroll = () => {
     const node = messagesRef.current;
@@ -912,6 +940,15 @@ export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
                 <ClockIcon />
               </button>
               <button
+                aria-label="Start a new conversation"
+                className={styles.widgetIconButton}
+                onClick={startNewConversation}
+                title="New conversation"
+                type="button"
+              >
+                <PlusIcon />
+              </button>
+              <button
                 aria-label="Clear conversation"
                 className={styles.widgetIconButton}
                 disabled={!activeConversation}
@@ -1028,6 +1065,8 @@ export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about spending, budgets, savings goals..."
+                ref={questionInputRef}
+                rows={1}
                 value={draft}
               />
               <Button
