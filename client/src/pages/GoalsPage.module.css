@@ -40,12 +40,14 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 18px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
 }
 
-.panel, .goalCard {
-  padding: 14px;
+.panel, .goalCard, .emptyGoalCard {
+  padding: 16px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-lg);
 }
 
 .panel h2 {
@@ -57,21 +59,153 @@
   color: var(--mm-text-muted);
 }
 
-.emptyState {
-  color: var(--mm-text-muted);
-  text-align: center;
-  padding: 1.5rem 0;
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
 }
 
-/* Vertical single-column form for modals (matches TransactionsPage style) */
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mm-text-muted);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.26rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.statusPill.early {
+  background: rgba(255, 107, 114, 0.14);
+  color: #ff6b72;
+}
+
+.statusPill.mid {
+  background: rgba(255, 193, 7, 0.16);
+  color: #ffc107;
+}
+
+.statusPill.near {
+  background: rgba(73, 197, 182, 0.16);
+  color: #49c5b6;
+}
+
+.statusPill.complete {
+  background: rgba(102, 213, 130, 0.16);
+  color: #66d582;
+}
+
+.heroContent {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.heroRingCard {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--mm-radius-md);
+  border: 1px solid var(--mm-border);
+  background: rgba(var(--mm-accent-rgb), 0.06);
+}
+
+.heroRingCard strong {
+  display: block;
+  font-size: 1.05rem;
+  color: var(--mm-accent-soft);
+}
+
+.heroRingCard span {
+  display: block;
+  color: var(--mm-text-muted);
+  font-size: 0.82rem;
+}
+
+.metricsGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metricCard {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.metricCard span {
+  color: var(--mm-text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.metricCard strong {
+  font-size: 0.95rem;
+}
+
+.progressRingWrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.progressRingSvg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progressRingTrack,
+.progressRingValue {
+  fill: none;
+  stroke-width: 8;
+}
+
+.progressRingTrack {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.progressRingValue {
+  stroke: #49c5b6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 300ms ease;
+}
+
+.progressRingLabel {
+  position: absolute;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--mm-accent-soft);
+}
+
 .verticalForm {
   display: grid;
   gap: 0.8rem;
 }
 
 .chart {
-  height: 160px;
-  margin-top: 8px;
+  height: 180px;
+  margin-top: 12px;
 }
 
 .aiSavingsBox {
@@ -102,6 +236,13 @@
   font-size: 0.85rem;
 }
 
+.aiProjectionText {
+  color: var(--mm-accent-soft);
+  font-size: 0.84rem;
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
 .aiRationale {
   color: var(--mm-text-muted);
   font-size: 0.82rem;
@@ -112,13 +253,13 @@
 .listSection {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-content: start;
 }
 
 .goalCard {
   cursor: pointer;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -137,6 +278,29 @@
 .goalInfo {
   min-width: 0;
   flex: 1;
+}
+
+.goalTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(var(--mm-accent-rgb), 0.1);
+  color: var(--mm-accent-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.categoryIcon {
+  font-size: 0.95rem;
 }
 
 .goalInfo h3 {
@@ -163,21 +327,32 @@
   flex-shrink: 0;
 }
 
-.goalPercentage {
-  font-size: 1rem;
-  color: #49c5b6;
-}
-
-.goalMeta {
+.cardContent {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
 }
 
-.goalMeta span {
+.cardSummary {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.goalMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.goalMetaRow span {
   color: var(--mm-text-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+}
+
+.goalMetaRow strong {
+  font-size: 0.9rem;
 }
 
 .progressTrack {
@@ -190,8 +365,79 @@
 .progressTrack span {
   display: block;
   height: 100%;
-  background: #49c5b6;
+  background: linear-gradient(90deg, #49c5b6 0%, #66d582 100%);
   transition: width 300ms ease;
+}
+
+.milestones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.milestone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--mm-border);
+  color: var(--mm-text-muted);
+  font-size: 0.72rem;
+}
+
+.milestoneActive {
+  border-color: rgba(73, 197, 182, 0.5);
+  background: rgba(73, 197, 182, 0.12);
+  color: #49c5b6;
+}
+
+.milestoneCelebrated {
+  box-shadow: 0 0 0 1px rgba(73, 197, 182, 0.2) inset;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: var(--mm-text-muted);
+  font-size: 0.82rem;
+}
+
+.secondaryAction {
+  border: 0;
+  background: transparent;
+  color: var(--mm-accent-soft);
+  padding: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.emptyGoalCard {
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  text-align: center;
+  min-height: 220px;
+  border-style: dashed;
+}
+
+.emptyGoalCard h3 {
+  margin: 0;
+}
+
+.emptyGoalCard p {
+  margin: 0;
+  max-width: 28rem;
+}
+
+.emptyGoalActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
 }
 
 .history {
@@ -226,7 +472,6 @@
   text-align: right;
 }
 
-/* Row actions (3-dot menu) */
 .rowActions {
   position: relative;
   display: flex;
@@ -305,7 +550,6 @@
   color: var(--color-error);
 }
 
-/* Modal actions */
 .modalActions {
   display: flex;
   gap: 0.75rem;
@@ -316,4 +560,31 @@
 .confirmText {
   margin-top: 0;
   color: var(--mm-text-soft);
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .heroContent {
+    grid-template-columns: 1fr;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .goalHeader,
+  .cardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .goalTitleRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
