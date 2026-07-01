@@ -10,6 +10,7 @@ import type { Budget } from "../types/budget";
 import type { Goal } from "../types/goal";
 import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
+import { ChatPage } from "../pages/ChatPage";
 import {
   getProfileAvatar,
   subscribeToProfileAvatar,
@@ -176,6 +177,7 @@ export function AppShell() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [budgetAlertCount, setBudgetAlertCount] = useState(0);
   const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
@@ -557,6 +559,22 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      {isAiChatOpen ? (
+        <section className={styles.aiChatPopup} aria-label="MoneyMate AI chat">
+          <ChatPage mode="widget" onClose={() => setIsAiChatOpen(false)} />
+        </section>
+      ) : null}
+
+      <button
+        aria-label={isAiChatOpen ? "Close MoneyMate AI chat" : "Open MoneyMate AI chat"}
+        aria-expanded={isAiChatOpen}
+        className={styles.aiChatLauncher}
+        onClick={() => setIsAiChatOpen((current) => !current)}
+        type="button"
+      >
+        <img alt="" aria-hidden="true" src="/moneymate-ai-assistant.png" />
+      </button>
 
       <Modal
         isOpen={isLogoutConfirmationOpen}

@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button, LoadingSpinner } from "../components";
+import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiErrorMessage } from "../services/api";
 import { chatApi, ChatProviderError } from "../services/chat";
@@ -72,7 +72,70 @@ function ArrowDownIcon() {
   );
 }
 
-function renderMessageText(content: string) {
+function AlertIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.2 4.2 2.8 18a2 2 0 0 0 1.8 3h14.8a2 2 0 0 0 1.8-3L13.8 4.2a2 2 0 0 0-3.6 0Z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v5l3 2" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <rect x="8" y="8" width="10" height="10" rx="2" />
+      <path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  );
+}
+
+function RetryIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4v6h-6" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function renderInlineMarkdown(line: string) {
   const renderInline = (line: string) => {
     const parts: ReactNode[] = [];
     let lastIndex = 0;
@@ -94,12 +157,87 @@ function renderMessageText(content: string) {
     return parts.length ? parts : line;
   };
 
-  return content
-    .split(/\n{2,}|\n/)
-    .filter((line) => line.trim())
-    .map((line, index) => (
-      <p key={`${index}-${line.slice(0, 12)}`}>{renderInline(line)}</p>
-    ));
+  return renderInline(line);
+}
+
+function renderMarkdown(content: string) {
+  const blocks: ReactNode[] = [];
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (!line) {
+      index += 1;
+      continue;
+    }
+
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+    if (heading) {
+      const HeadingTag = `h${Math.min(heading[1].length + 2, 5)}` as
+        | "h3"
+        | "h4"
+        | "h5";
+      blocks.push(
+        <HeadingTag key={`heading-${index}`}>
+          {renderInlineMarkdown(heading[2])}
+        </HeadingTag>,
+      );
+      index += 1;
+      continue;
+    }
+
+    const unorderedItems: ReactNode[] = [];
+    while (index < lines.length) {
+      const match = /^\s*[-*]\s+(.+)$/.exec(lines[index]);
+      if (!match) break;
+      unorderedItems.push(
+        <li key={`ul-${index}`}>{renderInlineMarkdown(match[1])}</li>,
+      );
+      index += 1;
+    }
+    if (unorderedItems.length) {
+      blocks.push(<ul key={`ul-${index}`}>{unorderedItems}</ul>);
+      continue;
+    }
+
+    const orderedItems: ReactNode[] = [];
+    while (index < lines.length) {
+      const match = /^\s*\d+[.)]\s+(.+)$/.exec(lines[index]);
+      if (!match) break;
+      orderedItems.push(
+        <li key={`ol-${index}`}>{renderInlineMarkdown(match[1])}</li>,
+      );
+      index += 1;
+    }
+    if (orderedItems.length) {
+      blocks.push(<ol key={`ol-${index}`}>{orderedItems}</ol>);
+      continue;
+    }
+
+    const paragraphLines = [line];
+    index += 1;
+    while (index < lines.length) {
+      const next = lines[index].trim();
+      if (
+        !next ||
+        /^#{1,3}\s+/.test(next) ||
+        /^\s*[-*]\s+/.test(lines[index]) ||
+        /^\s*\d+[.)]\s+/.test(lines[index])
+      ) {
+        break;
+      }
+      paragraphLines.push(next);
+      index += 1;
+    }
+    blocks.push(
+      <p key={`p-${index}`}>
+        {renderInlineMarkdown(paragraphLines.join(" "))}
+      </p>,
+    );
+  }
+
+  return blocks;
 }
 
 function upsertConversation(
@@ -118,12 +256,17 @@ function MessageBubble({
   message,
   onRetry,
   isRetrying,
+  onCopy,
+  isCopied,
 }: {
   message: ChatMessage;
   onRetry: (message: ChatMessage) => void;
   isRetrying: boolean;
+  onCopy: (message: ChatMessage) => void;
+  isCopied: boolean;
 }) {
   const isUser = message.role === "user";
+  const hasAssistantFailure = message.status === "assistant_failed";
   return (
     <article
       className={`${styles.messageRow} ${
@@ -131,22 +274,43 @@ function MessageBubble({
       }`}
     >
       <div className={styles.bubble}>
-        {renderMessageText(message.content)}
+        {isUser ? (
+          <p>{message.content}</p>
+        ) : (
+          renderMarkdown(message.content)
+        )}
       </div>
       <div className={styles.messageMeta}>
         <time className={styles.messageTime}>
           {formatTimestamp(message.created_at)}
         </time>
-        {message.status === "assistant_failed" ? (
+        {!isUser ? (
+          <button
+            aria-label={isCopied ? "Copied response" : "Copy response"}
+            className={styles.messageAction}
+            onClick={() => onCopy(message)}
+            title={isCopied ? "Copied" : "Copy response"}
+            type="button"
+          >
+            {isCopied ? <CheckIcon /> : <CopyIcon />}
+          </button>
+        ) : null}
+      </div>
+      {hasAssistantFailure ? (
+        <div className={styles.inlineError} role="status">
+          <AlertIcon />
+          <span>MoneyMate AI could not answer that. Please retry in a moment.</span>
           <Button
+            className={styles.retryButton}
             disabled={isRetrying}
             onClick={() => onRetry(message)}
             variant="secondary"
           >
-            Retry
+            <RetryIcon />
+            <span>{isRetrying ? "Retrying..." : "Retry"}</span>
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -173,6 +337,17 @@ function TrashIcon() {
     <svg aria-hidden="true" viewBox="0 0 24 24">
       <path d="M5 7h14M10 11v6M14 11v6M8 7l1-3h6l1 3M7 7l1 13h8l1-13" />
     </svg>
+  );
+}
+
+function AssistantMark() {
+  return (
+    <img
+      alt=""
+      aria-hidden="true"
+      className={styles.headerLogo}
+      src="/moneymate-ai-assistant.png"
+    />
   );
 }
 
@@ -246,7 +421,12 @@ function TypingIndicator() {
   );
 }
 
-export function ChatPage() {
+type ChatPageProps = {
+  mode?: "page" | "widget";
+  onClose?: () => void;
+};
+
+export function ChatPage({ mode = "page", onClose }: ChatPageProps) {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversation, setActiveConversation] =
@@ -260,6 +440,13 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [retryingId, setRetryingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [clearCandidate, setClearCandidate] =
+    useState<ChatConversation | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [savingRenameId, setSavingRenameId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(mode === "page");
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [nextBeforeMessageId, setNextBeforeMessageId] = useState<number | null>(
     null,
@@ -414,7 +601,6 @@ export function ChatPage() {
         error.failure.user_message,
       ]),
     );
-    setMessageError(error.failure.message);
   };
 
   const sendQuestion = async (question: string) => {
@@ -492,6 +678,18 @@ export function ChatPage() {
     }
   };
 
+  const copyMessage = async (message: ChatMessage) => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopiedId(message.id);
+      window.setTimeout(() => {
+        setCopiedId((current) => (current === message.id ? null : current));
+      }, 1600);
+    } catch {
+      setMessageError("Could not copy the response. Please try again.");
+    }
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     void sendQuestion(draft);
@@ -511,7 +709,7 @@ export function ChatPage() {
     setMessageError("");
   };
 
-  const deleteConversation = async (conversation: ChatConversation) => {
+  const clearConversation = async (conversation: ChatConversation) => {
     setDeletingId(conversation.id);
     setConversationError("");
     try {
@@ -527,12 +725,60 @@ export function ChatPage() {
       setConversationError(getApiErrorMessage(error));
     } finally {
       setDeletingId(null);
+      setClearCandidate(null);
+    }
+  };
+
+  const startRename = (conversation: ChatConversation) => {
+    setRenamingId(conversation.id);
+    setRenameDraft(conversation.title);
+  };
+
+  const cancelRename = () => {
+    setRenamingId(null);
+    setRenameDraft("");
+  };
+
+  const submitRename = async (conversation: ChatConversation) => {
+    const title = renameDraft.trim();
+    if (!title || title === conversation.title || savingRenameId) {
+      cancelRename();
+      return;
+    }
+    setSavingRenameId(conversation.id);
+    setConversationError("");
+    try {
+      const renamed = await chatApi.renameConversation(conversation.id, title);
+      setConversations((current) => upsertConversation(current, renamed));
+      setActiveConversation((current) =>
+        current?.id === renamed.id ? renamed : current,
+      );
+      cancelRename();
+    } catch (error) {
+      setConversationError(getApiErrorMessage(error));
+    } finally {
+      setSavingRenameId(null);
     }
   };
 
   return (
-    <section className={styles.page}>
-      <aside className={styles.historyPanel} aria-label="Conversation history">
+    <section
+      className={`${styles.page} ${mode === "widget" ? styles.widgetPage : ""}`}
+    >
+      {mode === "widget" && isHistoryOpen ? (
+        <button
+          aria-label="Close conversation history"
+          className={styles.historyScrim}
+          onClick={() => setIsHistoryOpen(false)}
+          type="button"
+        />
+      ) : null}
+      <aside
+        className={`${styles.historyPanel} ${
+          mode === "widget" ? styles.widgetHistoryPanel : ""
+        } ${isHistoryOpen ? styles.widgetHistoryOpen : ""}`}
+        aria-label="Conversation history"
+      >
         <div className={styles.historyHeader}>
           <h2>Conversations</h2>
           <Button
@@ -565,19 +811,71 @@ export function ChatPage() {
               }`}
               key={conversation.id}
             >
+              {renamingId === conversation.id ? (
+                <form
+                  className={styles.renameForm}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void submitRename(conversation);
+                  }}
+                >
+                  <input
+                    aria-label="Conversation title"
+                    autoFocus
+                    maxLength={120}
+                    onChange={(event) => setRenameDraft(event.target.value)}
+                    value={renameDraft}
+                  />
+                  <button
+                    aria-label="Save title"
+                    disabled={savingRenameId === conversation.id}
+                    title="Save title"
+                    type="submit"
+                  >
+                    <CheckIcon />
+                  </button>
+                  <button
+                    aria-label="Cancel rename"
+                    disabled={savingRenameId === conversation.id}
+                    onClick={cancelRename}
+                    title="Cancel"
+                    type="button"
+                  >
+                    <XIcon />
+                  </button>
+                </form>
+              ) : (
+                <button
+                  className={styles.conversationSelect}
+                  onClick={() => {
+                    setActiveConversation(conversation);
+                    if (mode === "widget") {
+                      setIsHistoryOpen(false);
+                    }
+                  }}
+                  type="button"
+                >
+                  <strong>{conversation.title}</strong>
+                </button>
+              )}
+              {renamingId !== conversation.id ? (
+                <button
+                  aria-label={`Rename ${conversation.title}`}
+                  className={styles.renameConversation}
+                  disabled={deletingId === conversation.id}
+                  onClick={() => startRename(conversation)}
+                  title="Rename conversation"
+                  type="button"
+                >
+                  <EditIcon />
+                </button>
+              ) : null}
               <button
-                className={styles.conversationSelect}
-                onClick={() => setActiveConversation(conversation)}
-                type="button"
-              >
-                <strong>{conversation.title}</strong>
-              </button>
-              <button
-                aria-label={`Delete ${conversation.title}`}
+                aria-label={`Clear ${conversation.title}`}
                 className={styles.deleteConversation}
                 disabled={deletingId === conversation.id}
-                onClick={() => void deleteConversation(conversation)}
-                title="Delete conversation"
+                onClick={() => setClearCandidate(conversation)}
+                title="Clear conversation"
                 type="button"
               >
                 <TrashIcon />
@@ -587,7 +885,58 @@ export function ChatPage() {
         </div>
       </aside>
 
-      <section className={styles.chatPanel} aria-label="AI financial assistant">
+      <section
+        className={`${styles.chatPanel} ${
+          mode === "widget" ? styles.widgetChatPanel : ""
+        }`}
+        aria-label="AI financial assistant"
+      >
+        {mode === "widget" ? (
+          <header className={styles.widgetHeader}>
+            <div className={styles.widgetTitle}>
+              <AssistantMark />
+              <div>
+                <strong>MoneyMate AI</strong>
+                <span>Financial assistant</span>
+              </div>
+            </div>
+            <div className={styles.widgetActions}>
+              <button
+                aria-label="Conversation history"
+                aria-expanded={isHistoryOpen}
+                className={styles.widgetIconButton}
+                onClick={() => setIsHistoryOpen((current) => !current)}
+                title="Conversation history"
+                type="button"
+              >
+                <ClockIcon />
+              </button>
+              <button
+                aria-label="Clear conversation"
+                className={styles.widgetIconButton}
+                disabled={!activeConversation}
+                onClick={() => {
+                  if (activeConversation) {
+                    setClearCandidate(activeConversation);
+                  }
+                }}
+                title="Clear conversation"
+                type="button"
+              >
+                <TrashIcon />
+              </button>
+              <button
+                aria-label="Close AI chat"
+                className={styles.widgetIconButton}
+                onClick={onClose}
+                title="Close"
+                type="button"
+              >
+                <XIcon />
+              </button>
+            </div>
+          </header>
+        ) : null}
         <div
           className={styles.messages}
           onScroll={handleScroll}
@@ -639,8 +988,10 @@ export function ChatPage() {
           {messages.map((message) => (
             <MessageBubble
               isRetrying={retryingId === message.id}
+              isCopied={copiedId === message.id}
               key={message.id}
               message={message}
+              onCopy={copyMessage}
               onRetry={retryMessage}
             />
           ))}
@@ -704,6 +1055,42 @@ export function ChatPage() {
           </form>
         </footer>
       </section>
+      <Modal
+        isOpen={Boolean(clearCandidate)}
+        onClose={() => {
+          if (!deletingId) {
+            setClearCandidate(null);
+          }
+        }}
+        title="Clear conversation?"
+      >
+        <div className={styles.confirmClear}>
+          <p>
+            This removes the conversation from your history. You can start a new
+            chat whenever you are ready.
+          </p>
+          <div className={styles.confirmActions}>
+            <Button
+              disabled={Boolean(deletingId)}
+              onClick={() => setClearCandidate(null)}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={Boolean(deletingId)}
+              onClick={() => {
+                if (clearCandidate) {
+                  void clearConversation(clearCandidate);
+                }
+              }}
+              variant="danger"
+            >
+              {deletingId ? "Clearing..." : "Clear"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }
