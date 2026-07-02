@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, LoadingSpinner, Select } from "../components";
 import { getAnnualReport, type AnnualReport } from "../services/reports";
 import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
@@ -14,6 +14,14 @@ function percent(value: number) {
   const rounded = Number.isFinite(value) ? value : 0;
   return `${rounded >= 0 ? "+" : ""}${rounded.toFixed(1)}%`;
 }
+
+const tooltipStyle = {
+  background: "var(--mm-surface-strong)",
+  border: "1px solid var(--mm-border-strong)",
+  borderRadius: "12px",
+  boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
+  color: "var(--mm-text)",
+};
 
 function buildYears() {
   const current = new Date().getFullYear();
@@ -52,6 +60,21 @@ async function downloadPdf(report: AnnualReport) {
         label: "Net savings",
         value: money(report.totals.netSavings),
         tone: report.totals.netSavings >= 0 ? "positive" : "negative",
+      },
+    ],
+    charts: [
+      {
+        title: "Income vs expenses",
+        xKey: "monthLabel",
+        data: report.months.map((item) => ({
+          monthLabel: item.monthLabel,
+          income: item.income,
+          expenses: item.expenses,
+        })),
+        series: [
+          { key: "income", label: "Income", color: "#22c55e" },
+          { key: "expenses", label: "Expenses", color: "#ff6b72" },
+        ],
       },
     ],
     tables: [
@@ -102,6 +125,15 @@ export function AnnualReportPage() {
       })) ?? [],
     [report],
   );
+
+  const yearOverYearLineData = useMemo(() => {
+    if (!report) return [];
+    return report.months.map((month, index) => ({
+      monthLabel: month.monthLabel,
+      currentIncome: month.income,
+      previousIncome: report.previousYearMonths?.[index]?.income ?? 0,
+    }));
+  }, [report]);
 
   return (
     <section className={styles.page}>
@@ -157,22 +189,17 @@ export function AnnualReportPage() {
             <div className={styles.chartWrap}>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(73, 197, 182, 0.18)" strokeDasharray="4 4" vertical={false} />
+                  <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                   <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} />
                   <Tooltip
-                    cursor={{ fill: "rgba(73, 197, 182, 0.055)" }}
-                    contentStyle={{
-                      background: "var(--mm-surface-strong)",
-                      border: "1px solid var(--mm-border-strong)",
-                      borderRadius: "12px",
-                      boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-                      color: "var(--mm-text)",
-                    }}
-                    labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
+                    cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                    contentStyle={tooltipStyle}
+                    wrapperStyle={{ outline: "none" }}
                   />
-                  <Bar dataKey="income" fill="#49c5b6" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="expenses" fill="#17635c" radius={[6, 6, 0, 0]} />
+                  <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
+                  <Bar dataKey="income" fill="#22c55e" radius={[6, 6, 0, 0]} name="Income" />
+                  <Bar dataKey="expenses" fill="#ff6b72" radius={[6, 6, 0, 0]} name="Expenses" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -204,8 +231,25 @@ export function AnnualReportPage() {
             </div>
           </Card>
 
-          <Card className={styles.tableCard}>
+          <Card className={styles.chartCard}>
             <h3>Year-over-year comparison</h3>
+            {report.previousYearMonths.length ? (
+              <div className={styles.chartWrap}>
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={yearOverYearLineData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
+                    <XAxis dataKey="monthLabel" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
+                    <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} width={70} />
+                    <Tooltip cursor={{ fill: "rgba(127, 225, 212, 0.055)" }} contentStyle={tooltipStyle} wrapperStyle={{ outline: "none" }} />
+                    <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
+                    <Line type="monotone" dataKey="previousIncome" stroke="#7fe1d4" strokeWidth={3} dot={false} name={`${Number(year) - 1} income`} />
+                    <Line type="monotone" dataKey="currentIncome" stroke="#49c5b6" strokeWidth={3} dot={false} name={`${year} income`} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p>No previous year data available.</p>
+            )}
             {report.previousYearComparison ? (
               <div className={styles.comparisonGrid}>
                 <div>
@@ -221,9 +265,7 @@ export function AnnualReportPage() {
                   <strong>{percent(report.previousYearComparison.savingsChange)}</strong>
                 </div>
               </div>
-            ) : (
-              <p>No previous year data available.</p>
-            )}
+            ) : null}
           </Card>
         </>
       )}

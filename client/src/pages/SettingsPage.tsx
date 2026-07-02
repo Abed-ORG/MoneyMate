@@ -22,6 +22,7 @@ import {
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { api, getApiErrorMessage } from "../services/api";
+import { clearAuthSession } from "../utils/auth";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import { transactionsApi } from "../services/transactions";
 import type { Category } from "../types/transaction";
@@ -39,9 +40,10 @@ type SettingsSection =
   | "personal"
   | "financial"
   | "categories"
+  | "privacy"
   | "security";
 
-type SectionIconName = "profile" | "wallet" | "categories" | "security";
+type SectionIconName = "profile" | "wallet" | "categories" | "security" | "privacy";
 
 const settingsSections: Array<{
   id: SettingsSection;
@@ -66,6 +68,12 @@ const settingsSections: Array<{
     label: "Spending categories",
     description: "Choose what MoneyMate tracks",
     icon: "categories",
+  },
+  {
+    id: "privacy",
+    label: "Data & Privacy",
+    description: "Download a CSV copy of your financial data",
+    icon: "privacy",
   },
   {
     id: "security",
@@ -131,6 +139,12 @@ function SectionIcon({ name }: { name: SectionIconName }) {
         <path d="m14.5 17 1.7 1.7 3.5-4" />
       </>
     ),
+    privacy: (
+      <>
+        <path d="M6 3.5h12v4.75C18 12 12 16 12 16s-6-4-6-7.75V3.5Z" />
+        <path d="M9 9.5h6" />
+      </>
+    ),
     security: (
       <>
         <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
@@ -192,6 +206,8 @@ export function SettingsPage() {
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -394,6 +410,49 @@ export function SettingsPage() {
     }
   };
 
+  const buildExportCsv = () => {
+    const transactions = JSON.parse(localStorage.getItem("moneymate.local.transactions") ?? "[]") as Array<Record<string, unknown>>;
+    const headers = ["date", "vendor", "category", "amount", "notes", "id"];
+    const rows = transactions.map((transaction) =>
+      headers.map((header) => {
+        const value = transaction[header];
+        return typeof value === "string"
+          ? `"${value.replace(/"/g, '""')}"`
+          : value ?? "";
+      }).join(","),
+    );
+    return [headers.join(","), ...rows].join("\r\n");
+  };
+
+  const downloadDataCsv = () => {
+    if (typeof window === "undefined") return;
+    const csv = buildExportCsv();
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `MoneyMate_Data_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsSaving(true);
+    try {
+      await api.delete<void>("/profile/account");
+      clearAuthSession();
+      toast.success("Account deleted", "Your MoneyMate account has been removed.");
+      window.location.assign("/login");
+    } catch (error) {
+      toast.error("Account not deleted", getApiErrorMessage(error));
+    } finally {
+      setIsSaving(false);
+      setIsDeleteConfirmationOpen(false);
+    }
+  };
+
   const displayName = fullName.trim() || user?.full_name || "MoneyMate user";
   const displayEmail = email.trim() || user?.email || "No email available";
   const initials = getInitials(displayName) || "MM";
@@ -402,7 +461,7 @@ export function SettingsPage() {
   );
   const editableCategories = customCategories.filter((category) => !category.is_default);
   const currencyOptions = useMemo(buildCurrencyOptions, []);
-  const showProfileSave = activeSection !== "security";
+  const showProfileSave = ["personal", "financial", "categories"].includes(activeSection);
 
   return (
     <div className={styles.page}>
@@ -637,6 +696,31 @@ export function SettingsPage() {
                   </div>
                 ) : null}
 
+                {activeSection === "privacy" ? (
+                  <div className={styles.privacySection}>
+                    <p>
+                      Download your MoneyMate data as a CSV file to keep a personal backup.
+                    </p>
+                    <div className={styles.privacyActions}>
+                      <Button
+                        disabled={isExportingData}
+                        onClick={async () => {
+                          setIsExportingData(true);
+                          try {
+                            await downloadDataCsv();
+                            toast.success("Data export ready", "A CSV copy of your data is downloading.");
+                          } catch (error) {
+                            toast.error("Export failed", "Unable to prepare your data export.");
+                          } finally {
+                            setIsExportingData(false);
+                          }
+                        }}
+                      >
+                        {isExportingData ? "Preparing file..." : "Download data as CSV"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </section>
             </div>
           ) : (
@@ -684,6 +768,20 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </form>
+              <div className={styles.deleteAccountSection}>
+                <h3>Delete account</h3>
+                <p>
+                  Permanently delete your MoneyMate account and all stored data.
+                  This action cannot be undone.
+                </p>
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => setIsDeleteConfirmationOpen(true)}
+                >
+                  Delete account
+                </Button>
+              </div>
             </section>
           )}
         </div>
@@ -753,6 +851,32 @@ export function SettingsPage() {
               }}
             >
               Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteConfirmationOpen}
+        title="Delete account"
+        onClose={() => setIsDeleteConfirmationOpen(false)}
+      >
+        <div className={styles.categoryModalBody}>
+          <p>
+            Deleting your account will remove all of your MoneyMate data permanently.
+            This cannot be undone.
+          </p>
+          <div className={styles.modalActions}>
+            <Button type="button" variant="secondary" onClick={() => setIsDeleteConfirmationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={isSaving}
+              onClick={() => void handleDeleteAccount()}
+            >
+              {isSaving ? "Deleting..." : "Delete account"}
             </Button>
           </div>
         </div>

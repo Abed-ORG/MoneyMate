@@ -24,11 +24,25 @@ type ReportTable<T> = {
   emptyText?: string;
 };
 
-export type ReportPdfConfig = {
+type ReportChartSeries = {
+  key: string;
+  label: string;
+  color: string;
+};
+
+type ReportChart = {
+  title: string;
+  xKey: string;
+  data: Array<Record<string, string | number>>;
+  series: ReportChartSeries[];
+};
+
+type ReportPdfConfig = {
   title: string;
   eyebrow: string;
   generatedAt: string;
   summaryCards: SummaryCard[];
+  charts?: ReportChart[];
   tables: Array<ReportTable<any>>;
   footerNote?: string;
 };
@@ -306,6 +320,61 @@ function drawSectionTitle(page: PdfCanvas, title: string) {
   page.cursorTop += 36;
 }
 
+function drawChartSection(
+  page: PdfCanvas,
+  chart: ReportChart,
+) {
+  const chartHeight = 120;
+  const chartTop = page.cursorTop;
+  const chartWidth = pageWidth - margin * 2;
+  if (!chart.data.length) {
+    return;
+  }
+
+  const maxValue = Math.max(
+    ...chart.data.flatMap((row) =>
+      chart.series.map((series) => Number(row[series.key]) || 0),
+    ),
+    1,
+  );
+  const groupWidth = chartWidth / (chart.data.length * chart.series.length + chart.data.length + 1);
+  const barWidth = Math.max(16, groupWidth * 0.85);
+  const baseline = chartTop + chartHeight - 24;
+
+  page.text(chart.title, margin, chartTop, 12, {
+    color: "#0b1818",
+    font: "bold",
+  });
+  page.cursorTop += 22;
+
+  page.line(margin, baseline, margin + chartWidth, baseline, "#d8ebe7", 1);
+
+  chart.data.forEach((row, rowIndex) => {
+    const groupX = margin + groupWidth + rowIndex * (groupWidth * (chart.series.length + 1));
+    chart.series.forEach((series, seriesIndex) => {
+      const value = Number(row[series.key]) || 0;
+      const height = (value / maxValue) * (chartHeight - 40);
+      const x = groupX + seriesIndex * (barWidth + groupWidth * 0.2);
+      page.rect(x, baseline - height, barWidth, height, series.color);
+    });
+    page.text(String(row[chart.xKey]), groupX, baseline + 8, 8, {
+      color: "#5b706d",
+    });
+  });
+
+  let legendX = margin;
+  const legendY = baseline + 26;
+  chart.series.forEach((series) => {
+    page.rect(legendX, legendY - 7, 10, 10, series.color);
+    page.text(series.label, legendX + 16, legendY - 2, 8, {
+      color: "#5b706d",
+    });
+    legendX += 72 + textWidth(series.label, 8);
+  });
+
+  page.cursorTop += chartHeight + 18;
+}
+
 function drawTable<T>(
   pages: PdfCanvas[],
   table: ReportTable<T>,
@@ -352,21 +421,18 @@ function drawTable<T>(
     }
 
     const isEmptyRow = row === null;
-    page.rect(
-      margin,
-      page.cursorTop,
-      tableWidth,
-      rowHeight,
-      index % 2 === 0 ? "#ffffff" : "#f4fbf9",
-    );
-    page.line(margin, page.cursorTop + rowHeight, pageWidth - margin, page.cursorTop + rowHeight, "#e3f0ed");
-
-    if (isEmptyRow) {
-      page.text(table.emptyText ?? "No data available.", margin + 10, page.cursorTop + 10, 9, {
-        color: "#5b706d",
-      });
-    } else {
-      let x = margin;
+      const rowTone = !isEmptyRow && table.title === "Month-by-month breakdown"
+        ? (typeof (row as any).netSavings === "number"
+          ? (Number((row as any).netSavings) >= 0 ? "#ecfbf2" : "#ffe8ec")
+          : null)
+        : null;
+      const rowColor = rowTone ?? (index % 2 === 0 ? "#ffffff" : "#f4fbf9");
+      page.rect(
+        margin,
+        page.cursorTop,
+        tableWidth,
+        rowHeight,
+        rowColor,
       table.columns.forEach((column) => {
         const value = column.value(row);
         const textX =
@@ -405,6 +471,15 @@ export async function buildThemedReportPdf(config: ReportPdfConfig) {
   const pages = [new PdfCanvas(logo ? "Logo" : null)];
   drawHeader(pages[0], config, logo);
   drawSummaryCards(pages[0], config.summaryCards);
+  config.charts?.forEach((chart) => {
+    if (pages[pages.length - 1].cursorTop + 160 > pageHeight - 70) {
+      drawFooter(pages[pages.length - 1], pages.length, config.footerNote);
+      const newPage = new PdfCanvas(logo ? "Logo" : null);
+      pages.push(newPage);
+      drawHeader(newPage, config, logo);
+    }
+    drawChartSection(pages[pages.length - 1], chart);
+  });
   config.tables.forEach((table) => {
     drawTable(pages, table, logo, config);
   });
