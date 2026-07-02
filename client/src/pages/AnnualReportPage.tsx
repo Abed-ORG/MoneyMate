@@ -180,26 +180,28 @@ export function AnnualReportPage() {
 
           <Card className={styles.tableCard}>
             <h3>Month-by-month breakdown</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Income</th>
-                  <th>Expenses</th>
-                  <th>Net savings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.months.map((item) => (
-                  <tr key={item.month}>
-                    <td>{item.monthLabel}</td>
-                    <td>{money(item.income)}</td>
-                    <td>{money(item.expenses)}</td>
-                    <td>{money(item.netSavings)}</td>
+            <div className={styles.tableScroll}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                    <th>Net savings</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {report.months.map((item) => (
+                    <tr key={item.month}>
+                      <td>{item.monthLabel}</td>
+                      <td>{money(item.income)}</td>
+                      <td>{money(item.expenses)}</td>
+                      <td>{money(item.netSavings)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           <Card className={styles.tableCard}>

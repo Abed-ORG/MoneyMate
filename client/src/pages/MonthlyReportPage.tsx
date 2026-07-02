@@ -191,49 +191,53 @@ export function MonthlyReportPage() {
           <div className={styles.grid}>
             <Card className={styles.tableCard}>
               <h3>Budget details</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Budget</th>
-                    <th>Spent</th>
-                    <th>Remaining</th>
-                    <th>Used</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.budgetCategories.map((item) => (
-                    <tr key={item.category}>
-                      <td>{item.category}</td>
-                      <td>{money(item.budgeted)}</td>
-                      <td>{money(item.spent)}</td>
-                      <td>{money(item.remaining)}</td>
-                      <td>{percent(item.usagePercentage)}</td>
+              <div className={styles.tableScroll}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Budget</th>
+                      <th>Spent</th>
+                      <th>Remaining</th>
+                      <th>Used</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {report.budgetCategories.map((item) => (
+                      <tr key={item.category}>
+                        <td>{item.category}</td>
+                        <td>{money(item.budgeted)}</td>
+                        <td>{money(item.spent)}</td>
+                        <td>{money(item.remaining)}</td>
+                        <td>{percent(item.usagePercentage)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Card>
             <Card className={styles.tableCard}>
               <h3>Top spending categories</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Amount</th>
-                    <th>% of expenses</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.topSpendingCategories.map((item) => (
-                    <tr key={item.category}>
-                      <td>{item.category}</td>
-                      <td>{money(item.spent)}</td>
-                      <td>{percent(item.percentageOfExpenses)}</td>
+              <div className={styles.tableScroll}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Amount</th>
+                      <th>% of expenses</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {report.topSpendingCategories.map((item) => (
+                      <tr key={item.category}>
+                        <td>{item.category}</td>
+                        <td>{money(item.spent)}</td>
+                        <td>{percent(item.percentageOfExpenses)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Card>
           </div>
         </>

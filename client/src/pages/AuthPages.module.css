@@ -173,6 +173,89 @@
     background 180ms ease;
 }
 
+.fieldError {
+  margin: 0;
+  color: #ff6b72;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.rememberRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: -0.2rem;
+  color: var(--mm-text-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rememberRow input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.passwordStrength {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: -0.2rem;
+}
+
+.passwordStrengthBar {
+  width: 100%;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(248, 255, 249, 0.12);
+  overflow: hidden;
+}
+
+.passwordStrengthFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.passwordStrengthFill.danger {
+  background: #ff6b72;
+}
+
+.passwordStrengthFill.warning {
+  background: #f2b84b;
+}
+
+.passwordStrengthFill.success {
+  background: #49c5b6;
+}
+
+.passwordStrengthLabel {
+  color: var(--mm-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.buttonContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.buttonSpinner {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+}
+
+@keyframes authSpin {
+  to { transform: rotate(360deg); }
+}
+
 .field input::placeholder {
   color: rgba(238, 244, 247, 0.46);
 }

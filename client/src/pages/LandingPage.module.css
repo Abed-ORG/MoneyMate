@@ -19,6 +19,8 @@
 :global(:root[data-theme="light"]) .aboutSection > p,
 :global(:root[data-theme="light"]) .aboutDescription,
 :global(:root[data-theme="light"]) .aboutHighlights span,
+:global(:root[data-theme="light"]) .flipCardBack p,
+:global(:root[data-theme="light"]) .faqItem p,
 :global(:root[data-theme="light"]) .contactCopy p,
 :global(:root[data-theme="light"]) .footer p {
   color: var(--mm-text-soft);
@@ -465,6 +467,14 @@
   padding: 7rem 0 8rem;
 }
 
+.howSection,
+.faqSection {
+  width: min(100% - 5rem, 90rem);
+  margin: 0 auto;
+  scroll-margin-top: 1rem;
+  padding: 0 0 8rem;
+}
+
 .featureHeading {
   display: grid;
   justify-items: center;
@@ -631,6 +641,145 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+
+.howGrid {
+  display: grid;
+  margin-top: 2rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.flipCard {
+  perspective: 1200px;
+}
+
+.flipCardInner {
+  position: relative;
+  min-height: 19rem;
+  transform-style: preserve-3d;
+  transition: transform 600ms ease;
+}
+
+.flipCard:hover .flipCardInner,
+.flipCard:focus-within .flipCardInner {
+  transform: rotateY(180deg);
+}
+
+.flipCardFace,
+.flipCardBack {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.85rem;
+  padding: 1.4rem;
+  backface-visibility: hidden;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.08);
+  border-radius: var(--mm-radius-lg);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(var(--mm-accent-rgb), 0.08), transparent 14rem),
+    var(--mm-card-background);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 0.75rem 1.8rem rgba(0, 0, 0, 0.14);
+}
+
+.flipCardBack {
+  transform: rotateY(180deg);
+  text-align: center;
+}
+
+.flipCardGlow {
+  position: absolute;
+  top: 0;
+  left: 16%;
+  width: 68%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--mm-accent-rgb), 0.24), transparent);
+  content: "";
+}
+
+.flipCardIcon {
+  display: grid;
+  width: 4.1rem;
+  height: 4.1rem;
+  place-items: center;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.18);
+  border-radius: 50%;
+  background: rgba(var(--mm-accent-rgb), 0.08);
+  color: var(--mm-accent-soft);
+}
+
+.flipCardIcon svg {
+  width: 1.8rem;
+  height: 1.8rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.flipCard h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.flipCardFace p,
+.flipCardBack p {
+  margin: 0;
+  color: rgba(235, 246, 238, 0.72);
+  line-height: 1.6;
+}
+
+.faqList {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 2rem;
+}
+
+.faqItem {
+  overflow: hidden;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.08);
+  border-radius: var(--mm-radius-lg);
+  background: var(--mm-card-background);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 0.75rem 1.8rem rgba(0, 0, 0, 0.14);
+}
+
+.faqItem summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  font-weight: 700;
+}
+
+.faqItem summary::-webkit-details-marker {
+  display: none;
+}
+
+.faqItem summary::after {
+  content: "+";
+  color: var(--mm-accent-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.faqItem[open] summary::after {
+  content: "-";
+}
+
+.faqItem p {
+  margin: 0;
+  padding: 0 1.25rem 1.2rem;
+  color: rgba(235, 246, 238, 0.72);
+  line-height: 1.7;
 }
 
 .aboutSection {
@@ -873,24 +1022,46 @@
   content: "";
 }
 
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 2rem;
-  border-top: 1px solid rgba(var(--mm-accent-rgb), 0.06);
-  scroll-margin-top: 1rem;
-  padding: 2.4rem 0 3rem;
-}
-
 .contactSection {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.9fr) minmax(22rem, 1.1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
   width: min(100% - 5rem, 90rem);
   margin: 0 auto;
-  padding: 1rem 0 3rem;
+  padding: 1rem 0 4rem;
+}
+
+.contactVisual {
+  position: relative;
+  display: grid;
+  min-height: 18rem;
+  place-items: center;
+}
+
+.contactGlow {
+  position: absolute;
+  inset: 14% 8% 10%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(var(--mm-accent-rgb), 0.28), transparent 54%),
+    radial-gradient(circle, rgba(var(--mm-accent-rgb), 0.16), transparent 72%);
+  filter: blur(1.45rem);
+  transform: scale(1.02);
+}
+
+.contactImage {
+  position: relative;
+  width: min(100%, 24rem);
+  filter:
+    drop-shadow(0 1rem 2rem rgba(0, 0, 0, 0.32))
+    drop-shadow(0 0 1rem rgba(var(--mm-accent-rgb), 0.2));
+  transform: translateY(0.2rem);
 }
 
 .contactCopy {
   max-width: 42rem;
+  font: inherit;
 }
 
 .contactCopy h2 {
@@ -905,12 +1076,77 @@
   margin: 0;
   color: rgba(235, 246, 238, 0.74);
   font-size: 0.95rem;
-  line-height: 1.7;
+  line-height: 1.85;
+  letter-spacing: -0.01em;
 }
 
-.contactCopy a {
+.contactButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0.2rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.18);
+  border-radius: 999px;
+  background: rgba(var(--mm-accent-rgb), 0.08);
   color: var(--mm-accent-soft);
   font-weight: 800;
+  white-space: nowrap;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.contactButton::after {
+  content: "↗";
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.contactButton:hover {
+  transform: translateY(-1px);
+  background: rgba(var(--mm-accent-rgb), 0.14);
+  box-shadow: 0 0 1rem rgba(var(--mm-accent-rgb), 0.14);
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1.1fr) minmax(24rem, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 6rem);
+  border-top: 1px solid rgba(var(--mm-accent-rgb), 0.06);
+  scroll-margin-top: 1rem;
+  padding: 2.8rem 0 3.4rem;
+}
+
+.footerColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.6rem);
+}
+
+.footerColumn {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.footerColumn h3 {
+  margin: 0 0 0.35rem;
+  color: var(--mm-accent-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.footerColumn a {
+  color: var(--mm-text-soft);
+  line-height: 1.5;
+}
+
+.footerColumn a:hover {
+  color: var(--mm-accent-soft);
 }
 
 .footer .brand {
@@ -923,7 +1159,10 @@
 }
 
 .footer p {
-  margin: 0;
+  max-width: 24rem;
+  margin: 0.9rem 0 0;
+  color: rgba(235, 246, 238, 0.62);
+  line-height: 1.7;
 }
 
 @keyframes logoSculptureFloat {
@@ -992,6 +1231,9 @@
 
   .featureSection,
   .aboutSection,
+  .howSection,
+  .faqSection,
+  .contactSection,
   .footer {
     scroll-margin-top: 1rem;
   }
@@ -1026,6 +1268,9 @@
   .hero,
   .featureSection,
   .aboutSection,
+  .howSection,
+  .faqSection,
+  .contactSection,
   .footer {
     width: min(100% - 2rem, 46rem);
   }
@@ -1078,6 +1323,10 @@
     grid-template-columns: 1fr;
   }
 
+  .howGrid {
+    grid-template-columns: 1fr;
+  }
+
   .featureGrid article {
     min-height: 8rem;
   }
@@ -1125,15 +1374,32 @@
     width: min(100%, 22rem);
   }
 
-  .contactSection,
-  .featureSection,
-  .aboutSection,
-  .footer {
-    width: min(100% - 2rem, 46rem);
-  }
-
   .contactCopy {
     max-width: none;
+  }
+
+  .contactSection {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .contactCopy p {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .footer {
+    grid-template-columns: 1fr;
+  }
+
+  .footerColumns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .footerColumns {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1197,11 +1463,6 @@
   .featureIcon svg {
     width: 1.65rem;
     height: 1.65rem;
-  }
-
-  .footer {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }
 

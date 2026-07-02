@@ -6,6 +6,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.account import Account
@@ -72,6 +73,18 @@ def previous_period(
     days = (end_date - start_date).days + 1
     previous_end = start_date - timedelta(days=1)
     return previous_end - timedelta(days=days - 1), previous_end
+
+
+def latest_transaction_month(db: Session, user_id: int) -> date | None:
+    latest_occurred_at = (
+        db.query(func.max(Transaction.occurred_at))
+        .join(Account)
+        .filter(Account.user_id == user_id)
+        .scalar()
+    )
+    if latest_occurred_at is None:
+        return None
+    return latest_occurred_at.date().replace(day=1)
 
 
 def question_areas(question: str) -> set[str]:
@@ -147,6 +160,8 @@ def requested_period(
         return today - timedelta(days=6), today
     if "last 30" in text or "past 30" in text:
         return today - timedelta(days=29), today
+    if today.day == 1:
+        return month_bounds(today, previous=True)
     start, _ = month_bounds(today)
     return start, today
 
@@ -379,6 +394,27 @@ def build_financial_context(
         if include_transactions or include_budgets
         else []
     )
+    if (include_transactions or include_budgets) and not transactions:
+        latest_month_start = latest_transaction_month(db, user_id)
+        if latest_month_start and latest_month_start != start_date:
+            start_date = latest_month_start
+            if start_date.month == 12:
+                end_date = date(start_date.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = (
+                    date(start_date.year, start_date.month + 1, 1)
+                    - timedelta(days=1)
+                )
+            previous_start, previous_end = previous_period(
+                start_date,
+                end_date,
+            )
+            transactions = transactions_for_period(
+                db,
+                user_id,
+                start_date,
+                end_date,
+            )
     transaction_summary = (
         summarize_transactions(transactions)
         if include_transactions

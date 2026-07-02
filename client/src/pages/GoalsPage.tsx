@@ -28,11 +28,111 @@ function money(value: number | string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value));
 }
 
+function getGoalCategoryInfo(goal: Goal) {
+  const name = goal.name.toLowerCase();
+  if (/(vacat|trip|travel|holiday|beach)/.test(name)) {
+    return { icon: "🏖️", label: "Vacation" };
+  }
+  if (/(car|vehicle|auto|bike)/.test(name)) {
+    return { icon: "🚗", label: "Car" };
+  }
+  if (/(emerg|safety|buffer|rainy)/.test(name)) {
+    return { icon: "🛡️", label: "Emergency fund" };
+  }
+  if (/(house|home|mortgage|rent)/.test(name)) {
+    return { icon: "🏡", label: "House" };
+  }
+  if (/(educ|school|college|tuition|study)/.test(name)) {
+    return { icon: "🎓", label: "Education" };
+  }
+  return { icon: "🎯", label: "Goal" };
+}
+
+function getDaysRemaining(goal: Goal) {
+  if (!goal.deadline) {
+    return null;
+  }
+  const deadline = new Date(goal.deadline);
+  const today = new Date();
+  const diff = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : 0;
+}
+
+function formatProjectionMonth(month: string, startDate?: string | null) {
+  const match = month.trim().match(/^M(\d+)$/i);
+  if (!match || !startDate) {
+    return month;
+  }
+
+  const index = Number(match[1]) - 1;
+  const labelDate = new Date(startDate);
+  labelDate.setDate(1);
+  labelDate.setMonth(labelDate.getMonth() + index);
+
+  return new Intl.DateTimeFormat("en-US", { month: "short" }).format(labelDate);
+}
+
+function getProjectedCompletionLabel(goal: Goal, monthlyContribution: number) {
+  const target = Number(goal.target_amount);
+  const current = Number(goal.current_amount);
+  if (target <= current) {
+    return "You’ve already reached this goal.";
+  }
+  if (!monthlyContribution || monthlyContribution <= 0) {
+    return "Start saving to build momentum toward this goal.";
+  }
+
+  const start = goal.start_date ? new Date(goal.start_date) : new Date();
+  const monthsNeeded = Math.max(Math.ceil((target - current) / monthlyContribution), 1);
+  const completion = new Date(start);
+  completion.setMonth(completion.getMonth() + monthsNeeded);
+  const formatted = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(completion);
+  return `At your current rate, you’ll reach this goal by ${formatted}.`;
+}
+
 function AddIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
       <path d="M12 5v14M5 12h14" />
     </svg>
+  );
+}
+
+function getGoalStatus(goal: Goal) {
+  const percent = Math.min(Math.max(goal.saved_percentage, 0), 100);
+  if (percent >= 100) {
+    return { label: "Complete", tone: "complete" };
+  }
+  if (percent >= 75) {
+    return { label: "Almost there", tone: "near" };
+  }
+  if (percent >= 50) {
+    return { label: "Steady pace", tone: "mid" };
+  }
+  return { label: "Just getting started", tone: "early" };
+}
+
+function ProgressRing({ value, size = 76, strokeWidth = 8 }: { value: number; size?: number; strokeWidth?: number }) {
+  const safeValue = Math.min(Math.max(value, 0), 100);
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (safeValue / 100) * circumference;
+
+  return (
+    <div className={styles.progressRingWrap} style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className={styles.progressRingSvg}>
+        <circle cx={size / 2} cy={size / 2} r={radius} className={styles.progressRingTrack} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          className={styles.progressRingValue}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <span className={styles.progressRingLabel}>{safeValue.toFixed(0)}%</span>
+    </div>
   );
 }
 
@@ -89,6 +189,13 @@ export function GoalsPage() {
     () => goals.find((goal) => goal.id === selectedId) ?? goals[0],
     [goals, selectedId],
   );
+
+  const projectedCompletionLabel = useMemo(() => {
+    if (!selectedGoal) {
+      return "";
+    }
+    return getProjectedCompletionLabel(selectedGoal, requiredMonthly);
+  }, [requiredMonthly, selectedGoal]);
 
   // Fetch AI calculations whenever the selected goal changes
   useEffect(() => {
@@ -368,13 +475,45 @@ export function GoalsPage() {
       {!isLoadingGoals ? (
       <div className={styles.grid}>
         <Card className={styles.panel}>
-          <h2>Goal timeline</h2>
+          <div className={styles.panelHeader}>
+            <div>
+              <p className={styles.eyebrow}>Goal overview</p>
+              <h2>{selectedGoal ? `${selectedGoal.name} at a glance` : "No goal selected"}</h2>
+            </div>
+            {selectedGoal ? (
+              <span className={`${styles.statusPill} ${styles[getGoalStatus(selectedGoal).tone]}`}>
+                {getGoalStatus(selectedGoal).label}
+              </span>
+            ) : null}
+          </div>
           {selectedGoal ? (
             <>
-              <p>{selectedGoal.name} projected savings curve.</p>
+              <div className={styles.heroContent}>
+                <div className={styles.heroRingCard}>
+                  <ProgressRing value={Math.min(selectedGoal.saved_percentage, 100)} />
+                  <div>
+                    <strong>{money(selectedGoal.current_amount)}</strong>
+                    <span>saved so far</span>
+                  </div>
+                </div>
+                <div className={styles.metricsGrid}>
+                  <div className={styles.metricCard}>
+                    <span>Target</span>
+                    <strong>{money(selectedGoal.target_amount)}</strong>
+                  </div>
+                  <div className={styles.metricCard}>
+                    <span>Remaining</span>
+                    <strong>{money(selectedGoal.remaining_amount)}</strong>
+                  </div>
+                  <div className={styles.metricCard}>
+                    <span>Deadline</span>
+                    <strong>{selectedGoal.deadline ? new Date(selectedGoal.deadline).toLocaleDateString() : "Flexible"}</strong>
+                  </div>
+                </div>
+              </div>
               <div className={styles.chart}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={projections}>
+                  <AreaChart data={projections.map((point) => ({ ...point, month: formatProjectionMonth(point.month, selectedGoal?.start_date ?? null) }))}>
                     <CartesianGrid strokeDasharray="4 4" />
                     <XAxis dataKey="month" />
                     <YAxis tickFormatter={(value) => `$${value}`} />
@@ -384,84 +523,134 @@ export function GoalsPage() {
                 </ResponsiveContainer>
               </div>
               <div className={styles.aiSavingsBox}>
-                <span className={styles.aiLabel}>
-                  AI savings calculator
-                </span>
+                <span className={styles.aiLabel}>AI savings calculator</span>
                 <strong className={styles.aiAmount}>{money(requiredMonthly)}</strong>
                 <span className={styles.aiDesc}>required monthly contribution</span>
-                {aiRationale ? (
-                  <p className={styles.aiRationale}>{aiRationale}</p>
-                ) : null}
+                {projectedCompletionLabel ? <p className={styles.aiProjectionText}>{projectedCompletionLabel}</p> : null}
+                {aiRationale ? <p className={styles.aiRationale}>{aiRationale}</p> : null}
               </div>
             </>
           ) : (
-            <p className={styles.emptyState}>Create a goal to see the projection.</p>
+            <div className={styles.emptyGoalCard}>
+              <h3>Create your first goal</h3>
+              <p>Set a target and we’ll map your momentum with a smart projection.</p>
+            </div>
           )}
         </Card>
+        <section className={styles.listSection}>
+          {goals.length === 0 ? (
+            <Card className={styles.emptyGoalCard}>
+              <h3>No goals yet</h3>
+              <p>Track a big purchase, trip, or emergency fund with a clear monthly target.</p>
+              <div className={styles.emptyGoalActions}>
+                <Button onClick={openAddModal}>Create first goal</Button>
+              </div>
+            </Card>
+          ) : null}
+          {goals.map((goal) => {
+            const status = getGoalStatus(goal);
+            const category = getGoalCategoryInfo(goal);
+            const daysRemaining = getDaysRemaining(goal);
+            return (
+              <Card
+                className={`${styles.goalCard} ${selectedId === goal.id ? styles.selectedCard : ""}`}
+                key={goal.id}
+                onClick={() => setSelectedId(goal.id)}
+              >
+                <div className={styles.goalHeader}>
+                  <div className={styles.goalInfo}>
+                    <div className={styles.goalTitleRow}>
+                      <div className={styles.categoryBadge}>
+                        <span className={styles.categoryIcon}>{category.icon}</span>
+                        <span>{category.label}</span>
+                      </div>
+                      <span className={`${styles.statusPill} ${styles[status.tone]}`}>{status.label}</span>
+                    </div>
+                    <h3>{goal.name}</h3>
+                    <p>
+                      {goal.linked_account || "No linked account"}
+                      {goal.deadline ? ` · due ${new Date(goal.deadline).toLocaleDateString()}` : ""}
+                    </p>
+                  </div>
+                  <div className={styles.goalHeaderRight}>
+                    <div className={styles.rowActions} ref={actionMenuId === goal.id ? actionMenuRef : undefined}>
+                      <button
+                        className={styles.dotsButton}
+                        type="button"
+                        aria-expanded={actionMenuId === goal.id}
+                        aria-label="Open goal actions"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openActionMenu(goal);
+                        }}
+                      >
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                          <circle cx="12" cy="5" r="1.8" />
+                          <circle cx="12" cy="12" r="1.8" />
+                          <circle cx="12" cy="19" r="1.8" />
+                        </svg>
+                      </button>
+                      {actionMenuId === goal.id ? (
+                        <div className={styles.actionMenu}>
+                          <button type="button" onClick={() => openContributeFromMenu(goal)}>Log contribution</button>
+                          <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
+                          <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.cardContent}>
+                  <ProgressRing value={Math.min(goal.saved_percentage, 100)} size={70} strokeWidth={7} />
+                  <div className={styles.cardSummary}>
+                    <div className={styles.goalMetaRow}>
+                      <span>Saved</span>
+                      <strong>{money(goal.current_amount)}</strong>
+                    </div>
+                    <div className={styles.goalMetaRow}>
+                      <span>Target</span>
+                      <strong>{money(goal.target_amount)}</strong>
+                    </div>
+                    <div className={styles.goalMetaRow}>
+                      <span>Left</span>
+                      <strong>{money(goal.remaining_amount)}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.progressTrack}>
+                  <span style={{ width: `${Math.min(goal.saved_percentage, 100)}%` }} />
+                </div>
+                <div className={styles.milestones}>
+                  {[25, 50, 75, 100].map((milestone) => {
+                    const reached = goal.saved_percentage >= milestone;
+                    return (
+                      <span
+                        key={milestone}
+                        className={`${styles.milestone} ${reached ? styles.milestoneActive : ""} ${reached ? styles.milestoneCelebrated : ""}`}
+                      >
+                        {reached ? `🎉 ${milestone}%` : `${milestone}%`}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className={styles.cardFooter}>
+                  <button type="button" className={styles.secondaryAction} onClick={(event) => {
+                    event.stopPropagation();
+                    openContributeFromMenu(goal);
+                  }}>
+                    Log contribution
+                  </button>
+                  <span>{daysRemaining !== null ? `${daysRemaining} days left` : "Keep momentum going"}</span>
+                </div>
+              </Card>
+            );
+          })}
+        </section>
       </div>
       ) : null}
-
-      {!isLoadingGoals ? (
-      <section className={styles.listSection}>
-        {goals.map((goal) => (
-          <Card
-            className={`${styles.goalCard} ${selectedId === goal.id ? styles.selectedCard : ""}`}
-            key={goal.id}
-            onClick={() => setSelectedId(goal.id)}
-          >
-            <div className={styles.goalHeader}>
-              <div className={styles.goalInfo}>
-                <h3>{goal.name}</h3>
-                <p>
-                  {goal.linked_account || "No linked account"}
-                  {goal.deadline ? ` · due ${new Date(goal.deadline).toLocaleDateString()}` : ""}
-                </p>
-              </div>
-              <div className={styles.goalHeaderRight}>
-                <strong className={styles.goalPercentage}>{goal.saved_percentage.toFixed(0)}%</strong>
-                <div
-                  className={styles.rowActions}
-                  ref={actionMenuId === goal.id ? actionMenuRef : undefined}
-                >
-                  <button
-                    className={styles.dotsButton}
-                    type="button"
-                    aria-expanded={actionMenuId === goal.id}
-                    aria-label="Open goal actions"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openActionMenu(goal);
-                    }}
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24">
-                      <circle cx="12" cy="5" r="1.8" />
-                      <circle cx="12" cy="12" r="1.8" />
-                      <circle cx="12" cy="19" r="1.8" />
-                    </svg>
-                  </button>
-                  {actionMenuId === goal.id ? (
-                    <div className={styles.actionMenu}>
-                      <button type="button" onClick={() => openContributeFromMenu(goal)}>Log contribution</button>
-                      <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
-                      <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div className={styles.progressTrack}>
-              <span style={{ width: `${Math.min(goal.saved_percentage, 100)}%` }} />
-            </div>
-            <div className={styles.goalMeta}>
-              <span>Saved {money(goal.current_amount)}</span>
-              <span>Remaining {money(goal.remaining_amount)}</span>
-            </div>
-          </Card>
-        ))}
-      </section>
-      ) : null}
-
-      {selectedGoal && selectedGoal.contributions.length > 0 && (
+      {selectedGoal && selectedGoal.contributions.length > 0 ? (
         <Card className={styles.panel}>
           <h2>Contribution history</h2>
           <div className={styles.history}>
@@ -474,7 +663,7 @@ export function GoalsPage() {
             ))}
           </div>
         </Card>
-      )}
+      ) : null}
 
       {/* Add Goal Modal */}
       <Modal isOpen={isAddOpen} title="Create goal" onClose={() => setIsAddOpen(false)}>
