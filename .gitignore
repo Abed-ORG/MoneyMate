@@ -93,5 +93,6 @@ local_settings.py
 
 # Misc
 .cache/
+nul
 
 # End of file

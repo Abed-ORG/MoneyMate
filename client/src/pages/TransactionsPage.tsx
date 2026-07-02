@@ -659,7 +659,7 @@ export function TransactionsPage() {
       const updated = await transactionsApi.update(transaction.id, basePayload);
       setTransactions((current) => current.map((item) => (item.id === transaction.id ? updated : item)));
     } catch (err) {
-      setToast({ title: "Could not update transaction", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not update transaction", getApiErrorMessage(err));
     }
   };
 
