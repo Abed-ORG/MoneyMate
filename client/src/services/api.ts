@@ -16,6 +16,8 @@ const API_BASE_URL = (
   (import.meta.env.DEV ? "http://127.0.0.1:8000" : "")
 ).replace(/\/$/, "");
 
+const requestCache = new Map<string, Promise<unknown>>();
+
 function buildRequestUrl(endpoint: string, baseUrl: string) {
   return baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 }
@@ -110,71 +112,91 @@ export async function apiRequest<T>(
 
   const body = isJsonBody(options.body) ? JSON.stringify(options.body) : options.body;
 
-  let response: Response | undefined;
-  const requestUrls = [
-    buildRequestUrl(endpoint, API_BASE_URL),
-    ...(API_BASE_URL ? [endpoint] : []),
-  ];
-
-  let lastError: unknown;
-  try {
-    for (const url of requestUrls) {
-      try {
-        response = await fetch(url, {
-          ...options,
-          headers,
-          body,
-        });
-        lastError = undefined;
-        break;
-      } catch (error) {
-        lastError = error;
-      }
+  const cacheKey = `${options.method || "GET"}:${endpoint}:${body ?? ""}`;
+  if (options.method === "GET" && !options.headers || !("has" in (options.headers || {}) && (options.headers as Headers).has("Cache-Control"))) {
+    const cached = requestCache.get(cacheKey);
+    if (cached) {
+      return cached as Promise<T>;
     }
-    if (!response) {
-      throw lastError ?? new Error("Unable to reach MoneyMate API.");
-    }
-  } catch (error) {
-    const message = import.meta.env.PROD && !API_BASE_URL
-      ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
-      : `Could not reach the MoneyMate API at ${API_BASE_URL || "the current origin"}. Check that the backend is running and that the URL is correct.`;
-    throw {
-      status: 0,
-      message,
-      details: error,
-    } satisfies ApiError;
   }
 
-  const data = await parseResponse(response);
+  const requestPromise = (async (): Promise<T> => {
+    let response: Response | undefined;
+    const requestUrls = [
+      buildRequestUrl(endpoint, API_BASE_URL),
+      ...(API_BASE_URL ? [endpoint] : []),
+    ];
 
-  if (!response.ok) {
-    const error = normalizeError(
-      response.status,
-      getResponseMessage(data) ?? "Something went wrong while contacting MoneyMate.",
-      data,
-    );
-
-    if (response.status === 401) {
-      const message =
-        getResponseMessage(data) ?? "Your session has expired. Please log in again.";
-      clearAuthSession(message);
-      window.dispatchEvent(new CustomEvent("moneymate:unauthorized"));
-      const publicPaths = [
-        "/",
-        "/login",
-        "/register",
-        "/forgot-password",
-        "/reset-password",
-      ];
-      if (!publicPaths.includes(window.location.pathname)) {
-        window.location.assign("/login");
+    let lastError: unknown;
+    try {
+      for (const url of requestUrls) {
+        try {
+          response = await fetch(url, {
+            ...options,
+            headers,
+            body,
+          });
+          lastError = undefined;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
       }
+      if (!response) {
+        throw lastError ?? new Error("Unable to reach MoneyMate API.");
+      }
+    } catch (error) {
+      const message = import.meta.env.PROD && !API_BASE_URL
+        ? "MoneyMate is not configured with a production API URL. Set VITE_API_URL in Vercel to your Render backend."
+        : `Could not reach the MoneyMate API at ${API_BASE_URL || "the current origin"}. Check that the backend is running and that the URL is correct.`;
+      throw {
+        status: 0,
+        message,
+        details: error,
+      } satisfies ApiError;
     }
 
-    throw error;
+    const data = await parseResponse(response);
+
+    if (!response.ok) {
+      const error = normalizeError(
+        response.status,
+        getResponseMessage(data) ?? "Something went wrong while contacting MoneyMate.",
+        data,
+      );
+
+      if (response.status === 401) {
+        const message =
+          getResponseMessage(data) ?? "Your session has expired. Please log in again.";
+        clearAuthSession(message);
+        window.dispatchEvent(new CustomEvent("moneymate:unauthorized"));
+        const publicPaths = [
+          "/",
+          "/login",
+          "/register",
+          "/forgot-password",
+          "/reset-password",
+        ];
+        if (!publicPaths.includes(window.location.pathname)) {
+          window.location.assign("/login");
+        }
+      }
+
+      throw error;
+    }
+
+    return data as T;
+  })();
+
+  if (options.method === "GET") {
+    requestCache.set(cacheKey, requestPromise);
   }
 
-  return data as T;
+  return requestPromise;
+}
+
+export function clearApiCache() {
+  requestCache.clear();
 }
 
 export const api = {

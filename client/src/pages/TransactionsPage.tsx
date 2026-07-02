@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CategoryIcon,
@@ -352,6 +352,22 @@ function SparklesIcon() {
   );
 }
 
+const TransactionStats = memo(function TransactionStats({ transactions }: { transactions: Transaction[] }) {
+  const expenses = transactions
+    .filter((transaction) => Number(transaction.amount) < 0)
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+  const income = transactions
+    .filter((transaction) => Number(transaction.amount) > 0)
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+  return (
+    <div className={styles.transactionStats}>
+      <span>Income: ${income.toFixed(2)}</span>
+      <span>Expenses: ${Math.abs(expenses).toFixed(2)}</span>
+    </div>
+  );
+});
+
 export function TransactionsPage() {
   const toast = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -432,12 +448,18 @@ export function TransactionsPage() {
     ],
     [categoryNames],
   );
-  const expenses = transactions
-    .filter((transaction) => Number(transaction.amount) < 0)
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-  const income = transactions
-    .filter((transaction) => Number(transaction.amount) > 0)
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+  const expenses = useMemo(
+    () => transactions
+      .filter((transaction) => Number(transaction.amount) < 0)
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+    [transactions]
+  );
+  const income = useMemo(
+    () => transactions
+      .filter((transaction) => Number(transaction.amount) > 0)
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+    [transactions]
+  );
   const selectedCount = selectedTransactionIds.length;
   const allVisibleSelected =
     transactions.length > 0 &&
@@ -960,6 +982,7 @@ export function TransactionsPage() {
 
   return (
     <section className={styles.page}>
+      <TransactionStats transactions={transactions} />
       <div className={styles.actionBar}>
         <Button variant="secondary" onClick={openImportModal}>
           <CloudUploadIcon />
