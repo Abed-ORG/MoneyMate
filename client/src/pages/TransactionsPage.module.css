@@ -336,6 +336,7 @@
 
 .categoryCell {
   display: inline-grid;
+  gap: 0.4rem;
   width: 100%;
   place-items: center;
   min-width: 0;
@@ -473,10 +474,21 @@
     inset 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.045);
 }
 
+.clickableRow {
+  cursor: pointer;
+}
+
+.vendorCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
 .vendorMark {
   width: 1.65rem;
   height: 1.65rem;
-  margin-right: 0.5rem;
+  margin-right: 0;
   vertical-align: middle;
 }
 
@@ -920,6 +932,56 @@
   gap: 0.8rem;
 }
 
+.typeToggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-control-background);
+  padding: 0.2rem;
+}
+
+.typeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.45rem;
+  border: 0;
+  border-radius: calc(var(--mm-radius-sm) - 2px);
+  background: transparent;
+  color: var(--mm-text-muted);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0 0.5rem;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.typeButton:hover {
+  color: var(--mm-text-soft);
+}
+
+.typeButton.activeType {
+  background: rgba(var(--mm-accent-rgb), 0.15);
+  color: var(--mm-accent-soft);
+  box-shadow: 0 0.15rem 0.5rem rgba(var(--mm-accent-rgb), 0.1);
+}
+
+.typeButton svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .categoryAiRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 2.65rem;
@@ -1077,6 +1139,215 @@
   width: 1.35rem;
   height: 1.35rem;
   opacity: 0;
+}
+
+/* --- Inline editing styles --- */
+
+.editingRow {
+  background: rgba(var(--mm-accent-rgb), 0.08) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--mm-accent-rgb), 0.35),
+    inset 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.06) !important;
+}
+
+.inlineField {
+  position: relative;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inlineInput {
+  width: 100%;
+  min-height: 2rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-input-background);
+  color: var(--mm-text);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.inlineInput:focus {
+  border-color: rgba(var(--mm-accent-rgb), 0.5);
+  box-shadow: 0 0 0 2px rgba(var(--mm-accent-rgb), 0.12);
+  outline: none;
+}
+
+.inlineInputError {
+  border-color: var(--color-error) !important;
+  box-shadow: 0 0 0 2px rgba(255, 107, 114, 0.15) !important;
+}
+
+.inlineSelect {
+  width: 100%;
+  min-height: 2rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-input-background);
+  color: var(--mm-text);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.inlineSelect:focus {
+  border-color: rgba(var(--mm-accent-rgb), 0.5);
+  box-shadow: 0 0 0 2px rgba(var(--mm-accent-rgb), 0.12);
+  outline: none;
+}
+
+.inlineError {
+  color: var(--color-error);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inlineActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.saveInlineButton,
+.cancelInlineButton {
+  display: inline-grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: var(--mm-control-background);
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.saveInlineButton:hover:not(:disabled) {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  box-shadow: 0 0 0.6rem rgba(74, 222, 128, 0.15);
+  transform: translateY(-1px);
+}
+
+.cancelInlineButton:hover:not(:disabled) {
+  border-color: var(--color-error);
+  background: rgba(255, 107, 114, 0.1);
+  box-shadow: 0 0 0.6rem rgba(255, 107, 114, 0.15);
+  transform: translateY(-1px);
+}
+
+.saveInlineButton svg,
+.cancelInlineButton svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.saveInlineButton svg {
+  stroke: #4ade80;
+}
+
+.cancelInlineButton svg {
+  stroke: var(--color-error);
+}
+
+.saveInlineButton:disabled,
+.cancelInlineButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.readonlyAction {
+  color: var(--mm-text-muted);
+  font-size: 0.85rem;
+}
+
+.inlineSpinner {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgba(74, 222, 128, 0.3);
+  border-top-color: #4ade80;
+  border-radius: 50%;
+  animation: inlineSpin 0.6s linear infinite;
+}
+
+@keyframes inlineSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Empty state card --- */
+
+.emptyStateCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.emptyStateCard h3 {
+  margin: 0.5rem 0 0;
+  color: var(--mm-text);
+  font-size: 1.15rem;
+}
+
+.emptyStateCard p {
+  margin: 0.25rem 0 1rem;
+  max-width: 26rem;
+  color: var(--mm-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.emptyStateIcon {
+  display: inline-grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 50%;
+  background: rgba(var(--mm-accent-rgb), 0.08);
+  color: var(--mm-accent-soft);
+  box-shadow: 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.08);
+}
+
+.emptyStateIcon svg {
+  width: 2rem;
+  height: 2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 0.6rem;
 }
 
 @media (max-width: 1500px) {

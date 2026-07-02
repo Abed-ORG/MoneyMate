@@ -29,129 +29,186 @@
   stroke-width: 1.9;
 }
 
-.grid {
+/* ─── Card grid ──────────────────────────────────────── */
+
+.goalGrid {
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 32rem), 1fr));
+  gap: 1rem;
 }
 
-.panel, .goalCard, .emptyGoalCard {
-  padding: 16px;
+/* ─── Goal card ──────────────────────────────────────── */
+
+.goalCard {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 1rem;
+  padding: 1.35rem;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.panel h2 {
-  margin: 0 0 6px;
+.goalCard:hover {
+  border-color: rgba(var(--mm-accent-rgb), 0.3);
+  box-shadow: 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.06);
 }
 
-.panel p {
-  margin: 4px 0 0;
-  color: var(--mm-text-muted);
-}
-
-.panelHeader {
+.goalCardHeader {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
   align-items: flex-start;
+  gap: 0.75rem;
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mm-text-muted);
+.goalCardLeft {
+  min-width: 0;
+  flex: 1;
 }
 
-.statusPill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.26rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
+.goalCardLeft h3 {
+  margin: 0.35rem 0 0;
+  font-size: 1.15rem;
+  color: var(--mm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.statusPill.early {
-  background: rgba(255, 107, 114, 0.14);
-  color: #ff6b72;
-}
-
-.statusPill.mid {
-  background: rgba(255, 193, 7, 0.16);
-  color: #ffc107;
-}
-
-.statusPill.near {
-  background: rgba(73, 197, 182, 0.16);
-  color: #49c5b6;
-}
-
-.statusPill.complete {
-  background: rgba(102, 213, 130, 0.16);
-  color: #66d582;
-}
-
-.heroContent {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-}
-
-.heroRingCard {
+.goalActions {
   display: flex;
-  gap: 12px;
   align-items: center;
-  padding: 12px;
-  border-radius: var(--mm-radius-md);
-  border: 1px solid var(--mm-border);
-  background: rgba(var(--mm-accent-rgb), 0.06);
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
-.heroRingCard strong {
-  display: block;
-  font-size: 1.05rem;
+.contributeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.4);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(var(--mm-accent-rgb), 0.12);
   color: var(--mm-accent-soft);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  white-space: nowrap;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.heroRingCard span {
+.contributeButton:hover {
+  background: rgba(var(--mm-accent-rgb), 0.2);
+  border-color: rgba(var(--mm-accent-rgb), 0.6);
+  box-shadow: 0 0 0.6rem rgba(var(--mm-accent-rgb), 0.12);
+  transform: translateY(-1px);
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(var(--mm-accent-rgb), 0.1);
+  color: var(--mm-accent-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.categoryIcon {
+  font-size: 0.95rem;
+}
+
+/* ─── Card body ──────────────────────────────────────── */
+
+.goalCardBody {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.goalRingSection {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+}
+
+.savedAmount {
+  display: block;
+  color: var(--mm-accent-soft);
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+.savedLabel {
   display: block;
   color: var(--mm-text-muted);
-  font-size: 0.82rem;
-}
-
-.metricsGrid {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.metricCard {
-  display: grid;
-  gap: 3px;
-  padding: 10px 12px;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-md);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.metricCard span {
-  color: var(--mm-text-muted);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.metricCard strong {
-  font-size: 0.95rem;
+.goalStats {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
 }
+
+.goalStat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.8rem;
+}
+
+.statLabel {
+  color: var(--mm-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.statValue {
+  color: var(--mm-text);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.statValueSecondary {
+  color: var(--mm-text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* ─── Projection ──────────────────────────────────────── */
+
+.projectionBox {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.12);
+  border-radius: var(--mm-radius-sm);
+  background: rgba(var(--mm-accent-rgb), 0.04);
+  padding: 0.55rem 0.7rem;
+}
+
+.projectionText {
+  color: var(--mm-accent-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ─── Progress ring ────────────────────────────────────── */
 
 .progressRingWrap {
   position: relative;
@@ -179,177 +236,21 @@
 .progressRingValue {
   stroke: #49c5b6;
   stroke-linecap: round;
-  transition: stroke-dashoffset 300ms ease;
 }
 
 .progressRingLabel {
   position: absolute;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 800;
   color: var(--mm-accent-soft);
 }
 
-.verticalForm {
-  display: grid;
-  gap: 0.8rem;
-}
-
-.chart {
-  height: 180px;
-  margin-top: 12px;
-}
-
-.aiSavingsBox {
-  display: grid;
-  gap: 3px;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-sm);
-  background: rgba(var(--mm-accent-rgb), 0.06);
-}
-
-.aiLabel {
-  color: var(--mm-text-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.aiAmount {
-  font-size: 1.25rem;
-  color: #49c5b6;
-}
-
-.aiDesc {
-  color: var(--mm-text-soft);
-  font-size: 0.85rem;
-}
-
-.aiProjectionText {
-  color: var(--mm-accent-soft);
-  font-size: 0.84rem;
-  margin: 4px 0 0;
-  font-weight: 600;
-}
-
-.aiRationale {
-  color: var(--mm-text-muted);
-  font-size: 0.82rem;
-  margin: 2px 0 0;
-  font-style: italic;
-}
-
-.listSection {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-
-.goalCard {
-  cursor: pointer;
-  display: grid;
-  gap: 10px;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.selectedCard {
-  border-color: rgba(var(--mm-accent-rgb), 0.5);
-  box-shadow: 0 0 0 1px rgba(var(--mm-accent-rgb), 0.3), 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.08);
-}
-
-.goalHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.goalInfo {
-  min-width: 0;
-  flex: 1;
-}
-
-.goalTitleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.categoryBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
-  font-size: 0.74rem;
-  font-weight: 700;
-}
-
-.categoryIcon {
-  font-size: 0.95rem;
-}
-
-.goalInfo h3 {
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 1rem;
-}
-
-.goalInfo p {
-  margin: 2px 0 0;
-  color: var(--mm-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.82rem;
-}
-
-.goalHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.cardContent {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.cardSummary {
-  display: grid;
-  gap: 6px;
-  flex: 1;
-}
-
-.goalMetaRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.goalMetaRow span {
-  color: var(--mm-text-muted);
-  font-size: 0.8rem;
-}
-
-.goalMetaRow strong {
-  font-size: 0.9rem;
-}
+/* ─── Progress track ───────────────────────────────────── */
 
 .progressTrack {
   height: 8px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
@@ -357,8 +258,11 @@
   display: block;
   height: 100%;
   background: linear-gradient(90deg, #49c5b6 0%, #66d582 100%);
-  transition: width 300ms ease;
+  border-radius: inherit;
+  transition: width 400ms ease;
 }
+
+/* ─── Milestones ───────────────────────────────────────── */
 
 .milestones {
   display: flex;
@@ -376,6 +280,7 @@
   border: 1px solid var(--mm-border);
   color: var(--mm-text-muted);
   font-size: 0.72rem;
+  transition: all 200ms ease;
 }
 
 .milestoneActive {
@@ -385,83 +290,169 @@
 }
 
 .milestoneCelebrated {
-  box-shadow: 0 0 0 1px rgba(73, 197, 182, 0.2) inset;
+  box-shadow: 0 0 0.8rem rgba(73, 197, 182, 0.25), 0 0 0 1px rgba(73, 197, 182, 0.3) inset;
 }
 
-.cardFooter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+/* ─── Contribution history (collapsible) ────────────────── */
+
+.historyDetails {
+  border-top: 1px solid var(--mm-border);
+  padding-top: 0;
+}
+
+.historySummary {
+  cursor: pointer;
   color: var(--mm-text-muted);
   font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.75rem 0 0;
+  user-select: none;
 }
 
-.secondaryAction {
-  border: 0;
-  background: transparent;
+.historySummary:hover {
   color: var(--mm-accent-soft);
-  padding: 0;
-  cursor: pointer;
-  font-weight: 600;
 }
 
-.emptyGoalCard {
+.historyList {
   display: grid;
-  gap: 8px;
-  place-items: center;
-  text-align: center;
-  min-height: 220px;
-  border-style: dashed;
-}
-
-.emptyGoalCard h3 {
-  margin: 0;
-}
-
-.emptyGoalCard p {
-  margin: 0;
-  max-width: 28rem;
-}
-
-.emptyGoalActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-}
-
-.history {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  padding-top: 0.5rem;
 }
 
 .historyItem {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--mm-border);
+  gap: 4px 10px;
+  padding: 4px 0;
   align-items: center;
+}
+
+.historyItem strong {
+  color: var(--mm-accent-soft);
+  font-size: 0.85rem;
+}
+
+.historyItem span {
+  color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  text-align: right;
 }
 
 .historyItem p {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--mm-text-muted);
+  font-size: 0.78rem;
+  font-style: italic;
 }
 
-.historyItem strong {
-  color: #49c5b6;
-  font-size: 0.9rem;
+/* ─── Empty state ───────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  border: 1px dashed var(--mm-border);
+  border-radius: var(--mm-radius-lg);
+  background: rgba(var(--mm-accent-rgb), 0.02);
 }
 
-.historyItem span {
+.emptyState h2 {
+  margin: 0.5rem 0 0;
+  color: var(--mm-text);
+  font-size: 1.3rem;
+  max-width: 28rem;
+}
+
+.emptyState p {
+  margin: 0 0 0.75rem;
   color: var(--mm-text-muted);
-  font-size: 0.82rem;
-  text-align: right;
+  font-size: 1rem;
+  max-width: 26rem;
+  line-height: 1.5;
 }
+
+.emptyStateIllustration {
+  display: inline-grid;
+  width: 5rem;
+  height: 5rem;
+  place-items: center;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 50%;
+  background: rgba(var(--mm-accent-rgb), 0.08);
+  color: var(--mm-accent-soft);
+  box-shadow: 0 0 2rem rgba(var(--mm-accent-rgb), 0.1);
+}
+
+.emptyStateIllustration svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+/* ─── Confetti animation ────────────────────────────────── */
+
+.confettiLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confettiPiece {
+  position: absolute;
+  top: -10px;
+  border-radius: 2px;
+  animation: confettiFall 1.2s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400px) rotate(720deg) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* ─── Form ──────────────────────────────────────────────── */
+
+.verticalForm {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.confirmText {
+  margin-top: 0;
+  color: var(--mm-text-soft);
+}
+
+.confirmText strong {
+  color: var(--mm-text);
+}
+
+/* ─── Action menu ───────────────────────────────────────── */
 
 .rowActions {
   position: relative;
@@ -541,41 +532,20 @@
   color: var(--color-error);
 }
 
-.modalActions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.confirmText {
-  margin-top: 0;
-  color: var(--mm-text-soft);
-}
-
-@media (max-width: 980px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* ─── Responsive ────────────────────────────────────────── */
 
 @media (max-width: 720px) {
-  .heroContent {
-    grid-template-columns: 1fr;
-  }
-
-  .metricsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .goalHeader,
-  .cardFooter {
+  .goalCardHeader {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .goalTitleRow {
-    flex-direction: column;
-    align-items: flex-start;
+  .goalCardBody {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .goalStats {
+    width: 100%;
   }
 }

@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CategoryIcon,
@@ -290,6 +290,13 @@ function toPayload(form: FormState): TransactionPayload {
   };
 }
 
+type EditValues = {
+  vendor: string;
+  category: string;
+  notes: string;
+  amount: string;
+};
+
 function AddIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -352,6 +359,30 @@ function SparklesIcon() {
   );
 }
 
+function EditIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function TransactionsPage() {
   const toast = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -381,6 +412,10 @@ export function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [exportState, setExportState] = useState<ExportState>(defaultExportState);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<EditValues | null>(null);
+  const [editErrors, setEditErrors] = useState<Partial<Record<keyof EditValues, string>>>({});
+  const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -630,57 +665,109 @@ export function TransactionsPage() {
     }
   };
 
-  const handleInlineEdit = async (
-    transaction: Transaction,
-    field: "vendor" | "category" | "notes" | "amount",
-    value: string,
-  ) => {
-    const basePayload: TransactionPayload = {
-      date: transaction.date.slice(0, 10),
-      amount: Number(transaction.amount),
-      category: transaction.category,
+  const startEditing = useCallback((transaction: Transaction) => {
+    setActionMenuId(null);
+    setEditingId(transaction.id);
+    setEditValues({
       vendor: transaction.vendor,
+      category: transaction.category,
       notes: transaction.notes,
-    };
+      amount: String(Math.abs(Number(transaction.amount))),
+    });
+    setEditErrors({});
+  }, []);
 
-    if (field === "vendor") {
-      basePayload.vendor = value.trim();
-    } else if (field === "category") {
-      basePayload.category = value;
-    } else if (field === "notes") {
-      basePayload.notes = value.trim();
-    } else if (field === "amount") {
-      const numericValue = Number(value);
-      const signedAmount = Number(transaction.amount) < 0 ? -Math.abs(numericValue) : Math.abs(numericValue);
-      basePayload.amount = Number.isFinite(signedAmount) ? signedAmount : Number(transaction.amount);
+  const cancelEditing = useCallback(() => {
+    setEditingId(null);
+    setEditValues(null);
+    setEditErrors({});
+  }, []);
+
+  const saveEditing = useCallback(async (transaction: Transaction) => {
+    if (!editValues) return;
+
+    const errors: Partial<Record<keyof EditValues, string>> = {};
+    if (!editValues.vendor.trim()) {
+      errors.vendor = "Vendor is required.";
+    }
+    if (!editValues.category) {
+      errors.category = "Category is required.";
+    }
+    const amountNum = Number(editValues.amount);
+    if (!editValues.amount) {
+      errors.amount = "Amount is required.";
+    } else if (Number.isNaN(amountNum) || amountNum <= 0) {
+      errors.amount = "Amount must be a positive number.";
     }
 
+    setEditErrors(errors);
+    if (Object.keys(errors).length) return;
+
+    const signedAmount = Number(transaction.amount) < 0 ? -amountNum : amountNum;
+
+    setSavingEditId(transaction.id);
     try {
-      const updated = await transactionsApi.update(transaction.id, basePayload);
-      setTransactions((current) => current.map((item) => (item.id === transaction.id ? updated : item)));
+      const updated = await transactionsApi.update(transaction.id, {
+        date: transaction.date.slice(0, 10),
+        amount: Number.isFinite(signedAmount) ? signedAmount : Number(transaction.amount),
+        category: editValues.category,
+        vendor: editValues.vendor.trim(),
+        notes: editValues.notes.trim().slice(0, noteMaxLength),
+      });
+      setTransactions((current) =>
+        current.map((item) => (item.id === transaction.id ? updated : item)),
+      );
+      setToast({
+        title: "Transaction updated",
+        message: "Your changes were saved.",
+        variant: "success",
+      });
+      cancelEditing();
     } catch (err) {
-      setToast({ title: "Could not update transaction", message: getApiErrorMessage(err), variant: "error" });
+      setToast({ title: "Could not save changes", message: getApiErrorMessage(err), variant: "error" });
+    } finally {
+      setSavingEditId(null);
     }
-  };
+  }, [editValues, cancelEditing]);
 
+<<<<<<< HEAD
     const confirmDelete = async () => {
     const idsToDelete = selected ? [selected.id] : selectedTransactionIds;
+=======
+  const confirmDelete = async () => {
+    const idsToDelete = selectedTransactionIds.length ? selectedTransactionIds : (selected ? [selected.id] : []);
+>>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
     if (!idsToDelete.length) return;
 
     try {
       await Promise.all(idsToDelete.map((id) => transactionsApi.delete(id)));
+<<<<<<< HEAD
       toast.success(
         selected ? "Transaction deleted" : "Transactions deleted",
         selected
           ? "The transaction was removed."
           : `${idsToDelete.length} transactions were removed.`,
       );
+=======
+      setToast({
+        title: idsToDelete.length > 1 ? "Transactions deleted" : "Transaction deleted",
+        message: idsToDelete.length > 1
+          ? `${idsToDelete.length} transactions were removed.`
+          : "The transaction was removed.",
+        variant: "success",
+      });
+>>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
       setSelectedId(null);
       setSelectedTransactionIds([]);
       setIsDeleteOpen(false);
+      cancelEditing();
       await loadTransactions();
     } catch (err) {
+<<<<<<< HEAD
       toast.error("Could not delete transaction", getApiErrorMessage(err));
+=======
+      setToast({ title: "Could not delete", message: getApiErrorMessage(err), variant: "error" });
+>>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
     }
   };
 
@@ -834,7 +921,7 @@ export function TransactionsPage() {
 
   const openEditFromMenu = (transaction: Transaction) => {
     setActionMenuId(null);
-    openEdit(transaction);
+    startEditing(transaction);
   };
 
   const openHistoryFromMenu = (transaction: Transaction) => {
@@ -844,7 +931,7 @@ export function TransactionsPage() {
 
   const openDeleteFromMenu = (transaction: Transaction) => {
     setActionMenuId(null);
-    setSelectedId(transaction.id);
+    setSelectedTransactionIds([transaction.id]);
     setIsDeleteOpen(true);
   };
 
@@ -957,6 +1044,99 @@ export function TransactionsPage() {
       </div>
     </form>
   );
+
+  const renderInlineEditRow = (transaction: Transaction) => {
+    if (!editValues) return null;
+
+    return (
+      <tr key={transaction.id} className={styles.editingRow}>
+        <td>
+          <input
+            checked={selectedTransactionIds.includes(transaction.id)}
+            onChange={() => toggleTransactionSelection(transaction.id)}
+            type="checkbox"
+          />
+        </td>
+        <td>{formatDate(transaction.date)}</td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.vendor ? styles.inlineInputError : ""}`}
+              value={editValues.vendor}
+              onChange={(event) => setEditValues((current) => current ? { ...current, vendor: event.target.value } : current)}
+              placeholder="Vendor name"
+            />
+            {editErrors.vendor ? <span className={styles.inlineError}>{editErrors.vendor}</span> : null}
+          </div>
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <select
+              className={`${styles.inlineSelect} ${editErrors.category ? styles.inlineInputError : ""}`}
+              value={editValues.category}
+              onChange={(event) => setEditValues((current) => current ? { ...current, category: event.target.value } : current)}
+            >
+              {formCategoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            {editErrors.category ? <span className={styles.inlineError}>{editErrors.category}</span> : null}
+          </div>
+        </td>
+        <td>
+          <input
+            className={styles.inlineInput}
+            value={editValues.notes}
+            onChange={(event) => setEditValues((current) => current ? { ...current, notes: event.target.value } : current)}
+            placeholder="Optional note"
+            maxLength={noteMaxLength}
+          />
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.amount ? styles.inlineInputError : ""}`}
+              value={editValues.amount}
+              inputMode="decimal"
+              onChange={(event) => setEditValues((current) => current ? { ...current, amount: event.target.value } : current)}
+              placeholder="0.00"
+            />
+            {editErrors.amount ? <span className={styles.inlineError}>{editErrors.amount}</span> : null}
+          </div>
+        </td>
+        <td>
+          <div className={styles.inlineActions}>
+            <button
+              className={styles.saveInlineButton}
+              disabled={savingEditId === transaction.id}
+              onClick={() => void saveEditing(transaction)}
+              type="button"
+              aria-label="Save changes"
+              title="Save changes"
+            >
+              {savingEditId === transaction.id ? (
+                <span className={styles.inlineSpinner} aria-hidden="true" />
+              ) : (
+                <CheckIcon />
+              )}
+            </button>
+            <button
+              className={styles.cancelInlineButton}
+              disabled={savingEditId === transaction.id}
+              onClick={cancelEditing}
+              type="button"
+              aria-label="Cancel editing"
+              title="Cancel editing"
+            >
+              <XIcon />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  const isEditing = editingId !== null;
 
   return (
     <section className={styles.page}>
@@ -1148,16 +1328,13 @@ export function TransactionsPage() {
               </span>
               <div className={styles.tableActionButtons}>
                 <Button
-                  disabled={!selectedCount}
-                  onClick={() => {
-                    setSelectedId(null);
-                    setIsDeleteOpen(true);
-                  }}
+                  disabled={!selectedCount || isEditing}
+                  onClick={() => setIsDeleteOpen(true)}
                 >
                   Delete Selected
                 </Button>
                 <Button
-                  disabled={!selectedCount}
+                  disabled={!selectedCount || isEditing}
                   onClick={() => void recategorizeSelected()}
                 >
                   Re-categorize Selected
@@ -1198,6 +1375,7 @@ export function TransactionsPage() {
                         <input
                           aria-label="Select all transactions on this page"
                           checked={allVisibleSelected}
+                          disabled={isEditing}
                           onChange={toggleVisibleTransactionSelection}
                           type="checkbox"
                         />
@@ -1212,94 +1390,103 @@ export function TransactionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td>
-                        <input
-                          checked={selectedTransactionIds.includes(transaction.id)}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={() => toggleTransactionSelection(transaction.id)}
-                          type="checkbox"
-                        />
-                      </td>
-                      <td>{formatDate(transaction.date)}</td>
-                      <td>
-                        <input
-                          className={styles.inlineInput}
-                          defaultValue={transaction.vendor || "Unknown vendor"}
-                          onBlur={(event) => handleInlineEdit(transaction, "vendor", event.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <span className={styles.categoryCell}>
-                          {categoryByName.get(transaction.category)?.is_default === false ? (
-                            <span
-                              className={styles.customCategoryDot}
-                              style={categoryIconStyle(transaction.category)}
-                            />
+                  {transactions.map((transaction) => {
+                    if (editingId === transaction.id) {
+                      return renderInlineEditRow(transaction);
+                    }
+
+                    return (
+                      <tr key={transaction.id} className={styles.clickableRow}>
+                        <td>
+                          <input
+                            checked={selectedTransactionIds.includes(transaction.id)}
+                            disabled={isEditing}
+                            onChange={() => toggleTransactionSelection(transaction.id)}
+                            type="checkbox"
+                          />
+                        </td>
+                        <td>{formatDate(transaction.date)}</td>
+                        <td className={styles.vendorCell}>
+                          <span
+                            className={styles.vendorMark}
+                            style={categoryIconStyle(transaction.category)}
+                          >
+                            {(transaction.vendor || "?")[0].toUpperCase()}
+                          </span>
+                          {transaction.vendor || "Unknown"}
+                        </td>
+                        <td>
+                          <span className={styles.categoryCell}>
+                            {categoryByName.get(transaction.category)?.is_default === false ? (
+                              <span
+                                className={styles.customCategoryDot}
+                                style={categoryIconStyle(transaction.category)}
+                              />
+                            ) : (
+                              <span className={styles.categoryIcon}>
+                                <CategoryIcon category={transaction.category} />
+                              </span>
+                            )}
+                            {transaction.category}
+                          </span>
+                        </td>
+                        <td className={styles.notesCell} title={transaction.notes || undefined}>
+                          <span>{transaction.notes || "—"}</span>
+                        </td>
+                        <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
+                          {toMoney(transaction.amount)}
+                        </td>
+                        <td>
+                          {isEditing ? (
+                            <span className={styles.readonlyAction} title="Finish editing first">—</span>
                           ) : (
-                            <span className={styles.categoryIcon}>
-                              <CategoryIcon category={transaction.category} />
-                            </span>
-                          )}
-                          <select
-                            className={styles.inlineSelect}
-                            value={transaction.category}
-                            onChange={(event) => handleInlineEdit(transaction, "category", event.target.value)}
-                          >
-                            {formCategoryOptions.map((option) => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </span>
-                      </td>
-                      <td className={styles.notesCell} title={transaction.notes || undefined}>
-                        <input
-                          className={styles.inlineInput}
-                          defaultValue={transaction.notes || ""}
-                          onBlur={(event) => handleInlineEdit(transaction, "notes", event.target.value)}
-                        />
-                      </td>
-                      <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
-                        <input
-                          className={styles.inlineInput}
-                          defaultValue={String(Math.abs(Number(transaction.amount)))}
-                          onBlur={(event) => handleInlineEdit(transaction, "amount", event.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <div
-                          className={styles.rowActions}
-                          ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
-                        >
-                          <button
-                            className={styles.dotsButton}
-                            type="button"
-                            aria-expanded={actionMenuId === transaction.id}
-                            aria-label="Open transaction actions"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openActionMenu(transaction);
-                            }}
-                          >
-                            <svg aria-hidden="true" viewBox="0 0 24 24">
-                              <circle cx="12" cy="5" r="1.8" />
-                              <circle cx="12" cy="12" r="1.8" />
-                              <circle cx="12" cy="19" r="1.8" />
-                            </svg>
-                          </button>
-                          {actionMenuId === transaction.id ? (
-                            <div className={styles.actionMenu}>
-                              <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
-                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
-                              <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
-                              <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
+                            <div
+                              className={styles.rowActions}
+                              ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
+                            >
+                              <button
+                                className={styles.editIcon}
+                                type="button"
+                                aria-label="Edit transaction inline"
+                                title="Edit"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  startEditing(transaction);
+                                }}
+                              >
+                                <EditIcon />
+                              </button>
+                              <button
+                                className={styles.dotsButton}
+                                type="button"
+                                aria-expanded={actionMenuId === transaction.id}
+                                aria-label="Open transaction actions"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openActionMenu(transaction);
+                                }}
+                              >
+                                <svg aria-hidden="true" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="5" r="1.8" />
+                                  <circle cx="12" cy="12" r="1.8" />
+                                  <circle cx="12" cy="19" r="1.8" />
+                                </svg>
+                              </button>
+                              {actionMenuId === transaction.id ? (
+                                <div className={styles.actionMenu}>
+                                  <button type="button" onClick={() => startEditing(transaction)}>Edit inline</button>
+                                  <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit in modal</button>
+                                  <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
+                                  <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
+                                  <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1371,11 +1558,17 @@ export function TransactionsPage() {
       >
         {renderModalForm("edit")}
       </Modal>
-      <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
-        <p className={styles.confirmText}>Are you sure you want to delete this transaction?</p>
+      <Modal isOpen={isDeleteOpen} title={selectedTransactionIds.length > 1 ? "Delete Transactions" : "Delete Transaction"} onClose={() => setIsDeleteOpen(false)}>
+        <p className={styles.confirmText}>
+          {selectedTransactionIds.length > 1
+            ? `Are you sure you want to delete ${selectedTransactionIds.length} transactions?`
+            : "Are you sure you want to delete this transaction?"}
+        </p>
         <div className={styles.modalActions}>
           <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-          <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
+          <Button variant="danger" onClick={() => void confirmDelete()}>
+            {selectedTransactionIds.length > 1 ? `Delete ${selectedTransactionIds.length} Transactions` : "Delete Transaction"}
+          </Button>
         </div>
       </Modal>
       <Modal
@@ -1490,4 +1683,3 @@ export function TransactionsPage() {
     </section>
   );
 }
-
