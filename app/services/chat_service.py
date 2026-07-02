@@ -445,7 +445,8 @@ def resolve_followup_question(
         return question
     return (
         "Tell me more about my spending, budgets, savings goals, and net "
-        "position for the available period."
+        "position for the period mentioned here: "
+        f"{previous_assistant}"
     )
 
 

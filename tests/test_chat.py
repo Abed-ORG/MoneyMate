@@ -172,7 +172,7 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
         sent = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "How much did I spend this month?"},
+            json={"question": "How much did I spend in June 2026?"},
         )
         assert sent.status_code == 200
         body = sent.json()
@@ -568,7 +568,11 @@ def test_chat_routes_typo_finance_question_to_smart_model(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "Which catgory did I spend the most on?"},
+            json={
+                "question": (
+                    "Which catgory did I spend the most on in June 2026?"
+                )
+            },
         )
 
         assert response.status_code == 200
@@ -611,7 +615,11 @@ def test_chat_budget_question_uses_budget_context_without_goals(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "What is my Food & Dining budget?"},
+            json={
+                "question": (
+                    "What is my Food & Dining budget for June 2026?"
+                )
+            },
         )
 
         assert response.status_code == 200
