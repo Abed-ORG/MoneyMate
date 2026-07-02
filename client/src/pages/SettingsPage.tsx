@@ -22,10 +22,14 @@ import {
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { api, getApiErrorMessage } from "../services/api";
+import { budgetsApi } from "../services/budgets";
+import { goalsApi } from "../services/goals";
 import { clearAuthSession } from "../utils/auth";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import { transactionsApi } from "../services/transactions";
-import type { Category } from "../types/transaction";
+import type { Budget } from "../types/budget";
+import type { Goal } from "../types/goal";
+import type { Category, Transaction } from "../types/transaction";
 import styles from "./SettingsPage.module.css";
 
 const supportedAvatarTypes = new Set([
@@ -141,8 +145,11 @@ function SectionIcon({ name }: { name: SectionIconName }) {
     ),
     privacy: (
       <>
-        <path d="M6 3.5h12v4.75C18 12 12 16 12 16s-6-4-6-7.75V3.5Z" />
-        <path d="M9 9.5h6" />
+        <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" />
+        <path d="M5.5 5.5v7c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-7" />
+        <path d="M8.5 10c1 .5 2.2.75 3.5.75s2.5-.25 3.5-.75" />
+        <path d="M12 12.5v6" />
+        <path d="m9.5 16 2.5 2.5 2.5-2.5" />
       </>
     ),
     security: (
@@ -186,6 +193,46 @@ function fileToDataUrl(file: File) {
     reader.onerror = () => reject(new Error("The selected image could not be read."));
     reader.readAsDataURL(file);
   });
+}
+
+type CsvValue = string | number | boolean | null | undefined | string[];
+
+function csvCell(value: CsvValue) {
+  const normalized = Array.isArray(value) ? value.join("; ") : value ?? "";
+  return `"${String(normalized).replace(/"/g, '""')}"`;
+}
+
+function csvSection(
+  title: string,
+  headers: string[],
+  rows: CsvValue[][],
+) {
+  return [
+    csvCell(title),
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => row.map(csvCell).join(",")),
+  ].join("\r\n");
+}
+
+async function getAllTransactions() {
+  const pageSize = 500;
+  const items: Transaction[] = [];
+  let page = 1;
+  let total = 0;
+
+  do {
+    const response = await transactionsApi.list({
+      page,
+      pageSize,
+      sortBy: "date",
+      sortDir: "desc",
+    });
+    items.push(...response.items);
+    total = response.total;
+    page += 1;
+  } while (items.length < total);
+
+  return items;
 }
 
 export function SettingsPage() {
@@ -410,23 +457,95 @@ export function SettingsPage() {
     }
   };
 
-  const buildExportCsv = () => {
-    const transactions = JSON.parse(localStorage.getItem("moneymate.local.transactions") ?? "[]") as Array<Record<string, unknown>>;
-    const headers = ["date", "vendor", "category", "amount", "notes", "id"];
-    const rows = transactions.map((transaction) =>
-      headers.map((header) => {
-        const value = transaction[header];
-        return typeof value === "string"
-          ? `"${value.replace(/"/g, '""')}"`
-          : value ?? "";
-      }).join(","),
+  const buildExportCsv = async () => {
+    const [transactions, categories, budgets, goals] = await Promise.all([
+      getAllTransactions(),
+      transactionsApi.categories(),
+      budgetsApi.list(),
+      goalsApi.list(),
+    ]);
+
+    const profileRows: CsvValue[][] = [
+      ["full_name", user?.full_name ?? fullName],
+      ["email", user?.email ?? email],
+      ["monthly_income", profile?.monthly_income],
+      ["currency", profile?.currency],
+      ["spending_categories", profile?.spending_categories ?? []],
+      ["onboarding_completed", profile?.onboarding_completed],
+    ];
+
+    const transactionRows = transactions.map((transaction) => [
+      transaction.id,
+      transaction.date,
+      transaction.vendor,
+      transaction.category,
+      transaction.amount,
+      transaction.notes,
+      transaction.created_at,
+      transaction.updated_at,
+    ]);
+
+    const categoryRows = categories.map((category) => [
+      category.id,
+      category.name,
+      category.color,
+      category.is_default,
+    ]);
+
+    const budgetRows = (budgets as Budget[]).map((budget) => [
+      budget.id,
+      budget.category_name,
+      budget.amount,
+      budget.month,
+      budget.year,
+    ]);
+
+    const goalRows = (goals as Goal[]).map((goal) => [
+      goal.id,
+      goal.name,
+      goal.target_amount,
+      goal.current_amount,
+      goal.deadline,
+      goal.linked_account,
+      goal.is_active,
+    ]);
+
+    const contributionRows = (goals as Goal[]).flatMap((goal) =>
+      goal.contributions.map((contribution) => [
+        contribution.id,
+        goal.id,
+        goal.name,
+        contribution.amount,
+        contribution.contributed_at,
+        contribution.note,
+      ]),
     );
-    return [headers.join(","), ...rows].join("\r\n");
+
+    return [
+      csvSection("Profile", ["field", "value"], profileRows),
+      csvSection(
+        "Transactions",
+        ["id", "date", "vendor", "category", "amount", "notes", "created_at", "updated_at"],
+        transactionRows,
+      ),
+      csvSection("Categories", ["id", "name", "color", "is_default"], categoryRows),
+      csvSection("Budgets", ["id", "category", "amount", "month", "year"], budgetRows),
+      csvSection(
+        "Goals",
+        ["id", "name", "target_amount", "current_amount", "deadline", "linked_account", "is_active"],
+        goalRows,
+      ),
+      csvSection(
+        "Goal contributions",
+        ["id", "goal_id", "goal_name", "amount", "contributed_at", "note"],
+        contributionRows,
+      ),
+    ].join("\r\n\r\n");
   };
 
-  const downloadDataCsv = () => {
+  const downloadDataCsv = async () => {
     if (typeof window === "undefined") return;
-    const csv = buildExportCsv();
+    const csv = await buildExportCsv();
     const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -716,7 +835,7 @@ export function SettingsPage() {
                           }
                         }}
                       >
-                        {isExportingData ? "Preparing file..." : "Download data as CSV"}
+                        {isExportingData ? "Preparing..." : "Download"}
                       </Button>
                     </div>
                   </div>

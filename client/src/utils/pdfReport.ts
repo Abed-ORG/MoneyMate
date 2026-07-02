@@ -412,7 +412,7 @@ function drawTable<T>(
 
   drawHeaderRow();
 
-  const rows = table.rows.length ? table.rows : ([null] as T[]);
+  const rows = table.rows.length ? table.rows : ([null] as Array<T | null>);
   rows.forEach((row, index) => {
     if (page.cursorTop + rowHeight > pageHeight - 74) {
       newPage();
@@ -421,18 +421,23 @@ function drawTable<T>(
     }
 
     const isEmptyRow = row === null;
-      const rowTone = !isEmptyRow && table.title === "Month-by-month breakdown"
-        ? (typeof (row as any).netSavings === "number"
-          ? (Number((row as any).netSavings) >= 0 ? "#ecfbf2" : "#ffe8ec")
-          : null)
+    const rowTone =
+      !isEmptyRow &&
+      table.title === "Month-by-month breakdown" &&
+      typeof (row as { netSavings?: unknown }).netSavings === "number"
+        ? Number((row as { netSavings: number }).netSavings) >= 0
+          ? "#ecfbf2"
+          : "#ffe8ec"
         : null;
-      const rowColor = rowTone ?? (index % 2 === 0 ? "#ffffff" : "#f4fbf9");
-      page.rect(
-        margin,
-        page.cursorTop,
-        tableWidth,
-        rowHeight,
-        rowColor,
+    const rowColor = rowTone ?? (index % 2 === 0 ? "#ffffff" : "#f4fbf9");
+    page.rect(margin, page.cursorTop, tableWidth, rowHeight, rowColor);
+
+    if (isEmptyRow) {
+      page.text(table.emptyText ?? "No data available.", margin + 10, page.cursorTop + 10, 8.5, {
+        color: "#5b706d",
+      });
+    } else {
+      let x = margin;
       table.columns.forEach((column) => {
         const value = column.value(row);
         const textX =

@@ -351,18 +351,15 @@
 
 .themeButton {
   display: inline-flex;
-  min-height: 2.35rem;
+  overflow: hidden;
   align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
+  gap: 0.15rem;
   border: 1px solid var(--mm-border);
   border-radius: 999px;
   background: var(--mm-control-background);
   color: var(--mm-text-soft);
   cursor: pointer;
-  padding: 0.32rem 0.72rem;
-  font-size: 0.78rem;
-  font-weight: 800;
+  padding: 0.25rem;
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -371,16 +368,23 @@
     transform 160ms ease;
 }
 
-.themeButtonText {
-  display: inline-flex;
-  align-items: center;
-}
-
 .themeButtonIcon {
   display: inline-grid;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 2rem;
+  height: 1.85rem;
   place-items: center;
+  border-radius: 999px;
+  color: var(--mm-text-soft);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.themeButtonIconActive {
+  background: var(--mm-accent);
+  color: var(--mm-bg-deep);
+  box-shadow: var(--mm-shadow-glow);
 }
 
 .themeButton:hover {
@@ -655,10 +659,6 @@
 }
 
 @media (max-width: 520px) {
-  .themeButtonText {
-    display: none;
-  }
-
   .userButton strong,
   .userButton span {
     display: none;

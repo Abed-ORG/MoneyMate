@@ -10,6 +10,15 @@ function money(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 
+function compactMoney(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+    style: "currency",
+  }).format(value);
+}
+
 function percent(value: number) {
   const rounded = Number.isFinite(value) ? value : 0;
   return `${rounded >= 0 ? "+" : ""}${rounded.toFixed(1)}%`;
@@ -22,6 +31,64 @@ const tooltipStyle = {
   boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
   color: "var(--mm-text)",
 };
+
+type IncomeExpensePoint = {
+  income: number;
+  expenses: number;
+  net: number;
+};
+
+type SavingsPoint = {
+  currentSavings: number;
+  previousSavings: number;
+};
+
+function IncomeExpenseTooltip({
+  active,
+  label,
+  payload,
+}: {
+  active?: boolean;
+  label?: string;
+  payload?: Array<{ payload?: IncomeExpensePoint }>;
+}) {
+  const item = payload?.[0]?.payload;
+  if (!active || !item) {
+    return null;
+  }
+  return (
+    <div className={styles.tooltip}>
+      <strong>{label}</strong>
+      <span>Income: {money(item.income)}</span>
+      <span>Expenses: {money(item.expenses)}</span>
+      <span>Net: {money(item.net)}</span>
+    </div>
+  );
+}
+
+function YearComparisonTooltip({
+  active,
+  label,
+  payload,
+  year,
+}: {
+  active?: boolean;
+  label?: string;
+  payload?: Array<{ payload?: SavingsPoint }>;
+  year: string;
+}) {
+  const item = payload?.[0]?.payload;
+  if (!active || !item) {
+    return null;
+  }
+  return (
+    <div className={styles.tooltip}>
+      <strong>{label}</strong>
+      <span>{Number(year) - 1}: {money(item.previousSavings)}</span>
+      <span>{year}: {money(item.currentSavings)}</span>
+    </div>
+  );
+}
 
 function buildYears() {
   const current = new Date().getFullYear();
@@ -64,7 +131,7 @@ async function downloadPdf(report: AnnualReport) {
     ],
     charts: [
       {
-        title: "Income vs expenses",
+        title: "Income vs expense comparison",
         xKey: "monthLabel",
         data: report.months.map((item) => ({
           monthLabel: item.monthLabel,
@@ -122,6 +189,7 @@ export function AnnualReportPage() {
         name: item.monthLabel,
         income: item.income,
         expenses: item.expenses,
+        net: item.netSavings,
       })) ?? [],
     [report],
   );
@@ -130,8 +198,8 @@ export function AnnualReportPage() {
     if (!report) return [];
     return report.months.map((month, index) => ({
       monthLabel: month.monthLabel,
-      currentIncome: month.income,
-      previousIncome: report.previousYearMonths?.[index]?.income ?? 0,
+      currentSavings: month.netSavings,
+      previousSavings: report.previousYearMonths?.[index]?.netSavings ?? 0,
     }));
   }, [report]);
 
@@ -187,12 +255,19 @@ export function AnnualReportPage() {
           <Card className={styles.chartCard}>
             <h3>Monthly breakdown</h3>
             <div className={styles.chartWrap}>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={chartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
-                  <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} />
+                  <XAxis axisLine={false} dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
+                  <YAxis
+                    axisLine={false}
+                    tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
+                    tickFormatter={(value) => compactMoney(Number(value))}
+                    tickLine={false}
+                    width={70}
+                  />
                   <Tooltip
+                    content={<IncomeExpenseTooltip />}
                     cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
                     contentStyle={tooltipStyle}
                     wrapperStyle={{ outline: "none" }}
@@ -219,7 +294,10 @@ export function AnnualReportPage() {
                 </thead>
                 <tbody>
                   {report.months.map((item) => (
-                    <tr key={item.month}>
+                    <tr
+                      className={item.netSavings >= 0 ? styles.savingsPositive : styles.savingsNegative}
+                      key={item.month}
+                    >
                       <td>{item.monthLabel}</td>
                       <td>{money(item.income)}</td>
                       <td>{money(item.expenses)}</td>
@@ -235,15 +313,26 @@ export function AnnualReportPage() {
             <h3>Year-over-year comparison</h3>
             {report.previousYearMonths.length ? (
               <div className={styles.chartWrap}>
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart data={yearOverYearLineData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={yearOverYearLineData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="monthLabel" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
-                    <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} width={70} />
-                    <Tooltip cursor={{ fill: "rgba(127, 225, 212, 0.055)" }} contentStyle={tooltipStyle} wrapperStyle={{ outline: "none" }} />
+                    <XAxis axisLine={false} dataKey="monthLabel" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
+                    <YAxis
+                      axisLine={false}
+                      tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }}
+                      tickFormatter={(value) => compactMoney(Number(value))}
+                      tickLine={false}
+                      width={70}
+                    />
+                    <Tooltip
+                      content={<YearComparisonTooltip year={year} />}
+                      cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                      contentStyle={tooltipStyle}
+                      wrapperStyle={{ outline: "none" }}
+                    />
                     <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
-                    <Line type="monotone" dataKey="previousIncome" stroke="#7fe1d4" strokeWidth={3} dot={false} name={`${Number(year) - 1} income`} />
-                    <Line type="monotone" dataKey="currentIncome" stroke="#49c5b6" strokeWidth={3} dot={false} name={`${year} income`} />
+                    <Line type="monotone" dataKey="previousSavings" stroke="#5ab9dd" strokeWidth={3} dot={false} name={`${Number(year) - 1} net savings`} />
+                    <Line type="monotone" dataKey="currentSavings" stroke="#facc15" strokeWidth={3} dot={false} name={`${year} net savings`} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
