@@ -11,8 +11,18 @@ from app.auth.utils import (
     get_password_hash,
     verify_password,
 )
+from app.models.account import Account
+from app.models.budget import Budget
+from app.models.category import Category
+from app.models.chat_history import (
+    ChatConversation,
+    ChatHistory,
+    ChatMessage,
+)
 from app.models.financial_profile import FinancialProfile
+from app.models.goal import Goal, GoalContribution
 from app.models.refresh_token import RefreshToken
+from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.financial_profile import (
     FinancialProfilePayload,
@@ -149,4 +159,50 @@ def change_password(db: Session, user: User, payload: PasswordChange) -> None:
         )
         .update({"revoked": True}, synchronize_session=False)
     )
+    db.commit()
+
+
+def delete_account(db: Session, user: User) -> None:
+    user_id = user.id
+    conversation_ids = (
+        db.query(ChatConversation.id)
+        .filter(ChatConversation.user_id == user_id)
+    )
+    goal_ids = db.query(Goal.id).filter(Goal.user_id == user_id)
+    account_ids = db.query(Account.id).filter(Account.user_id == user_id)
+
+    db.query(ChatMessage).filter(
+        ChatMessage.conversation_id.in_(conversation_ids)
+    ).delete(synchronize_session=False)
+    db.query(ChatConversation).filter(
+        ChatConversation.user_id == user_id
+    ).delete(synchronize_session=False)
+    db.query(ChatHistory).filter(ChatHistory.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(GoalContribution).filter(
+        GoalContribution.goal_id.in_(goal_ids)
+    ).delete(synchronize_session=False)
+    db.query(Goal).filter(Goal.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(Budget).filter(Budget.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(Transaction).filter(
+        Transaction.account_id.in_(account_ids)
+    ).delete(synchronize_session=False)
+    db.query(Account).filter(Account.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(Category).filter(Category.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.query(FinancialProfile).filter(
+        FinancialProfile.user_id == user_id
+    ).delete(synchronize_session=False)
+    db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete(
+        synchronize_session=False
+    )
+    db.delete(user)
     db.commit()

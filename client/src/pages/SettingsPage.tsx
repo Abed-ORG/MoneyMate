@@ -22,9 +22,14 @@ import {
 import { useAuth, type AuthUser, type FinancialProfile } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { api, getApiErrorMessage } from "../services/api";
+import { budgetsApi } from "../services/budgets";
+import { goalsApi } from "../services/goals";
+import { clearAuthSession } from "../utils/auth";
 import { getProfileAvatar, saveProfileAvatar } from "../utils/profileAvatar";
 import { transactionsApi } from "../services/transactions";
-import type { Category } from "../types/transaction";
+import type { Budget } from "../types/budget";
+import type { Goal } from "../types/goal";
+import type { Category, Transaction } from "../types/transaction";
 import styles from "./SettingsPage.module.css";
 
 const supportedAvatarTypes = new Set([
@@ -39,9 +44,10 @@ type SettingsSection =
   | "personal"
   | "financial"
   | "categories"
+  | "privacy"
   | "security";
 
-type SectionIconName = "profile" | "wallet" | "categories" | "security";
+type SectionIconName = "profile" | "wallet" | "categories" | "security" | "privacy";
 
 const settingsSections: Array<{
   id: SettingsSection;
@@ -66,6 +72,12 @@ const settingsSections: Array<{
     label: "Spending categories",
     description: "Choose what MoneyMate tracks",
     icon: "categories",
+  },
+  {
+    id: "privacy",
+    label: "Data & Privacy",
+    description: "Download a CSV copy of your financial data",
+    icon: "privacy",
   },
   {
     id: "security",
@@ -131,6 +143,15 @@ function SectionIcon({ name }: { name: SectionIconName }) {
         <path d="m14.5 17 1.7 1.7 3.5-4" />
       </>
     ),
+    privacy: (
+      <>
+        <ellipse cx="12" cy="5.5" rx="6.5" ry="2.5" />
+        <path d="M5.5 5.5v7c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-7" />
+        <path d="M8.5 10c1 .5 2.2.75 3.5.75s2.5-.25 3.5-.75" />
+        <path d="M12 12.5v6" />
+        <path d="m9.5 16 2.5 2.5 2.5-2.5" />
+      </>
+    ),
     security: (
       <>
         <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
@@ -174,6 +195,46 @@ function fileToDataUrl(file: File) {
   });
 }
 
+type CsvValue = string | number | boolean | null | undefined | string[];
+
+function csvCell(value: CsvValue) {
+  const normalized = Array.isArray(value) ? value.join("; ") : value ?? "";
+  return `"${String(normalized).replace(/"/g, '""')}"`;
+}
+
+function csvSection(
+  title: string,
+  headers: string[],
+  rows: CsvValue[][],
+) {
+  return [
+    csvCell(title),
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => row.map(csvCell).join(",")),
+  ].join("\r\n");
+}
+
+async function getAllTransactions() {
+  const pageSize = 500;
+  const items: Transaction[] = [];
+  let page = 1;
+  let total = 0;
+
+  do {
+    const response = await transactionsApi.list({
+      page,
+      pageSize,
+      sortBy: "date",
+      sortDir: "desc",
+    });
+    items.push(...response.items);
+    total = response.total;
+    page += 1;
+  } while (items.length < total);
+
+  return items;
+}
+
 export function SettingsPage() {
   const { profile, refreshAccount, setProfile, user } = useAuth();
   const toast = useToast();
@@ -192,6 +253,8 @@ export function SettingsPage() {
   const [savedAvatar, setSavedAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -394,6 +457,121 @@ export function SettingsPage() {
     }
   };
 
+  const buildExportCsv = async () => {
+    const [transactions, categories, budgets, goals] = await Promise.all([
+      getAllTransactions(),
+      transactionsApi.categories(),
+      budgetsApi.list(),
+      goalsApi.list(),
+    ]);
+
+    const profileRows: CsvValue[][] = [
+      ["full_name", user?.full_name ?? fullName],
+      ["email", user?.email ?? email],
+      ["monthly_income", profile?.monthly_income],
+      ["currency", profile?.currency],
+      ["spending_categories", profile?.spending_categories ?? []],
+      ["onboarding_completed", profile?.onboarding_completed],
+    ];
+
+    const transactionRows = transactions.map((transaction) => [
+      transaction.id,
+      transaction.date,
+      transaction.vendor,
+      transaction.category,
+      transaction.amount,
+      transaction.notes,
+      transaction.created_at,
+      transaction.updated_at,
+    ]);
+
+    const categoryRows = categories.map((category) => [
+      category.id,
+      category.name,
+      category.color,
+      category.is_default,
+    ]);
+
+    const budgetRows = (budgets as Budget[]).map((budget) => [
+      budget.id,
+      budget.category_name,
+      budget.amount,
+      budget.month,
+      budget.year,
+    ]);
+
+    const goalRows = (goals as Goal[]).map((goal) => [
+      goal.id,
+      goal.name,
+      goal.target_amount,
+      goal.current_amount,
+      goal.deadline,
+      goal.linked_account,
+      goal.is_active,
+    ]);
+
+    const contributionRows = (goals as Goal[]).flatMap((goal) =>
+      goal.contributions.map((contribution) => [
+        contribution.id,
+        goal.id,
+        goal.name,
+        contribution.amount,
+        contribution.contributed_at,
+        contribution.note,
+      ]),
+    );
+
+    return [
+      csvSection("Profile", ["field", "value"], profileRows),
+      csvSection(
+        "Transactions",
+        ["id", "date", "vendor", "category", "amount", "notes", "created_at", "updated_at"],
+        transactionRows,
+      ),
+      csvSection("Categories", ["id", "name", "color", "is_default"], categoryRows),
+      csvSection("Budgets", ["id", "category", "amount", "month", "year"], budgetRows),
+      csvSection(
+        "Goals",
+        ["id", "name", "target_amount", "current_amount", "deadline", "linked_account", "is_active"],
+        goalRows,
+      ),
+      csvSection(
+        "Goal contributions",
+        ["id", "goal_id", "goal_name", "amount", "contributed_at", "note"],
+        contributionRows,
+      ),
+    ].join("\r\n\r\n");
+  };
+
+  const downloadDataCsv = async () => {
+    if (typeof window === "undefined") return;
+    const csv = await buildExportCsv();
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `MoneyMate_Data_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsSaving(true);
+    try {
+      await api.delete<void>("/profile/account");
+      clearAuthSession();
+      toast.success("Account deleted", "Your MoneyMate account has been removed.");
+      window.location.assign("/login");
+    } catch (error) {
+      toast.error("Account not deleted", getApiErrorMessage(error));
+    } finally {
+      setIsSaving(false);
+      setIsDeleteConfirmationOpen(false);
+    }
+  };
+
   const displayName = fullName.trim() || user?.full_name || "MoneyMate user";
   const displayEmail = email.trim() || user?.email || "No email available";
   const initials = getInitials(displayName) || "MM";
@@ -402,7 +580,7 @@ export function SettingsPage() {
   );
   const editableCategories = customCategories.filter((category) => !category.is_default);
   const currencyOptions = useMemo(buildCurrencyOptions, []);
-  const showProfileSave = activeSection !== "security";
+  const showProfileSave = ["personal", "financial", "categories"].includes(activeSection);
 
   return (
     <div className={styles.page}>
@@ -637,6 +815,31 @@ export function SettingsPage() {
                   </div>
                 ) : null}
 
+                {activeSection === "privacy" ? (
+                  <div className={styles.privacySection}>
+                    <p>
+                      Download your MoneyMate data as a CSV file to keep a personal backup.
+                    </p>
+                    <div className={styles.privacyActions}>
+                      <Button
+                        disabled={isExportingData}
+                        onClick={async () => {
+                          setIsExportingData(true);
+                          try {
+                            await downloadDataCsv();
+                            toast.success("Data export ready", "A CSV copy of your data is downloading.");
+                          } catch (error) {
+                            toast.error("Export failed", "Unable to prepare your data export.");
+                          } finally {
+                            setIsExportingData(false);
+                          }
+                        }}
+                      >
+                        {isExportingData ? "Preparing..." : "Download"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </section>
             </div>
           ) : (
@@ -684,6 +887,20 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </form>
+              <div className={styles.deleteAccountSection}>
+                <h3>Delete account</h3>
+                <p>
+                  Permanently delete your MoneyMate account and all stored data.
+                  This action cannot be undone.
+                </p>
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => setIsDeleteConfirmationOpen(true)}
+                >
+                  Delete account
+                </Button>
+              </div>
             </section>
           )}
         </div>
@@ -753,6 +970,32 @@ export function SettingsPage() {
               }}
             >
               Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteConfirmationOpen}
+        title="Delete account"
+        onClose={() => setIsDeleteConfirmationOpen(false)}
+      >
+        <div className={styles.categoryModalBody}>
+          <p>
+            Deleting your account will remove all of your MoneyMate data permanently.
+            This cannot be undone.
+          </p>
+          <div className={styles.modalActions}>
+            <Button type="button" variant="secondary" onClick={() => setIsDeleteConfirmationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={isSaving}
+              onClick={() => void handleDeleteAccount()}
+            >
+              {isSaving ? "Deleting..." : "Delete account"}
             </Button>
           </div>
         </div>

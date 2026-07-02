@@ -507,11 +507,21 @@ export function AppShell() {
               }
               type="button"
             >
-              <span className={styles.themeButtonIcon}>
-                {themeMode === "dark" ? <MoonIcon /> : <SunIcon />}
+              <span
+                className={`${styles.themeButtonIcon} ${
+                  themeMode === "light" ? styles.themeButtonIconActive : ""
+                }`}
+                aria-hidden="true"
+              >
+                <SunIcon />
               </span>
-              <span className={styles.themeButtonText}>
-                {themeMode === "dark" ? "Light" : "Dark"}
+              <span
+                className={`${styles.themeButtonIcon} ${
+                  themeMode === "dark" ? styles.themeButtonIconActive : ""
+                }`}
+                aria-hidden="true"
+              >
+                <MoonIcon />
               </span>
             </button>
             <div className={styles.userArea} ref={profileMenuRef}>

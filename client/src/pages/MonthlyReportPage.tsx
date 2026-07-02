@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, LoadingSpinner, Select } from "../components";
+import { BudgetComparisonChart } from "../components/Budgets/BudgetComponents";
+import type { BudgetSummary } from "../types/budget";
 import { getMonthlyReport, type MonthlyReport } from "../services/reports";
 import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./MonthlyReportPage.module.css";
@@ -91,15 +92,43 @@ export function MonthlyReportPage() {
     });
   }, [month, year]);
 
-  const chartData = useMemo(
-    () =>
-      report?.budgetCategories.map((item) => ({
-        name: item.category,
-        spent: item.spent,
-        budgeted: item.budgeted,
-      })) ?? [],
-    [report],
-  );
+  const budgetComparisonData = useMemo(() => {
+    if (!report) {
+      return [] as BudgetSummary[];
+    }
+
+    return report.budgetCategories.map((item, index) => {
+      const budgeted = item.budgeted;
+      const spent = item.spent;
+      const usagePercentage = item.usagePercentage;
+      const progressState: "green" | "yellow" | "red" =
+        usagePercentage >= 100
+          ? "red"
+          : usagePercentage > 90
+          ? "yellow"
+          : "green";
+
+      return {
+        budget_id: index,
+        category_id: index,
+        category_name: item.category,
+        category_color: "#49c5b6",
+        budgeted_amount: budgeted,
+        actual_spending: spent,
+        remaining_amount: item.remaining,
+        usage_percentage: usagePercentage,
+        variance_amount: spent - budgeted,
+        variance_percentage: budgeted ? ((spent - budgeted) / budgeted) * 100 : 0,
+        status:
+          usagePercentage >= 100
+            ? "over_budget"
+            : usagePercentage > 90
+            ? "close_to_budget"
+            : "under_budget",
+        progress_state: progressState,
+      } as BudgetSummary;
+    });
+  }, [report]);
 
   return (
     <section className={styles.page}>
@@ -165,26 +194,7 @@ export function MonthlyReportPage() {
           <Card className={styles.chartCard}>
             <h3>Budget adherence</h3>
             <div className={styles.chartWrap}>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={chartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(73, 197, 182, 0.18)" strokeDasharray="4 4" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
-                  <YAxis tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickFormatter={(value) => `$${value}`} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: "rgba(73, 197, 182, 0.055)" }}
-                    contentStyle={{
-                      background: "var(--mm-surface-strong)",
-                      border: "1px solid var(--mm-border-strong)",
-                      borderRadius: "12px",
-                      boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
-                      color: "var(--mm-text)",
-                    }}
-                    labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
-                  />
-                  <Bar dataKey="budgeted" fill="#17635c" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="spent" fill="#49c5b6" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <BudgetComparisonChart budgets={budgetComparisonData} currency="USD" />
             </div>
           </Card>
 
