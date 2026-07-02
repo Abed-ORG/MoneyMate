@@ -53,3 +53,40 @@
   scrollbar-color: rgba(var(--mm-accent-rgb), 0.52) rgba(var(--mm-bg-rgb), 0.45);
 }
 
+@media (max-width: 560px) {
+  .overlay {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--mm-radius-md);
+  }
+
+  .header {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .header h2 {
+    font-size: 1rem;
+  }
+
+  .body {
+    padding: 0.85rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .overlay {
+    padding: 0;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+}
+

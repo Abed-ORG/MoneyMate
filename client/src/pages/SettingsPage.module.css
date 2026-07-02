@@ -719,6 +719,76 @@
     width: 100%;
   }
 
+  .sectionNav {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+  }
+
+  .sectionNavItem {
+    min-width: 0;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .sectionNavItem strong {
+    font-size: 0.75rem;
+  }
+
+  .sectionHeading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sectionSaveButton {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .sectionHeading h2 {
+    font-size: 0.9rem;
+  }
+
+  .formGrid {
+    gap: 0.65rem;
+  }
+
+  .category {
+    min-height: 1.85rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.72rem;
+  }
+
+  .categoryIcon {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .customCategoryRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .customCategoryActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .profileCard {
+    aspect-ratio: auto;
+    min-height: 12rem;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
+
+  .passwordForm {
+    gap: 0.6rem;
+  }
 }
 
 

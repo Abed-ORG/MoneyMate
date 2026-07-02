@@ -1189,3 +1189,146 @@
     text-align: left;
   }
 }
+
+@media (max-width: 400px) {
+  .actionBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actionBar button {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .table {
+    min-width: 30rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.4rem 0.35rem;
+    font-size: 0.82rem;
+  }
+
+  .table th:nth-child(1) {
+    width: 3rem;
+  }
+
+  .table th:nth-child(2) {
+    width: 6rem;
+  }
+
+  .table th:nth-child(4) {
+    width: 5.5rem;
+  }
+
+  .table th:nth-child(6) {
+    width: 5.5rem;
+  }
+
+  .table th:nth-child(7) {
+    width: 3.5rem;
+  }
+
+  .topCards {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .importCard,
+  .quickAdd {
+    min-height: 7rem;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .largeIcon,
+  .plusIcon {
+    width: 3.2rem;
+    height: 3.2rem;
+  }
+
+  .largeIcon svg {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .importCard strong {
+    font-size: 0.92rem;
+  }
+
+  .importCard small {
+    font-size: 0.82rem;
+  }
+
+  .tableHeader {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .tableActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tableActionButtons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tableActionButtons button {
+    width: 100%;
+  }
+
+  .pagination {
+    gap: 0.5rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .pageIndicator {
+    min-width: 5rem;
+    font-size: 0.85rem;
+  }
+
+  .rowsControl {
+    flex-wrap: wrap;
+  }
+
+  .details {
+    width: 100%;
+  }
+
+  .selectedSummary {
+    flex-direction: column;
+    text-align: center;
+    min-height: 6rem;
+  }
+
+  .selectedSummary h2 {
+    font-size: 1rem;
+  }
+
+  .selectedSummary strong {
+    font-size: 1.1rem;
+  }
+
+  .detailActions {
+    flex-direction: column;
+  }
+
+  .detailActions button {
+    width: 100%;
+  }
+
+  .exportColumnGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    padding: 0.6rem;
+  }
+
+  .stats strong {
+    font-size: 0.9rem;
+  }
+}

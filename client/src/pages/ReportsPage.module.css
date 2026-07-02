@@ -39,3 +39,16 @@
   color: var(--mm-bg-deep) !important;
   box-shadow: var(--mm-shadow-glow);
 }
+
+@media (max-width: 560px) {
+  .viewSwitcher {
+    width: 100%;
+  }
+
+  .viewSwitcher a {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.6rem;
+  }
+}

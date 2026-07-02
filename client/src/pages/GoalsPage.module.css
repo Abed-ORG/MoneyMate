@@ -579,3 +579,107 @@
     align-items: flex-start;
   }
 }
+
+@media (max-width: 560px) {
+  .actionBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actionBar button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .grid {
+    gap: 12px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .panel h2 {
+    font-size: 1.05rem;
+  }
+
+  .heroContent {
+    gap: 8px;
+  }
+
+  .heroRingCard {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .heroRingCard strong {
+    font-size: 0.92rem;
+  }
+
+  .metricCard {
+    padding: 8px 10px;
+  }
+
+  .metricCard strong {
+    font-size: 0.88rem;
+  }
+
+  .goalCard {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .goalInfo h3 {
+    font-size: 0.9rem;
+  }
+
+  .goalMetaRow strong {
+    font-size: 0.82rem;
+  }
+
+  .categoryBadge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+  }
+
+  .cardContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .progressRingWrap {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .emptyGoalCard {
+    min-height: 160px;
+    padding: 12px;
+  }
+
+  .emptyGoalCard h3 {
+    font-size: 0.95rem;
+  }
+
+  .emptyGoalCard p {
+    font-size: 0.85rem;
+  }
+
+  .historyItem {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .historyItem span {
+    text-align: left;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
+}

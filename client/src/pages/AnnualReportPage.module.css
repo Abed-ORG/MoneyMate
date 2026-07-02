@@ -160,3 +160,47 @@
     width: 100%;
   }
 }
+
+@media (max-width: 560px) {
+  .summaryCard {
+    padding: 0.75rem;
+  }
+
+  .summaryCard strong {
+    font-size: 1.05rem;
+  }
+
+  .summaryCard span {
+    font-size: 0.82rem;
+  }
+
+  .chartCard,
+  .tableCard {
+    padding: 0.75rem;
+  }
+
+  .tableCard th,
+  .tableCard td {
+    padding: 0.5rem 0.35rem;
+    font-size: 0.85rem;
+  }
+
+  .viewSwitcher {
+    width: 100%;
+  }
+
+  .viewSwitcherButton {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .tableScroll table {
+    min-width: 24rem;
+  }
+
+  .comparisonGrid strong {
+    font-size: 0.95rem;
+  }
+}
