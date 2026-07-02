@@ -41,6 +41,60 @@ const features = [
   },
 ];
 
+const howItWorks = [
+  {
+    icon: "signup",
+    title: "Sign Up",
+    description:
+      "Create your MoneyMate account in just a few minutes and start with a clean, simple dashboard built to get you moving quickly.",
+  },
+  {
+    icon: "track",
+    title: "Track Spending",
+    description:
+      "Add transactions and monitor your day-to-day spending so you always know where your money is going.",
+  },
+  {
+    icon: "insights",
+    title: "Get Insights",
+    description:
+      "Turn your spending data into clear trends, practical guidance, and better money habits over time.",
+  },
+];
+
+const faqs = [
+  {
+    question: "Is MoneyMate free to use?",
+    answer:
+      "Yes. You can get started for free and use the core budgeting and tracking experience without paying anything upfront.",
+  },
+  {
+    question: "How do I add my expenses?",
+    answer:
+      "You can log expenses manually and keep your spending organized right from your dashboard.",
+  },
+  {
+    question: "Can I track multiple spending categories?",
+    answer:
+      "Yes. MoneyMate is designed to help you organize spending across categories so your habits are easier to understand.",
+  },
+  {
+    question: "Are my financial details secure?",
+    answer:
+      "MoneyMate is built with privacy and security in mind so you can manage your finances with confidence.",
+  },
+  {
+    question: "Does MoneyMate show insights automatically?",
+    answer:
+      "Yes. Once you track enough activity, MoneyMate highlights patterns and gives you helpful feedback on your money habits.",
+  },
+  {
+    question: "Can I get help if I have a question?",
+    answer:
+      "Absolutely. You can reach out through the contact section and the team will respond by email.",
+  },
+];
+
 function FeatureIcon({ type }: { type: string }) {
   if (type === "expense") {
     return (
@@ -244,6 +298,36 @@ function GrowthSculpture() {
   );
 }
 
+function StepIcon({ type }: { type: string }) {
+  if (type === "signup") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 48 48">
+        <path d="M24 25a9 9 0 1 0-9-9 9 9 0 0 0 9 9Z" />
+        <path d="M10 40c2-7 8-11 14-11s12 4 14 11" />
+        <path d="M34 15h8M38 11v8" />
+      </svg>
+    );
+  }
+
+  if (type === "track") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 48 48">
+        <path d="M8 34h32" />
+        <path d="M12 29l8-9 7 5 9-12" />
+        <path d="M31 13h10v10" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48">
+      <path d="M24 9c8 0 14 6 14 14s-6 14-14 14S10 31 10 23s6-14 14-14Z" />
+      <path d="M24 16v8l5 3" />
+      <path d="M8 38c4-4 10-6 16-6s12 2 16 6" />
+    </svg>
+  );
+}
+
 export function LandingPage() {
   const [isGrowthVisible, setIsGrowthVisible] = useState(false);
   const growthRef = useRef<HTMLDivElement | null>(null);
@@ -292,10 +376,19 @@ export function LandingPage() {
             About Us
           </a>
           <a
+            href="#how-it-works"
+            onClick={(event) => scrollToSection(event, "how-it-works")}
+          >
+            How It Works
+          </a>
+          <a
             href="#features"
             onClick={(event) => scrollToSection(event, "features")}
           >
             Features
+          </a>
+          <a href="#faq" onClick={(event) => scrollToSection(event, "faq")}>
+            FAQ
           </a>
           <a
             href="#contact"
@@ -459,13 +552,81 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section className={styles.howSection} id="how-it-works">
+        <div className={styles.featureHeading}>
+          <h2>
+            How It <span>Works</span>
+          </h2>
+          <span className={styles.headingGlow} aria-hidden="true" />
+          <p>
+            A simple three-step flow that keeps setup easy and turns your
+            spending into something you can actually act on.
+          </p>
+        </div>
+
+        <div className={styles.howGrid}>
+          {howItWorks.map((step, index) => (
+            <article className={styles.flipCard} key={step.title}>
+              <div className={styles.flipCardInner}>
+                <div className={styles.flipCardFace}>
+                  <span className={styles.flipCardGlow} aria-hidden="true" />
+                  <div className={styles.flipCardIcon}>
+                    <StepIcon type={step.icon} />
+                  </div>
+                  <h3>{step.title}</h3>
+                  <p>Hover to reveal the step details.</p>
+                </div>
+                <div className={styles.flipCardBack}>
+                  <p className={styles.sectionLabel}>Step {index + 1}</p>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.faqSection} id="faq">
+        <div className={styles.featureHeading}>
+          <h2>
+            Frequently Asked <span>Questions</span>
+          </h2>
+          <span className={styles.headingGlow} aria-hidden="true" />
+          <p>
+            Quick answers to the questions people ask most often before getting
+            started.
+          </p>
+        </div>
+
+        <div className={styles.faqList}>
+          {faqs.map((faq) => (
+            <details className={styles.faqItem} key={faq.question}>
+              <summary>{faq.question}</summary>
+              <p>{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section className={styles.contactSection} id="contact">
+        <div className={styles.contactVisual} aria-hidden="true">
+          <div className={styles.contactGlow} />
+          <img
+            className={styles.contactImage}
+            src="/moneymate-contact-envelope.png"
+            alt=""
+          />
+        </div>
         <div className={styles.contactCopy}>
           <p className={styles.sectionLabel}>Contact</p>
-          <h2>Need a hand? Let’s talk.</h2>
+          <h2>Need a hand? Let&apos;s talk.</h2>
           <p>
             If you have any questions, don&apos;t hesitate. Email us at{" "}
-            <a href="mailto:moneymate.app.mail@gmail.com">
+            <a
+              className={styles.contactButton}
+              href="mailto:moneymate.app.mail@gmail.com"
+            >
               moneymate.app.mail@gmail.com
             </a>
             .
@@ -474,12 +635,51 @@ export function LandingPage() {
       </section>
 
       <footer className={styles.footer}>
-        <Link className={styles.brand} to="/" aria-label="MoneyMate home">
-          <img src="/moneymate-logo.png" alt="" />
-          <span>
-            Money<span>Mate</span>
-          </span>
-        </Link>
+        <div>
+          <Link className={styles.brand} to="/" aria-label="MoneyMate home">
+            <img src="/moneymate-logo.png" alt="" />
+            <span>
+              Money<span>Mate</span>
+            </span>
+          </Link>
+          <p>Track smarter, spend better, and grow with confidence.</p>
+        </div>
+        <nav className={styles.footerColumns} aria-label="Footer navigation">
+          <div className={styles.footerColumn}>
+            <h3>Product</h3>
+            <a
+              href="#features"
+              onClick={(event) => scrollToSection(event, "features")}
+            >
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              onClick={(event) => scrollToSection(event, "how-it-works")}
+            >
+              How It Works
+            </a>
+            <a href="#faq" onClick={(event) => scrollToSection(event, "faq")}>
+              FAQ
+            </a>
+          </div>
+          <div className={styles.footerColumn}>
+            <h3>Company</h3>
+            <a href="#about" onClick={(event) => scrollToSection(event, "about")}>
+              About Us
+            </a>
+            <a href="#contact" onClick={(event) => scrollToSection(event, "contact")}>
+              Contact
+            </a>
+            <a href="/register">Careers</a>
+          </div>
+          <div className={styles.footerColumn}>
+            <h3>Legal</h3>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/cookies">Cookie Policy</a>
+          </div>
+        </nav>
       </footer>
     </main>
   );
