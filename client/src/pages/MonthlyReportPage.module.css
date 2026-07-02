@@ -139,6 +139,16 @@
   min-width: 0;
 }
 
+.tableScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableScroll table {
+  min-width: 30rem;
+  border-collapse: collapse;
+}
+
 @media (max-width: 920px) {
   .summaryGrid,
   .grid {

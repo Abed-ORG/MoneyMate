@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Button, LoadingSpinner } from "../components";
+import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiErrorMessage } from "../services/api";
 import { chatApi, ChatProviderError } from "../services/chat";
@@ -260,6 +260,7 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [retryingId, setRetryingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [conversationToDelete, setConversationToDelete] = useState<ChatConversation | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [nextBeforeMessageId, setNextBeforeMessageId] = useState<number | null>(
     null,
@@ -511,7 +512,16 @@ export function ChatPage() {
     setMessageError("");
   };
 
-  const deleteConversation = async (conversation: ChatConversation) => {
+  const openDeleteConversation = (conversation: ChatConversation) => {
+    setConversationToDelete(conversation);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) {
+      return;
+    }
+
+    const conversation = conversationToDelete;
     setDeletingId(conversation.id);
     setConversationError("");
     try {
@@ -527,6 +537,7 @@ export function ChatPage() {
       setConversationError(getApiErrorMessage(error));
     } finally {
       setDeletingId(null);
+      setConversationToDelete(null);
     }
   };
 
@@ -576,7 +587,7 @@ export function ChatPage() {
                 aria-label={`Delete ${conversation.title}`}
                 className={styles.deleteConversation}
                 disabled={deletingId === conversation.id}
-                onClick={() => void deleteConversation(conversation)}
+                onClick={() => openDeleteConversation(conversation)}
                 title="Delete conversation"
                 type="button"
               >
@@ -704,6 +715,28 @@ export function ChatPage() {
           </form>
         </footer>
       </section>
+
+      <Modal
+        isOpen={Boolean(conversationToDelete)}
+        title="Delete conversation"
+        onClose={() => setConversationToDelete(null)}
+      >
+        <p className={styles.confirmText}>
+          This will remove the conversation from your history. This action cannot be undone.
+        </p>
+        <div className={styles.modalActions}>
+          <Button variant="secondary" onClick={() => setConversationToDelete(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            disabled={deletingId === conversationToDelete?.id}
+            onClick={() => void confirmDeleteConversation()}
+          >
+            Delete conversation
+          </Button>
+        </div>
+      </Modal>
     </section>
   );
 }

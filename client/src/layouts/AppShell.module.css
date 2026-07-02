@@ -351,8 +351,7 @@
 
 .themeButton {
   display: inline-flex;
-  width: 2.25rem;
-  min-height: 2.2rem;
+  min-height: 2.35rem;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
@@ -361,7 +360,7 @@
   background: var(--mm-control-background);
   color: var(--mm-text-soft);
   cursor: pointer;
-  padding: 0;
+  padding: 0.32rem 0.72rem;
   font-size: 0.78rem;
   font-weight: 800;
   transition:
@@ -372,8 +371,16 @@
     transform 160ms ease;
 }
 
-.themeButton span {
-  display: none;
+.themeButtonText {
+  display: inline-flex;
+  align-items: center;
+}
+
+.themeButtonIcon {
+  display: inline-grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  place-items: center;
 }
 
 .themeButton:hover {
@@ -473,6 +480,22 @@
   max-width: 100rem;
   margin: 0 auto;
   padding: clamp(0.85rem, 2.2vw, 1.6rem);
+}
+
+.pageTransition {
+  animation: pageTransitionIn 220ms ease-out;
+}
+
+@keyframes pageTransitionIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .profileMenu {
@@ -632,7 +655,7 @@
 }
 
 @media (max-width: 520px) {
-  .themeButton span {
+  .themeButtonText {
     display: none;
   }
 
