@@ -274,14 +274,29 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   };
 
   const passwordStrength = (() => {
-    const score = registerPassword.length >= 12 ? 3 : registerPassword.length >= 8 ? 2 : registerPassword.length > 0 ? 1 : 0;
-    if (registerPassword.length === 0) {
+    const pw = registerPassword;
+    if (pw.length === 0) {
       return { label: "", width: 0, tone: "neutral" as const };
     }
-    if (score === 1) {
-      return { label: "Weak", width: 33, tone: "danger" as const };
+
+    let score = 0;
+
+    // Length scoring
+    if (pw.length >= 8) score += 1;
+    if (pw.length >= 12) score += 1;
+
+    // Character variety scoring
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
+    if (/\d/.test(pw)) score += 1;
+    if (/[^a-zA-Z0-9]/.test(pw)) score += 1;
+
+    if (score <= 1) {
+      return { label: "Weak", width: 25, tone: "danger" as const };
     }
     if (score === 2) {
+      return { label: "Weak", width: 33, tone: "danger" as const };
+    }
+    if (score === 3) {
       return { label: "Medium", width: 66, tone: "warning" as const };
     }
     return { label: "Strong", width: 100, tone: "success" as const };
