@@ -28,6 +28,7 @@ type FormState = {
   category: string;
   vendor: string;
   notes: string;
+  type: "expense" | "income";
 };
 
 type CsvRow = Record<string, string>;
@@ -67,6 +68,7 @@ const emptyForm: FormState = {
   category: "",
   vendor: "",
   notes: "",
+  type: "expense",
 };
 
 const defaultFilters: TransactionListParams = {
@@ -142,10 +144,11 @@ function formatDate(value: string, includeTime = false) {
 function transactionToForm(transaction: Transaction): FormState {
   return {
     date: transaction.date.slice(0, 10),
-    amount: String(transaction.amount),
+    amount: String(Math.abs(Number(transaction.amount))),
     category: transaction.category,
     vendor: transaction.vendor,
     notes: transaction.notes.slice(0, noteMaxLength),
+    type: Number(transaction.amount) >= 0 ? "income" : "expense",
   };
 }
 
@@ -277,9 +280,10 @@ function validateForm(form: FormState) {
 }
 
 function toPayload(form: FormState): TransactionPayload {
+  const amount = Number(form.amount);
   return {
     date: new Date(`${form.date}T12:00:00`).toISOString(),
-    amount: Number(form.amount),
+    amount: form.type === "expense" ? -Math.abs(amount) : Math.abs(amount),
     category: form.category.trim(),
     vendor: form.vendor.trim(),
     notes: form.notes.trim().slice(0, noteMaxLength),
@@ -626,12 +630,53 @@ export function TransactionsPage() {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!selected) return;
+  const handleInlineEdit = async (
+    transaction: Transaction,
+    field: "vendor" | "category" | "notes" | "amount",
+    value: string,
+  ) => {
+    const basePayload: TransactionPayload = {
+      date: transaction.date.slice(0, 10),
+      amount: Number(transaction.amount),
+      category: transaction.category,
+      vendor: transaction.vendor,
+      notes: transaction.notes,
+    };
+
+    if (field === "vendor") {
+      basePayload.vendor = value.trim();
+    } else if (field === "category") {
+      basePayload.category = value;
+    } else if (field === "notes") {
+      basePayload.notes = value.trim();
+    } else if (field === "amount") {
+      const numericValue = Number(value);
+      const signedAmount = Number(transaction.amount) < 0 ? -Math.abs(numericValue) : Math.abs(numericValue);
+      basePayload.amount = Number.isFinite(signedAmount) ? signedAmount : Number(transaction.amount);
+    }
+
     try {
-      await transactionsApi.delete(selected.id);
-      toast.success("Transaction deleted", "The transaction was removed.");
+      const updated = await transactionsApi.update(transaction.id, basePayload);
+      setTransactions((current) => current.map((item) => (item.id === transaction.id ? updated : item)));
+    } catch (err) {
+      setToast({ title: "Could not update transaction", message: getApiErrorMessage(err), variant: "error" });
+    }
+  };
+
+    const confirmDelete = async () => {
+    const idsToDelete = selected ? [selected.id] : selectedTransactionIds;
+    if (!idsToDelete.length) return;
+
+    try {
+      await Promise.all(idsToDelete.map((id) => transactionsApi.delete(id)));
+      toast.success(
+        selected ? "Transaction deleted" : "Transactions deleted",
+        selected
+          ? "The transaction was removed."
+          : `${idsToDelete.length} transactions were removed.`,
+      );
       setSelectedId(null);
+      setSelectedTransactionIds([]);
       setIsDeleteOpen(false);
       await loadTransactions();
     } catch (err) {
@@ -851,10 +896,16 @@ export function TransactionsPage() {
           onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
         />
       </FormField>
+      <FormField label="Type">
+        <div className={styles.typeToggle}>
+          <button className={`${styles.typeButton} ${form.type === "expense" ? styles.activeType : ""}`} onClick={() => setForm((current) => ({ ...current, type: "expense" }))} type="button">Expense</button>
+          <button className={`${styles.typeButton} ${form.type === "income" ? styles.activeType : ""}`} onClick={() => setForm((current) => ({ ...current, type: "income" }))} type="button">Income</button>
+        </div>
+      </FormField>
       <FormField label="Amount" error={formErrors.amount}>
         <Input
           inputMode="decimal"
-          placeholder="-24.50 or 1200"
+          placeholder="24.50"
           value={form.amount}
           error={formErrors.amount}
           onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
@@ -1098,6 +1149,15 @@ export function TransactionsPage() {
               <div className={styles.tableActionButtons}>
                 <Button
                   disabled={!selectedCount}
+                  onClick={() => {
+                    setSelectedId(null);
+                    setIsDeleteOpen(true);
+                  }}
+                >
+                  Delete Selected
+                </Button>
+                <Button
+                  disabled={!selectedCount}
                   onClick={() => void recategorizeSelected()}
                 >
                   Re-categorize Selected
@@ -1113,7 +1173,19 @@ export function TransactionsPage() {
           ) : null}
           {error ? <div className={styles.stateError}>{error}</div> : null}
           {!isLoading && !error && transactions.length === 0 ? (
-            <div className={styles.state}>No transactions match your filters.</div>
+            <div className={styles.emptyStateCard}>
+              <div className={styles.emptyStateIcon}><SpreadsheetIcon /></div>
+              <h3>No transactions yet</h3>
+              <p>Start by adding a transaction or uploading a file to build your money story.</p>
+              <div className={styles.emptyStateActions}>
+                <Button onClick={() => {
+                  setForm(emptyForm);
+                  setFormErrors({});
+                  setIsAddOpen(true);
+                }}>Add Transaction</Button>
+                <Button variant="secondary" onClick={openImportModal}>Upload File</Button>
+              </div>
+            </div>
           ) : null}
 
           {!isLoading && !error && transactions.length > 0 ? (
@@ -1151,7 +1223,13 @@ export function TransactionsPage() {
                         />
                       </td>
                       <td>{formatDate(transaction.date)}</td>
-                      <td>{transaction.vendor || "Unknown vendor"}</td>
+                      <td>
+                        <input
+                          className={styles.inlineInput}
+                          defaultValue={transaction.vendor || "Unknown vendor"}
+                          onBlur={(event) => handleInlineEdit(transaction, "vendor", event.target.value)}
+                        />
+                      </td>
                       <td>
                         <span className={styles.categoryCell}>
                           {categoryByName.get(transaction.category)?.is_default === false ? (
@@ -1164,14 +1242,30 @@ export function TransactionsPage() {
                               <CategoryIcon category={transaction.category} />
                             </span>
                           )}
-                          <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
+                          <select
+                            className={styles.inlineSelect}
+                            value={transaction.category}
+                            onChange={(event) => handleInlineEdit(transaction, "category", event.target.value)}
+                          >
+                            {formCategoryOptions.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
                         </span>
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
-                        <span>{transaction.notes || "-"}</span>
+                        <input
+                          className={styles.inlineInput}
+                          defaultValue={transaction.notes || ""}
+                          onBlur={(event) => handleInlineEdit(transaction, "notes", event.target.value)}
+                        />
                       </td>
                       <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
-                        {toMoney(transaction.amount)}
+                        <input
+                          className={styles.inlineInput}
+                          defaultValue={String(Math.abs(Number(transaction.amount)))}
+                          onBlur={(event) => handleInlineEdit(transaction, "amount", event.target.value)}
+                        />
                       </td>
                       <td>
                         <div

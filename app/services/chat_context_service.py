@@ -160,6 +160,8 @@ def requested_period(
         return today - timedelta(days=6), today
     if "last 30" in text or "past 30" in text:
         return today - timedelta(days=29), today
+    if today.day == 1:
+        return month_bounds(today, previous=True)
     start, _ = month_bounds(today)
     return start, today
 
