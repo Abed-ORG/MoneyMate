@@ -1,4 +1,4 @@
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, type MouseEvent as ReactMouseEvent, useRef, useState } from "react";
 import {
   Button,
   CategoryIcon,
@@ -359,14 +359,6 @@ function SparklesIcon() {
   );
 }
 
-function EditIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -401,6 +393,7 @@ export function TransactionsPage() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState<CSSProperties>({});
   const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -524,9 +517,16 @@ export function TransactionsPage() {
       }
       setActionMenuId(null);
     };
+    const closeOnViewportChange = () => setActionMenuId(null);
 
     document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+    window.addEventListener("resize", closeOnViewportChange);
+    window.addEventListener("scroll", closeOnViewportChange, true);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      window.removeEventListener("resize", closeOnViewportChange);
+      window.removeEventListener("scroll", closeOnViewportChange, true);
+    };
   }, [actionMenuId]);
 
   useEffect(() => {
@@ -717,57 +717,39 @@ export function TransactionsPage() {
       setTransactions((current) =>
         current.map((item) => (item.id === transaction.id ? updated : item)),
       );
-      setToast({
+      toast.showToast({
         title: "Transaction updated",
         message: "Your changes were saved.",
         variant: "success",
       });
       cancelEditing();
     } catch (err) {
-      setToast({ title: "Could not save changes", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not save changes", getApiErrorMessage(err));
     } finally {
       setSavingEditId(null);
     }
   }, [editValues, cancelEditing]);
 
-<<<<<<< HEAD
-    const confirmDelete = async () => {
-    const idsToDelete = selected ? [selected.id] : selectedTransactionIds;
-=======
   const confirmDelete = async () => {
     const idsToDelete = selectedTransactionIds.length ? selectedTransactionIds : (selected ? [selected.id] : []);
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
     if (!idsToDelete.length) return;
 
     try {
       await Promise.all(idsToDelete.map((id) => transactionsApi.delete(id)));
-<<<<<<< HEAD
-      toast.success(
-        selected ? "Transaction deleted" : "Transactions deleted",
-        selected
-          ? "The transaction was removed."
-          : `${idsToDelete.length} transactions were removed.`,
-      );
-=======
-      setToast({
+      toast.showToast({
         title: idsToDelete.length > 1 ? "Transactions deleted" : "Transaction deleted",
         message: idsToDelete.length > 1
           ? `${idsToDelete.length} transactions were removed.`
           : "The transaction was removed.",
         variant: "success",
       });
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
       setSelectedId(null);
       setSelectedTransactionIds([]);
       setIsDeleteOpen(false);
       cancelEditing();
       await loadTransactions();
     } catch (err) {
-<<<<<<< HEAD
-      toast.error("Could not delete transaction", getApiErrorMessage(err));
-=======
-      setToast({ title: "Could not delete", message: getApiErrorMessage(err), variant: "error" });
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
+      toast.error("Could not delete", getApiErrorMessage(err));
     }
   };
 
@@ -914,9 +896,25 @@ export function TransactionsPage() {
     }
   };
 
-  const openActionMenu = (transaction: Transaction) => {
+  const openActionMenu = (
+    transaction: Transaction,
+    event: ReactMouseEvent<HTMLButtonElement>,
+  ) => {
     setSelectedId(transaction.id);
-    setActionMenuId((current) => (current === transaction.id ? null : transaction.id));
+
+    if (actionMenuId === transaction.id) {
+      setActionMenuId(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 208;
+    const menuHeight = 220;
+    setActionMenuPosition({
+      top: Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - menuHeight)),
+      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+    });
+    setActionMenuId(transaction.id);
   };
 
   const openEditFromMenu = (transaction: Transaction) => {
@@ -1407,13 +1405,7 @@ export function TransactionsPage() {
                         </td>
                         <td>{formatDate(transaction.date)}</td>
                         <td className={styles.vendorCell}>
-                          <span
-                            className={styles.vendorMark}
-                            style={categoryIconStyle(transaction.category)}
-                          >
-                            {(transaction.vendor || "?")[0].toUpperCase()}
-                          </span>
-                          {transaction.vendor || "Unknown"}
+                          <span>{transaction.vendor || "Unknown"}</span>
                         </td>
                         <td>
                           <span className={styles.categoryCell}>
@@ -1445,25 +1437,13 @@ export function TransactionsPage() {
                               ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
                             >
                               <button
-                                className={styles.editIcon}
-                                type="button"
-                                aria-label="Edit transaction inline"
-                                title="Edit"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  startEditing(transaction);
-                                }}
-                              >
-                                <EditIcon />
-                              </button>
-                              <button
                                 className={styles.dotsButton}
                                 type="button"
                                 aria-expanded={actionMenuId === transaction.id}
                                 aria-label="Open transaction actions"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  openActionMenu(transaction);
+                                  openActionMenu(transaction, event);
                                 }}
                               >
                                 <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -1473,7 +1453,7 @@ export function TransactionsPage() {
                                 </svg>
                               </button>
                               {actionMenuId === transaction.id ? (
-                                <div className={styles.actionMenu}>
+                                <div className={styles.actionMenu} style={actionMenuPosition}>
                                   <button type="button" onClick={() => startEditing(transaction)}>Edit inline</button>
                                   <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit in modal</button>
                                   <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>

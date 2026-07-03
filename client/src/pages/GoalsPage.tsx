@@ -1,19 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-<<<<<<< HEAD
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { Button, Card, FormField, Input, LoadingSpinner, Modal } from "../components";
 import { useToast } from "../contexts/ToastContext";
-=======
-import { Button, Card, FormField, Input, Modal, Toast } from "../components";
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
 import { goalsApi } from "../services/goals";
 import type { Goal, GoalPayload, GoalUpdatePayload } from "../types/goal";
 import styles from "./GoalsPage.module.css";
@@ -27,24 +14,10 @@ const emptyForm = {
   currentAmount: "",
 };
 
-<<<<<<< HEAD
-=======
-type ToastState = {
-  title: string;
-  message: string;
-  variant: "success" | "error" | "warning" | "info";
-};
-
 type Milestone = 25 | 50 | 75 | 100;
 
 const MILESTONES: Milestone[] = [25, 50, 75, 100];
-
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
-function money(value: number | string) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value));
-}
-
-/* ─── Category icon map ───────────────────────────────────── */
+const MILESTONE_STORAGE_KEY = "moneymate.milestones.celebrated";
 
 const CATEGORY_ICONS: Record<string, { icon: string; label: string }> = {
   vacation: { icon: "🏖️", label: "Vacation" },
@@ -53,6 +26,13 @@ const CATEGORY_ICONS: Record<string, { icon: string; label: string }> = {
   house: { icon: "🏡", label: "House" },
   education: { icon: "🎓", label: "Education" },
 };
+
+function money(value: number | string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(value));
+}
 
 function getGoalCategoryInfo(name: string) {
   const lower = name.toLowerCase();
@@ -70,7 +50,55 @@ function getDaysRemaining(goal: Goal) {
   return diff > 0 ? diff : 0;
 }
 
-/* ─── Progress ring ──────────────────────────────────────── */
+function getCelebratedMilestones(goalId: number): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(`${MILESTONE_STORAGE_KEY}.${goalId}`);
+    return new Set<string>(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistCelebratedMilestone(goalId: number, milestone: string) {
+  try {
+    const set = getCelebratedMilestones(goalId);
+    set.add(milestone);
+    window.localStorage.setItem(`${MILESTONE_STORAGE_KEY}.${goalId}`, JSON.stringify(Array.from(set)));
+  } catch {
+    // Local storage is best-effort only.
+  }
+}
+
+function getProjectionLabel(goal: Goal): string {
+  const target = Number(goal.target_amount);
+  const current = Number(goal.current_amount);
+  if (target <= current) return "Goal reached! 🎉";
+
+  const contributions = goal.contributions;
+  if (contributions.length < 2) {
+    return "Not enough data to estimate projection.";
+  }
+
+  const sorted = [...contributions].sort(
+    (a, b) => new Date(a.contributed_at).getTime() - new Date(b.contributed_at).getTime(),
+  );
+  const firstDate = new Date(sorted[0].contributed_at);
+  const lastDate = new Date(sorted[sorted.length - 1].contributed_at);
+  const daysDiff = (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (daysDiff < 7) return "Not enough data to estimate projection.";
+
+  const totalContributed = sorted.reduce((sum, contribution) => sum + Number(contribution.amount), 0);
+  const monthlyRate = (totalContributed / daysDiff) * 30.44;
+  if (monthlyRate <= 0) return "Not enough data to estimate projection.";
+
+  const monthsNeeded = Math.ceil((target - current) / monthlyRate);
+  const projectionDate = new Date();
+  projectionDate.setMonth(projectionDate.getMonth() + monthsNeeded);
+  const formatted = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(projectionDate);
+
+  return `At your savings rate, you'll reach this goal by ${formatted}.`;
+}
 
 function ProgressRing({
   value,
@@ -93,13 +121,13 @@ function ProgressRing({
       setOffset(circumference - (safeValue / 100) * circumference);
       return;
     }
-    // Reset then animate
+
     setOffset(circumference);
-    const raq = requestAnimationFrame(() => {
+    const frame = requestAnimationFrame(() => {
       setOffset(circumference - (safeValue / 100) * circumference);
     });
-    return () => cancelAnimationFrame(raq);
-  }, [safeValue, circumference, animate]);
+    return () => cancelAnimationFrame(frame);
+  }, [animate, circumference, safeValue]);
 
   return (
     <div className={styles.progressRingWrap} style={{ width: size, height: size }}>
@@ -120,8 +148,6 @@ function ProgressRing({
   );
 }
 
-/* ─── SVG Icons ──────────────────────────────────────────── */
-
 function AddIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -132,15 +158,21 @@ function AddIcon() {
 
 function TargetIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="12" cy="12" r="1" />
     </svg>
   );
 }
-
-/* ─── Confetti component ─────────────────────────────────── */
 
 type ConfettiParticle = {
   id: number;
@@ -169,83 +201,23 @@ function Confetti({ active }: { active: boolean }) {
 
   return (
     <div className={styles.confettiLayer} aria-hidden="true">
-      {particles.map((p) => (
+      {particles.map((particle) => (
         <span
-          key={p.id}
+          key={particle.id}
           className={styles.confettiPiece}
           style={{
-            left: `${p.x}%`,
-            width: p.size,
-            height: p.size,
-            background: p.color,
-            animationDelay: `${p.delay}s`,
-            animationDuration: `${p.duration}s`,
+            left: `${particle.x}%`,
+            width: particle.size,
+            height: particle.size,
+            background: particle.color,
+            animationDelay: `${particle.delay}s`,
+            animationDuration: `${particle.duration}s`,
           }}
         />
       ))}
     </div>
   );
 }
-
-/* ─── Projection helper ──────────────────────────────────── */
-
-function getProjectionLabel(goal: Goal): string {
-  const target = Number(goal.target_amount);
-  const current = Number(goal.current_amount);
-  if (target <= current) return "Goal reached! 🎉";
-
-  const contributions = goal.contributions;
-  // Calculate average monthly contribution from history
-  if (contributions.length < 2) {
-    return "Not enough data to estimate projection.";
-  }
-
-  const sorted = [...contributions].sort(
-    (a, b) => new Date(a.contributed_at).getTime() - new Date(b.contributed_at).getTime(),
-  );
-  const firstDate = new Date(sorted[0].contributed_at);
-  const lastDate = new Date(sorted[sorted.length - 1].contributed_at);
-  const daysDiff = (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (daysDiff < 7) return "Not enough data to estimate projection.";
-
-  const totalContributed = sorted.reduce((sum, c) => sum + Number(c.amount), 0);
-  const monthlyRate = (totalContributed / daysDiff) * 30.44;
-  if (monthlyRate <= 0) return "Not enough data to estimate projection.";
-
-  const remaining = target - current;
-  const monthsNeeded = Math.ceil(remaining / monthlyRate);
-  const projectionDate = new Date();
-  projectionDate.setMonth(projectionDate.getMonth() + monthsNeeded);
-  const formatted = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(projectionDate);
-
-  return `At your savings rate, you'll reach this goal by ${formatted}.`;
-}
-
-/* ─── Milestone celebration persistence ──────────────────── */
-
-const MILESTONE_STORAGE_KEY = "moneymate.milestones.celebrated";
-
-function getCelebratedMilestones(goalId: number): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(`${MILESTONE_STORAGE_KEY}.${goalId}`);
-    return new Set<string>(raw ? JSON.parse(raw) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function persistCelebratedMilestone(goalId: number, milestone: string) {
-  try {
-    const set = getCelebratedMilestones(goalId);
-    set.add(milestone);
-    window.localStorage.setItem(`${MILESTONE_STORAGE_KEY}.${goalId}`, JSON.stringify(Array.from(set)));
-  } catch {
-    // ignore
-  }
-}
-
-/* ─── Main component ─────────────────────────────────────── */
 
 export function GoalsPage() {
   const toast = useToast();
@@ -254,21 +226,15 @@ export function GoalsPage() {
   const [form, setForm] = useState(emptyForm);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [contribution, setContribution] = useState("");
-
-  // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isContributeOpen, setIsContributeOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
-<<<<<<< HEAD
-=======
-  const [toast, setToast] = useState<ToastState | null>(null);
   const [celebratingGoalId, setCelebratingGoalId] = useState<number | null>(null);
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
 
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
-  const celebrateTimer = useRef<number>();
+  const celebrateTimer = useRef<number | null>(null);
 
   useEffect(() => {
     setIsLoadingGoals(true);
@@ -279,6 +245,9 @@ export function GoalsPage() {
           setSelectedId(items[0].id);
         }
       })
+      .catch(() => {
+        toast.error("Could not load goals", "Something went wrong.");
+      })
       .finally(() => setIsLoadingGoals(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -287,10 +256,12 @@ export function GoalsPage() {
     if (!actionMenuId) {
       return undefined;
     }
+
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (actionMenuRef.current?.contains(event.target as Node)) return;
       setActionMenuId(null);
     };
+
     document.addEventListener("mousedown", closeOnOutsideClick);
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [actionMenuId]);
@@ -302,13 +273,14 @@ export function GoalsPage() {
   }, []);
 
   const selectedGoal = useMemo(
-    () => goals.find((g) => g.id === selectedId) ?? goals[0],
+    () => goals.find((goal) => goal.id === selectedId) ?? goals[0],
     [goals, selectedId],
   );
 
   async function refresh(promise: Promise<Goal>) {
     const updated = await promise;
     setGoals((current) => current.map((goal) => (goal.id === updated.id ? updated : goal)));
+    return updated;
   }
 
   function formToCreatePayload(): GoalPayload {
@@ -359,6 +331,7 @@ export function GoalsPage() {
 
   async function saveEdit() {
     if (!selectedGoal) return;
+
     try {
       await refresh(goalsApi.update(selectedGoal.id, formToUpdatePayload()));
       setIsEditOpen(false);
@@ -370,11 +343,12 @@ export function GoalsPage() {
 
   async function confirmDelete() {
     if (!selectedGoal) return;
+
     try {
       await goalsApi.remove(selectedGoal.id);
-      setGoals((current) => current.filter((g) => g.id !== selectedGoal.id));
+      setGoals((current) => current.filter((goal) => goal.id !== selectedGoal.id));
       if (selectedId === selectedGoal.id) {
-        setSelectedId(goals.length > 1 ? goals.find((g) => g.id !== selectedGoal.id)?.id ?? null : null);
+        setSelectedId(goals.length > 1 ? goals.find((goal) => goal.id !== selectedGoal.id)?.id ?? null : null);
       }
       setIsDeleteOpen(false);
       toast.success("Goal deleted", "The goal was removed.");
@@ -383,41 +357,32 @@ export function GoalsPage() {
     }
   }
 
-  /* ─── Contribution ────────────────────────────────────── */
-
   async function logContribution(goalId: number) {
     try {
       const updated = await goalsApi.contribute(goalId, {
         amount: Number(contribution),
         note: "Manual log",
       });
-      setGoals((current) => current.map((g) => (g.id === updated.id ? updated : g)));
+      setGoals((current) => current.map((goal) => (goal.id === updated.id ? updated : goal)));
       setContribution("");
       setIsContributeOpen(false);
-<<<<<<< HEAD
-      toast.success("Contribution logged", "Goal progress updated.");
-=======
 
-      // Check milestones
-      const newPercent = updated.saved_percentage;
       const celebrated = getCelebratedMilestones(goalId);
       const freshMilestones = MILESTONES.filter(
-        (m) => newPercent >= m && !celebrated.has(String(m)),
+        (milestone) => updated.saved_percentage >= milestone && !celebrated.has(String(milestone)),
       );
+
       if (freshMilestones.length > 0) {
-        freshMilestones.forEach((m) => persistCelebratedMilestone(goalId, String(m)));
+        freshMilestones.forEach((milestone) => persistCelebratedMilestone(goalId, String(milestone)));
         setCelebratingGoalId(goalId);
         celebrateTimer.current = window.setTimeout(() => setCelebratingGoalId(null), 1800);
       }
 
-      setToast({ title: "Contribution logged", message: "Goal progress updated.", variant: "success" });
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
+      toast.success("Contribution logged", "Goal progress updated.");
     } catch {
       toast.error("Could not log contribution", "Something went wrong.");
     }
   }
-
-  /* ─── Handlers ────────────────────────────────────────── */
 
   function openActionMenu(goal: Goal) {
     setSelectedId(goal.id);
@@ -448,8 +413,6 @@ export function GoalsPage() {
     setIsAddOpen(true);
   }
 
-  /* ─── Modal form renderers ────────────────────────────── */
-
   const renderForm = (mode: "create" | "edit") => (
     <form
       className={styles.verticalForm}
@@ -459,22 +422,34 @@ export function GoalsPage() {
       }}
     >
       <FormField label="Name">
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
       </FormField>
       <FormField label="Target amount">
-        <Input type="number" value={form.targetAmount} onChange={(e) => setForm({ ...form, targetAmount: e.target.value })} />
+        <Input
+          type="number"
+          value={form.targetAmount}
+          onChange={(event) => setForm({ ...form, targetAmount: event.target.value })}
+        />
       </FormField>
       <FormField label="Starting amount">
-        <Input type="number" value={form.currentAmount} onChange={(e) => setForm({ ...form, currentAmount: e.target.value })} />
+        <Input
+          type="number"
+          value={form.currentAmount}
+          onChange={(event) => setForm({ ...form, currentAmount: event.target.value })}
+        />
       </FormField>
       <FormField label="Start date" helperText="When you plan to start saving">
-        <Input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+        <Input type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
       </FormField>
       <FormField label="Deadline">
-        <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+        <Input type="date" value={form.deadline} onChange={(event) => setForm({ ...form, deadline: event.target.value })} />
       </FormField>
       <FormField label="Linked account" helperText="e.g. Savings account, Checking account">
-        <Input value={form.linkedAccount} onChange={(e) => setForm({ ...form, linkedAccount: e.target.value })} placeholder="Savings account" />
+        <Input
+          value={form.linkedAccount}
+          onChange={(event) => setForm({ ...form, linkedAccount: event.target.value })}
+          placeholder="Savings account"
+        />
       </FormField>
       <div className={styles.modalActions}>
         <Button variant="secondary" onClick={() => (mode === "create" ? setIsAddOpen(false) : setIsEditOpen(false))}>
@@ -486,8 +461,6 @@ export function GoalsPage() {
       </div>
     </form>
   );
-
-  /* ─── Goal card renderer ──────────────────────────────── */
 
   const renderGoalCard = (goal: Goal) => {
     const category = getGoalCategoryInfo(goal.name);
@@ -537,8 +510,8 @@ export function GoalsPage() {
               </button>
               {actionMenuId === goal.id ? (
                 <div className={styles.actionMenu}>
-                  <button type="button" onClick={() => { setActionMenuId(null); openEditFromMenu(goal); }}>Edit</button>
-                  <button type="button" className={styles.dangerAction} onClick={() => { setActionMenuId(null); openDeleteFromMenu(goal); }}>Delete</button>
+                  <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
+                  <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
                 </div>
               ) : null}
             </div>
@@ -571,18 +544,15 @@ export function GoalsPage() {
             </div>
           </div>
 
-          {/* Projection */}
           <div className={styles.projectionBox}>
             <span className={styles.projectionText}>{projectionLabel}</span>
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className={styles.progressTrack}>
           <span style={{ width: `${percent}%` }} />
         </div>
 
-        {/* Milestones */}
         <div className={styles.milestones}>
           {MILESTONES.map((milestone) => {
             const reached = goal.saved_percentage >= milestone;
@@ -598,7 +568,6 @@ export function GoalsPage() {
           })}
         </div>
 
-        {/* Contribution history */}
         {goal.contributions.length > 0 ? (
           <details className={styles.historyDetails}>
             <summary className={styles.historySummary}>
@@ -628,207 +597,11 @@ export function GoalsPage() {
         </Button>
       </div>
 
-<<<<<<< HEAD
       {isLoadingGoals ? (
-        <Card className={styles.panel}>
+        <Card>
           <LoadingSpinner label="Loading goals" />
         </Card>
-      ) : null}
-
-      {!isLoadingGoals ? (
-      <div className={styles.grid}>
-        <Card className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <div>
-              <p className={styles.eyebrow}>Goal overview</p>
-              <h2>{selectedGoal ? `${selectedGoal.name} at a glance` : "No goal selected"}</h2>
-            </div>
-            {selectedGoal ? (
-              <span className={`${styles.statusPill} ${styles[getGoalStatus(selectedGoal).tone]}`}>
-                {getGoalStatus(selectedGoal).label}
-              </span>
-            ) : null}
-          </div>
-          {selectedGoal ? (
-            <>
-              <div className={styles.heroContent}>
-                <div className={styles.heroRingCard}>
-                  <ProgressRing value={Math.min(selectedGoal.saved_percentage, 100)} />
-                  <div>
-                    <strong>{money(selectedGoal.current_amount)}</strong>
-                    <span>saved so far</span>
-                  </div>
-                </div>
-                <div className={styles.metricsGrid}>
-                  <div className={styles.metricCard}>
-                    <span>Target</span>
-                    <strong>{money(selectedGoal.target_amount)}</strong>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <span>Remaining</span>
-                    <strong>{money(selectedGoal.remaining_amount)}</strong>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <span>Deadline</span>
-                    <strong>{selectedGoal.deadline ? new Date(selectedGoal.deadline).toLocaleDateString() : "Flexible"}</strong>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.chart}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={projections.map((point) => ({ ...point, month: formatProjectionMonth(point.month, selectedGoal?.start_date ?? null) }))}>
-                    <CartesianGrid strokeDasharray="4 4" />
-                    <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => `$${value}`} />
-                    <Tooltip formatter={(value) => money(Number(value))} />
-                    <Area type="monotone" dataKey="projected" stroke="#49c5b6" fill="#49c5b6" fillOpacity={0.24} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className={styles.aiSavingsBox}>
-                <span className={styles.aiLabel}>AI savings calculator</span>
-                <strong className={styles.aiAmount}>{money(requiredMonthly)}</strong>
-                <span className={styles.aiDesc}>required monthly contribution</span>
-                {projectedCompletionLabel ? <p className={styles.aiProjectionText}>{projectedCompletionLabel}</p> : null}
-                {aiRationale ? <p className={styles.aiRationale}>{aiRationale}</p> : null}
-              </div>
-            </>
-          ) : (
-            <div className={styles.emptyGoalCard}>
-              <h3>Create your first goal</h3>
-              <p>Set a target and we’ll map your momentum with a smart projection.</p>
-            </div>
-          )}
-        </Card>
-        <section className={styles.listSection}>
-          {goals.length === 0 ? (
-            <Card className={styles.emptyGoalCard}>
-              <h3>No goals yet</h3>
-              <p>Track a big purchase, trip, or emergency fund with a clear monthly target.</p>
-              <div className={styles.emptyGoalActions}>
-                <Button onClick={openAddModal}>Create first goal</Button>
-              </div>
-            </Card>
-          ) : null}
-          {goals.map((goal) => {
-            const status = getGoalStatus(goal);
-            const category = getGoalCategoryInfo(goal);
-            const daysRemaining = getDaysRemaining(goal);
-            return (
-              <Card
-                className={`${styles.goalCard} ${selectedId === goal.id ? styles.selectedCard : ""}`}
-                key={goal.id}
-                onClick={() => setSelectedId(goal.id)}
-              >
-                <div className={styles.goalHeader}>
-                  <div className={styles.goalInfo}>
-                    <div className={styles.goalTitleRow}>
-                      <div className={styles.categoryBadge}>
-                        <span className={styles.categoryIcon}>{category.icon}</span>
-                        <span>{category.label}</span>
-                      </div>
-                      <span className={`${styles.statusPill} ${styles[status.tone]}`}>{status.label}</span>
-                    </div>
-                    <h3>{goal.name}</h3>
-                    <p>
-                      {goal.linked_account || "No linked account"}
-                      {goal.deadline ? ` · due ${new Date(goal.deadline).toLocaleDateString()}` : ""}
-                    </p>
-                  </div>
-                  <div className={styles.goalHeaderRight}>
-                    <div className={styles.rowActions} ref={actionMenuId === goal.id ? actionMenuRef : undefined}>
-                      <button
-                        className={styles.dotsButton}
-                        type="button"
-                        aria-expanded={actionMenuId === goal.id}
-                        aria-label="Open goal actions"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openActionMenu(goal);
-                        }}
-                      >
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                          <circle cx="12" cy="5" r="1.8" />
-                          <circle cx="12" cy="12" r="1.8" />
-                          <circle cx="12" cy="19" r="1.8" />
-                        </svg>
-                      </button>
-                      {actionMenuId === goal.id ? (
-                        <div className={styles.actionMenu}>
-                          <button type="button" onClick={() => openContributeFromMenu(goal)}>Log contribution</button>
-                          <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
-                          <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.cardContent}>
-                  <ProgressRing value={Math.min(goal.saved_percentage, 100)} size={70} strokeWidth={7} />
-                  <div className={styles.cardSummary}>
-                    <div className={styles.goalMetaRow}>
-                      <span>Saved</span>
-                      <strong>{money(goal.current_amount)}</strong>
-                    </div>
-                    <div className={styles.goalMetaRow}>
-                      <span>Target</span>
-                      <strong>{money(goal.target_amount)}</strong>
-                    </div>
-                    <div className={styles.goalMetaRow}>
-                      <span>Left</span>
-                      <strong>{money(goal.remaining_amount)}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.progressTrack}>
-                  <span style={{ width: `${Math.min(goal.saved_percentage, 100)}%` }} />
-                </div>
-                <div className={styles.milestones}>
-                  {[25, 50, 75, 100].map((milestone) => {
-                    const reached = goal.saved_percentage >= milestone;
-                    return (
-                      <span
-                        key={milestone}
-                        className={`${styles.milestone} ${reached ? styles.milestoneActive : ""} ${reached ? styles.milestoneCelebrated : ""}`}
-                      >
-                        {reached ? `🎉 ${milestone}%` : `${milestone}%`}
-                      </span>
-                    );
-                  })}
-                </div>
-                <div className={styles.cardFooter}>
-                  <button type="button" className={styles.secondaryAction} onClick={(event) => {
-                    event.stopPropagation();
-                    openContributeFromMenu(goal);
-                  }}>
-                    Log contribution
-                  </button>
-                  <span>{daysRemaining !== null ? `${daysRemaining} days left` : "Keep momentum going"}</span>
-                </div>
-              </Card>
-            );
-          })}
-        </section>
-      </div>
-      ) : null}
-      {selectedGoal && selectedGoal.contributions.length > 0 ? (
-        <Card className={styles.panel}>
-          <h2>Contribution history</h2>
-          <div className={styles.history}>
-            {selectedGoal.contributions.map((entry) => (
-              <div key={entry.id} className={styles.historyItem}>
-                <strong>{money(entry.amount)}</strong>
-                <span>{new Date(entry.contributed_at).toLocaleDateString()}</span>
-                <p>{entry.note || "Manual contribution"}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ) : null}
-=======
-      {goals.length === 0 ? (
+      ) : goals.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyStateIllustration}>
             <TargetIcon />
@@ -845,19 +618,15 @@ export function GoalsPage() {
           {goals.map(renderGoalCard)}
         </div>
       )}
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
 
-      {/* Add Goal Modal */}
       <Modal isOpen={isAddOpen} title="Create goal" onClose={() => setIsAddOpen(false)}>
         {renderForm("create")}
       </Modal>
 
-      {/* Edit Goal Modal */}
       <Modal isOpen={isEditOpen} title="Edit goal" onClose={() => setIsEditOpen(false)}>
         {renderForm("edit")}
       </Modal>
 
-      {/* Log Contribution Modal */}
       <Modal isOpen={isContributeOpen} title="Log contribution" onClose={() => setIsContributeOpen(false)}>
         <form
           className={styles.verticalForm}
@@ -866,12 +635,15 @@ export function GoalsPage() {
             if (selectedGoal) void logContribution(selectedGoal.id);
           }}
         >
-          <FormField label="Amount" error={contribution && (Number(contribution) <= 0 || Number.isNaN(Number(contribution))) ? "Amount must be positive." : undefined}>
+          <FormField
+            label="Amount"
+            error={contribution && (Number(contribution) <= 0 || Number.isNaN(Number(contribution))) ? "Amount must be positive." : undefined}
+          >
             <Input
               type="number"
               placeholder="Amount"
               value={contribution}
-              onChange={(e) => setContribution(e.target.value)}
+              onChange={(event) => setContribution(event.target.value)}
             />
           </FormField>
           <div className={styles.modalActions}>
@@ -886,7 +658,6 @@ export function GoalsPage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteOpen} title="Delete goal" onClose={() => setIsDeleteOpen(false)}>
         <p className={styles.confirmText}>
           Are you sure you want to delete <strong>{selectedGoal?.name}</strong>?

@@ -115,7 +115,6 @@
 .iconBox,
 .largeIcon,
 .plusIcon,
-.vendorMark,
 .dropIcon {
   display: inline-grid;
   place-items: center;
@@ -335,10 +334,12 @@
 }
 
 .categoryCell {
-  display: inline-grid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   width: 100%;
-  place-items: center;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -404,39 +405,48 @@
 
 .table {
   width: 100%;
-  min-width: 42rem;
-  table-layout: auto;
-  border-collapse: collapse;
+  min-width: 56rem;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .table th,
 .table td {
-  border-bottom: 1px solid var(--mm-border);
-  padding: 0.6rem 0.55rem;
+  border-bottom: 1px solid rgba(248, 255, 249, 0.08);
+  padding: 0.7rem 0.75rem;
   color: var(--mm-text-soft);
   text-align: center;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .table th {
+  border-bottom-color: var(--mm-border);
   color: var(--mm-text);
   font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .table th:nth-child(1) {
   width: 4.5rem;
+  text-align: center;
+}
+
+.table td:nth-child(1) {
+  text-align: center;
 }
 
 .table th:nth-child(2) {
-  width: 8.5rem;
+  width: calc((100% - 9rem) / 5);
 }
 
 .table th:nth-child(3) {
-  width: auto;
+  width: calc((100% - 9rem) / 5);
 }
 
 .table th:nth-child(4) {
-  width: 7rem;
+  width: calc((100% - 9rem) / 5);
   text-align: center;
 }
 
@@ -445,15 +455,21 @@
 }
 
 .table th:nth-child(5) {
-  width: auto;
+  width: calc((100% - 9rem) / 5);
 }
 
 .table th:nth-child(6) {
-  width: 7rem;
+  width: calc((100% - 9rem) / 5);
+  text-align: center;
+}
+
+.table td:nth-child(6) {
+  text-align: center;
 }
 
 .table th:nth-child(7) {
   width: 4.5rem;
+  text-align: center;
 }
 
 .table th:last-child,
@@ -464,16 +480,12 @@
 .table tbody tr {
   cursor: default;
   transition:
-    background 160ms ease,
-    box-shadow 160ms ease;
+    background 160ms ease;
 }
 
 .table tbody tr:hover,
 .selectedRow {
-  background: linear-gradient(90deg, rgba(var(--mm-accent-rgb), 0.1), rgba(var(--mm-accent-rgb), 0.025));
-  box-shadow:
-    inset 0 0 0 1px rgba(var(--mm-accent-rgb), 0.24),
-    inset 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.045);
+  background: rgba(var(--mm-accent-rgb), 0.06);
 }
 
 .clickableRow {
@@ -481,17 +493,16 @@
 }
 
 .vendorCell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
+  color: var(--mm-text);
+  font-weight: 700;
+  text-align: center;
 }
 
-.vendorMark {
-  width: 1.65rem;
-  height: 1.65rem;
-  margin-right: 0;
-  vertical-align: middle;
+.vendorCell span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .badge {
@@ -523,9 +534,11 @@
 
 .customCategoryDot {
   display: inline-grid;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid rgba(248, 255, 249, 0.14);
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--mm-border);
   border-radius: 50%;
 }
 
@@ -536,6 +549,7 @@
 
 .notesCell {
   max-width: 0;
+  color: var(--mm-text-muted);
 }
 
 .notesCell span {
@@ -594,10 +608,8 @@
 }
 
 .actionMenu {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  z-index: 80;
+  position: fixed;
+  z-index: 1000;
   display: grid;
   min-width: 13rem;
   overflow: hidden;
@@ -606,7 +618,6 @@
   background: var(--mm-menu-background);
   box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.34);
   padding: 0.35rem;
-  transform: translateY(-0.25rem);
 }
 
 .actionMenu button {
@@ -665,11 +676,6 @@
   border-color: var(--mm-accent-soft);
   box-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.11);
   transform: translateY(-1px);
-}
-
-.rowActions .editIcon {
-  border-color: rgba(var(--mm-accent-rgb), 0.48);
-  color: var(--mm-accent-soft);
 }
 
 .rowActions .deleteIcon {
@@ -1424,7 +1430,7 @@
   }
 
   .table {
-    min-width: 36rem;
+    min-width: 54rem;
   }
 
   .table th,
