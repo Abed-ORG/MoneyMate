@@ -1098,12 +1098,6 @@
     box-shadow 180ms ease;
 }
 
-.contactButton::after {
-  content: "↗";
-  font-size: 0.95em;
-  line-height: 1;
-}
-
 .contactButton:hover {
   transform: translateY(-1px);
   background: rgba(var(--mm-accent-rgb), 0.14);
@@ -1140,12 +1134,20 @@
   text-transform: uppercase;
 }
 
-.footerColumn a {
+.footerColumn a,
+.footerDisabledLink {
   color: var(--mm-text-soft);
+  cursor: default;
   line-height: 1.5;
+  transition: color 180ms ease;
 }
 
-.footerColumn a:hover {
+.footerColumn a {
+  cursor: pointer;
+}
+
+.footerColumn a:hover,
+.footerDisabledLink:hover {
   color: var(--mm-accent-soft);
 }
 

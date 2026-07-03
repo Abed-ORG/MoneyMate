@@ -629,7 +629,6 @@ export function LandingPage() {
             >
               moneymate.app.mail@gmail.com
             </a>
-            .
           </p>
         </div>
       </section>
@@ -671,13 +670,21 @@ export function LandingPage() {
             <a href="#contact" onClick={(event) => scrollToSection(event, "contact")}>
               Contact
             </a>
-            <a href="/register">Careers</a>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Careers
+            </span>
           </div>
           <div className={styles.footerColumn}>
             <h3>Legal</h3>
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
-            <a href="/cookies">Cookie Policy</a>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Privacy Policy
+            </span>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Terms of Service
+            </span>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Cookie Policy
+            </span>
           </div>
         </nav>
       </footer>
