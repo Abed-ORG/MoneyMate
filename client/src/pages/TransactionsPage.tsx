@@ -717,57 +717,39 @@ export function TransactionsPage() {
       setTransactions((current) =>
         current.map((item) => (item.id === transaction.id ? updated : item)),
       );
-      setToast({
+      toast.showToast({
         title: "Transaction updated",
         message: "Your changes were saved.",
         variant: "success",
       });
       cancelEditing();
     } catch (err) {
-      setToast({ title: "Could not save changes", message: getApiErrorMessage(err), variant: "error" });
+      toast.error("Could not save changes", getApiErrorMessage(err));
     } finally {
       setSavingEditId(null);
     }
   }, [editValues, cancelEditing]);
 
-<<<<<<< HEAD
-    const confirmDelete = async () => {
-    const idsToDelete = selected ? [selected.id] : selectedTransactionIds;
-=======
   const confirmDelete = async () => {
     const idsToDelete = selectedTransactionIds.length ? selectedTransactionIds : (selected ? [selected.id] : []);
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
     if (!idsToDelete.length) return;
 
     try {
       await Promise.all(idsToDelete.map((id) => transactionsApi.delete(id)));
-<<<<<<< HEAD
-      toast.success(
-        selected ? "Transaction deleted" : "Transactions deleted",
-        selected
-          ? "The transaction was removed."
-          : `${idsToDelete.length} transactions were removed.`,
-      );
-=======
-      setToast({
+      toast.showToast({
         title: idsToDelete.length > 1 ? "Transactions deleted" : "Transaction deleted",
         message: idsToDelete.length > 1
           ? `${idsToDelete.length} transactions were removed.`
           : "The transaction was removed.",
         variant: "success",
       });
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
       setSelectedId(null);
       setSelectedTransactionIds([]);
       setIsDeleteOpen(false);
       cancelEditing();
       await loadTransactions();
     } catch (err) {
-<<<<<<< HEAD
-      toast.error("Could not delete transaction", getApiErrorMessage(err));
-=======
-      setToast({ title: "Could not delete", message: getApiErrorMessage(err), variant: "error" });
->>>>>>> b122b4d (refactor: enhance password strength, goals grid, and transaction editing)
+      toast.error("Could not delete", getApiErrorMessage(err));
     }
   };
 
