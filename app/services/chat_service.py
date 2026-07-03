@@ -443,7 +443,9 @@ def is_contextual_followup_reply(
         return False
     if has_affirmative_reply_signal(question):
         return True
-    return bool(meaningful_tokens(question) & meaningful_tokens(previous_assistant))
+    return bool(
+        meaningful_tokens(question) & meaningful_tokens(previous_assistant)
+    )
 
 
 def last_assistant_message(history: list[dict[str, str]]) -> str:

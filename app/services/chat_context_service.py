@@ -213,7 +213,9 @@ def transaction_to_context_row(transaction: Transaction) -> dict[str, Any]:
             else None
         ),
         "vendor": transaction.vendor or transaction.description or "Unknown",
-        "category": transaction.category.name if transaction.category else "Other",
+        "category": (
+            transaction.category.name if transaction.category else "Other"
+        ),
         "amount": to_json_money(amount),
         "transaction_type": "income" if amount > 0 else "expense",
         "notes": transaction.notes or "",

@@ -805,7 +805,9 @@ def test_chat_keep_going_followup_uses_current_goal_context(monkeypatch):
         followup_answer,
     )
     try:
-        user, headers = create_account(session, client, "keepgoing@example.com")
+        user, headers = create_account(
+            session, client, "keepgoing@example.com"
+        )
         add_financial_data(session, user.id)
         current_goal = (
             session.query(Goal)
