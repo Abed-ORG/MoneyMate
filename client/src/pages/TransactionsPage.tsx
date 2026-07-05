@@ -291,6 +291,7 @@ function toPayload(form: FormState): TransactionPayload {
 }
 
 type EditValues = {
+  date: string;
   vendor: string;
   category: string;
   notes: string;
@@ -669,6 +670,7 @@ export function TransactionsPage() {
     setActionMenuId(null);
     setEditingId(transaction.id);
     setEditValues({
+      date: transaction.date.slice(0, 10),
       vendor: transaction.vendor,
       category: transaction.category,
       notes: transaction.notes,
@@ -687,6 +689,11 @@ export function TransactionsPage() {
     if (!editValues) return;
 
     const errors: Partial<Record<keyof EditValues, string>> = {};
+    if (!editValues.date) {
+      errors.date = "Date is required.";
+    } else if (Number.isNaN(new Date(editValues.date).getTime())) {
+      errors.date = "Enter a valid date.";
+    }
     if (!editValues.vendor.trim()) {
       errors.vendor = "Vendor is required.";
     }
@@ -708,7 +715,7 @@ export function TransactionsPage() {
     setSavingEditId(transaction.id);
     try {
       const updated = await transactionsApi.update(transaction.id, {
-        date: transaction.date.slice(0, 10),
+        date: editValues.date,
         amount: Number.isFinite(signedAmount) ? signedAmount : Number(transaction.amount),
         category: editValues.category,
         vendor: editValues.vendor.trim(),
@@ -1055,7 +1062,17 @@ export function TransactionsPage() {
             type="checkbox"
           />
         </td>
-        <td>{formatDate(transaction.date)}</td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.date ? styles.inlineInputError : ""}`}
+              type="date"
+              value={editValues.date}
+              onChange={(event) => setEditValues((current) => current ? { ...current, date: event.target.value } : current)}
+            />
+            {editErrors.date ? <span className={styles.inlineError}>{editErrors.date}</span> : null}
+          </div>
+        </td>
         <td>
           <div className={styles.inlineField}>
             <input
@@ -1069,15 +1086,17 @@ export function TransactionsPage() {
         </td>
         <td>
           <div className={styles.inlineField}>
-            <select
-              className={`${styles.inlineSelect} ${editErrors.category ? styles.inlineInputError : ""}`}
+            <Select
+              aria-label="Edit transaction category"
+              className={styles.inlineSelect}
+              error={editErrors.category}
+              menuPlacement="top"
+              options={formCategoryOptions}
+              searchable
+              searchPlaceholder="Search categories..."
               value={editValues.category}
-              onChange={(event) => setEditValues((current) => current ? { ...current, category: event.target.value } : current)}
-            >
-              {formCategoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+              onValueChange={(value) => setEditValues((current) => current ? { ...current, category: value } : current)}
+            />
             {editErrors.category ? <span className={styles.inlineError}>{editErrors.category}</span> : null}
           </div>
         </td>
@@ -1454,8 +1473,7 @@ export function TransactionsPage() {
                               </button>
                               {actionMenuId === transaction.id ? (
                                 <div className={styles.actionMenu} style={actionMenuPosition}>
-                                  <button type="button" onClick={() => startEditing(transaction)}>Edit inline</button>
-                                  <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit in modal</button>
+                                  <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
                                   <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
                                   <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
                                   <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>

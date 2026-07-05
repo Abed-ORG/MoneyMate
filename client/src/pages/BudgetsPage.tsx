@@ -277,6 +277,11 @@ export function BudgetsPage() {
   };
 
   const selectMonth = (nextMonth: number, nextYear: number) => {
+    if (nextMonth === month && nextYear === year) {
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
     setMonth(nextMonth);
     setYear(nextYear);
     setBudgetFilters({ statuses: [], categoryIds: [] });

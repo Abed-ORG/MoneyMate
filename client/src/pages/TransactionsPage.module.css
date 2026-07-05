@@ -1193,25 +1193,24 @@
 
 .inlineSelect {
   width: 100%;
-  min-height: 2rem;
-  border: 1px solid var(--mm-border);
-  border-radius: var(--mm-radius-sm);
-  background: var(--mm-input-background);
-  color: var(--mm-text);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
   box-sizing: border-box;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
 }
 
-.inlineSelect:focus {
-  border-color: rgba(var(--mm-accent-rgb), 0.5);
-  box-shadow: 0 0 0 2px rgba(var(--mm-accent-rgb), 0.12);
-  outline: none;
+.inlineSelect button {
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--mm-input-background);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.inlineSelect input {
+  min-height: 2rem;
+  font-size: 0.85rem;
+}
+
+.inlineSelect [role="listbox"] {
+  min-width: 11rem;
 }
 
 .inlineError {
