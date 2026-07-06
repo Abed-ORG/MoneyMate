@@ -391,41 +391,47 @@ export function BudgetComparisonChart({
   );
 
   return (
-    <div className={styles.verticalBars}>
-      {budgets.map((budget) => {
-        const budgeted = toNumber(budget.budgeted_amount);
-        const actual = toNumber(budget.actual_spending);
-        const trackHeight = Math.max(12, Math.min(100, (budgeted / maxBudgeted) * 100));
-        const fillHeight = budgeted > 0 ? Math.min(100, (actual / budgeted) * 100) : 0;
-        const isOverBudget = actual > budgeted;
-        return (
-          <article className={styles.verticalBarItem} key={budget.budget_id}>
-            <div className={styles.verticalBarValues}>
-              <strong>{formatCurrency(actual, currency)}</strong>
-              <span>{formatCurrency(budgeted, currency)}</span>
-            </div>
-            <div className={styles.verticalBarPlot}>
-              <div
-                aria-label={`${budget.category_name}: ${formatCurrency(actual, currency)} actual of ${formatCurrency(budgeted, currency)} budgeted`}
-                className={`${styles.verticalBarTrack} ${styles[budget.progress_state]} ${
-                  isOverBudget ? styles.overBudgetBar : ""
-                }`}
-                role="img"
-                style={{ height: `${trackHeight}%` }}
-              >
-                <span style={{ height: `${Math.max(2, fillHeight)}%` }} />
-                {isOverBudget ? <em>{formatPercent(budget.usage_percentage)}</em> : null}
+    <div className={styles.verticalBarFrame}>
+      <div className={styles.verticalValueLegend} aria-hidden="true">
+        <span className={styles.spentLegend}>Spent</span>
+        <span className={styles.budgetLegend}>Budget</span>
+      </div>
+      <div className={styles.verticalBars}>
+        {budgets.map((budget) => {
+          const budgeted = toNumber(budget.budgeted_amount);
+          const actual = toNumber(budget.actual_spending);
+          const trackHeight = Math.max(12, Math.min(100, (budgeted / maxBudgeted) * 100));
+          const fillHeight = budgeted > 0 ? Math.min(100, (actual / budgeted) * 100) : 0;
+          const isOverBudget = actual > budgeted;
+          return (
+            <article className={styles.verticalBarItem} key={budget.budget_id}>
+              <div className={styles.verticalBarValues}>
+                <strong>{formatCurrency(actual, currency)}</strong>
+                <span>{formatCurrency(budgeted, currency)}</span>
               </div>
-            </div>
-            <div className={styles.verticalBarLabel}>
-              <span className={styles.tableCategoryIcon}>
-                <CategoryIcon category={budget.category_name} />
-              </span>
-              <strong>{budget.category_name}</strong>
-            </div>
-          </article>
-        );
-      })}
+              <div className={styles.verticalBarPlot}>
+                <div
+                  aria-label={`${budget.category_name}: ${formatCurrency(actual, currency)} actual of ${formatCurrency(budgeted, currency)} budgeted`}
+                  className={`${styles.verticalBarTrack} ${styles[budget.progress_state]} ${
+                    isOverBudget ? styles.overBudgetBar : ""
+                  }`}
+                  role="img"
+                  style={{ height: `${trackHeight}%` }}
+                >
+                  <span style={{ height: `${Math.max(2, fillHeight)}%` }} />
+                  {isOverBudget ? <em>{formatPercent(budget.usage_percentage)}</em> : null}
+                </div>
+              </div>
+              <div className={styles.verticalBarLabel}>
+                <span className={styles.tableCategoryIcon}>
+                  <CategoryIcon category={budget.category_name} />
+                </span>
+                <strong>{budget.category_name}</strong>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }

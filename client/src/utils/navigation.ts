@@ -4,7 +4,6 @@ export const protectedNavigation = [
   { label: "Budgets", path: "/budgets" },
   { label: "Goals", path: "/goals" },
   { label: "Reports", path: "/reports" },
-  { label: "Chat", path: "/chat" },
 ] as const;
 
 export function getPageTitle(pathname: string) {

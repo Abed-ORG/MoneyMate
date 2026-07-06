@@ -594,6 +594,49 @@
   gap: 0.75rem;
 }
 
+.privacySection,
+.deleteAccountSection {
+  display: grid;
+  max-width: 38rem;
+  gap: 0.75rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-control-background);
+  padding: 0.85rem;
+}
+
+.privacySection p,
+.deleteAccountSection p,
+.deleteAccountSection h3 {
+  margin: 0;
+}
+
+.privacySection p,
+.deleteAccountSection p {
+  color: var(--mm-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.privacyActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.deleteAccountSection {
+  margin-top: 0.25rem;
+  border-color: rgba(255, 107, 114, 0.28);
+  background:
+    linear-gradient(90deg, rgba(255, 107, 114, 0.08), transparent),
+    var(--mm-control-background);
+}
+
+.deleteAccountSection h3 {
+  color: var(--color-error);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
 .categoryModalBody {
   display: grid;
   gap: 0.8rem;
@@ -638,7 +681,7 @@
     width: 100%;
     margin-top: 0;
     margin-left: 0;
-    grid-template-columns: repeat(4, minmax(8.5rem, 1fr));
+    grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
     grid-template-rows: 1fr;
     border-radius: 0;
     overflow-x: auto;
@@ -719,76 +762,11 @@
     width: 100%;
   }
 
-  .sectionNav {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.35rem;
-  }
-
-  .sectionNavItem {
-    min-width: 0;
-    padding: 0.5rem 0.55rem;
-  }
-
-  .sectionNavItem strong {
-    font-size: 0.75rem;
-  }
-
-  .sectionHeading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .sectionSaveButton {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .sectionHeading h2 {
-    font-size: 0.9rem;
-  }
-
-  .formGrid {
-    gap: 0.65rem;
-  }
-
-  .category {
-    min-height: 1.85rem;
-    padding: 0.35rem 0.45rem;
-    font-size: 0.72rem;
-  }
-
-  .categoryIcon {
-    width: 1.15rem;
-    height: 1.15rem;
-  }
-
-  .customCategoryRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.45rem;
-  }
-
-  .customCategoryActions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .profileCard {
-    aspect-ratio: auto;
-    min-height: 12rem;
-  }
-
-  .modalActions {
-    flex-direction: column;
-  }
-
-  .modalActions button {
+  .privacyActions button,
+  .deleteAccountSection button {
     width: 100%;
   }
 
-  .passwordForm {
-    gap: 0.6rem;
-  }
 }
 
 

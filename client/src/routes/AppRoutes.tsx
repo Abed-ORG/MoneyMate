@@ -1,6 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { AppShell } from "../layouts/AppShell";
+import { BudgetsPage } from "../pages/BudgetsPage";
+import { DashboardPage } from "../pages/DashboardPage";
+import { GoalsPage } from "../pages/GoalsPage";
+import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
+import { LandingPage } from "../pages/LandingPage";
+import { LoginPage } from "../pages/LoginPage";
+import { MonthlyReportPage } from "../pages/MonthlyReportPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 
@@ -120,38 +127,10 @@ export function AppRoutes() {
           }
         />
         <Route path="/reports" element={<Navigate replace to="/reports/monthly" />} />
-        <Route
-          path="/reports/monthly"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <MonthlyReportPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/reports/annual"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <AnnualReportPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ChatPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <SettingsPage />
-            </Suspense>
-          }
-        />
+        <Route path="/reports/monthly" element={<MonthlyReportPage />} />
+        <Route path="/reports/annual" element={<AnnualReportPage />} />
+        <Route path="/chat" element={<Navigate replace to="/dashboard" />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route
         path="*"

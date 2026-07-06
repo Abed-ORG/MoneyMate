@@ -245,17 +245,12 @@ function GrowthSculpture() {
 
       <g className={styles.growthArrow} filter="url(#growthShadow)">
         <path
-          className={styles.growthArrowDepth}
-          d="M133 628C254 573 393 456 512 315C571 245 628 181 676 133L852 57L801 274L741 213C668 286 608 351 547 432C441 572 298 682 150 748C129 757 105 747 96 726C88 707 99 682 120 673C251 613 380 498 483 361C542 283 604 206 657 151Z"
-          fill="#003a35"
-          opacity="0.82"
-        />
-        <path
           className={styles.growthArrowFace}
-          d="M121 609C249 550 381 435 496 300C555 231 611 168 660 119L835 42L786 255L728 194C656 267 594 336 529 414C421 559 286 659 136 724C116 733 93 724 85 704C77 684 87 662 107 653C239 596 363 485 468 346C527 268 587 192 642 137Z"
+          d="M108 650C244 590 365 482 468 346C520 278 579 205 642 138L589 88L850 42L790 276L728 204C672 266 612 340 548 424C435 574 302 676 143 730C119 738 95 728 86 707C77 685 88 660 108 650Z"
           fill="url(#growthFace)"
           stroke="#6df4df"
           strokeWidth="7"
+          strokeLinecap="round"
           strokeLinejoin="round"
         />
       </g>
@@ -629,7 +624,6 @@ export function LandingPage() {
             >
               moneymate.app.mail@gmail.com
             </a>
-            .
           </p>
         </div>
       </section>
@@ -671,13 +665,21 @@ export function LandingPage() {
             <a href="#contact" onClick={(event) => scrollToSection(event, "contact")}>
               Contact
             </a>
-            <a href="/register">Careers</a>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Careers
+            </span>
           </div>
           <div className={styles.footerColumn}>
             <h3>Legal</h3>
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
-            <a href="/cookies">Cookie Policy</a>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Privacy Policy
+            </span>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Terms of Service
+            </span>
+            <span className={styles.footerDisabledLink} aria-disabled="true">
+              Cookie Policy
+            </span>
           </div>
         </nav>
       </footer>

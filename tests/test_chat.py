@@ -172,7 +172,7 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
         sent = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "How much did I spend this month?"},
+            json={"question": "How much did I spend in June 2026?"},
         )
         assert sent.status_code == 200
         body = sent.json()
@@ -186,6 +186,36 @@ def test_chat_send_persists_grounded_messages_and_context(monkeypatch):
         assert body["assistant_message"]["metrics"]["total_income"] == 1000.0
         assert captured["context"]["transactions"]["expenses"] == 200.0
         assert captured["context"]["transactions"]["income"] == 1000.0
+        assert captured["context"]["transactions"]["transactions"] == [
+            {
+                "date": "2026-06-06",
+                "vendor": "Train",
+                "category": "Travel",
+                "amount": -80.0,
+                "transaction_type": "expense",
+                "notes": "",
+            },
+            {
+                "date": "2026-06-05",
+                "vendor": "Cafe",
+                "category": "Food & Dining",
+                "amount": -120.0,
+                "transaction_type": "expense",
+                "notes": "",
+            },
+            {
+                "date": "2026-06-01",
+                "vendor": "Payroll",
+                "category": "Other",
+                "amount": 1000.0,
+                "transaction_type": "income",
+                "notes": "",
+            },
+        ]
+        assert (
+            captured["context"]["transactions"]["transactions_truncated"]
+            is False
+        )
         assert "budgets" not in captured["context"]
         assert "goals" not in captured["context"]
         assert captured["tier"] == "smart"
@@ -568,7 +598,11 @@ def test_chat_routes_typo_finance_question_to_smart_model(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "Which catgory did I spend the most on?"},
+            json={
+                "question": (
+                    "Which catgory did I spend the most on in June 2026?"
+                )
+            },
         )
 
         assert response.status_code == 200
@@ -611,7 +645,11 @@ def test_chat_budget_question_uses_budget_context_without_goals(monkeypatch):
         response = client.post(
             f"/chat/conversations/{conversation_id}/messages",
             headers=headers,
-            json={"question": "What is my Food & Dining budget?"},
+            json={
+                "question": (
+                    "What is my Food & Dining budget for June 2026?"
+                )
+            },
         )
 
         assert response.status_code == 200
@@ -744,6 +782,75 @@ def test_chat_affirmative_followup_continues_previous_offer(
         assert response.json()["assistant_message"]["metrics"][
             "total_expenses"
         ] == 200.0
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_chat_keep_going_followup_uses_current_goal_context(monkeypatch):
+    client, session = make_client()
+    captured = {}
+
+    def followup_answer(question, context, tier="smart"):
+        captured["question"] = question
+        captured["context"] = context
+        captured["tier"] = tier
+        goal_names = [goal["name"] for goal in context["goals"]]
+        assert goal_names == [captured["current_goal_name"]]
+        return f"Your current goal is {captured['current_goal_name']}."
+
+    monkeypatch.setattr(
+        chat_service.gemini_chat_client,
+        "generate_answer",
+        followup_answer,
+    )
+    try:
+        user, headers = create_account(
+            session, client, "keepgoing@example.com"
+        )
+        add_financial_data(session, user.id)
+        current_goal = (
+            session.query(Goal)
+            .filter(Goal.user_id == user.id)
+            .one()
+        )
+        captured["current_goal_name"] = current_goal.name
+        stale_goal_name = " ".join(reversed(current_goal.name.split()))
+        conversation_id = client.post(
+            "/chat/conversations",
+            headers=headers,
+            json={},
+        ).json()["id"]
+        followup_question = "yes keep going"
+        session.add(
+            ChatMessage(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=(
+                    f"Your savings goals include {stale_goal_name}. "
+                    f"I can answer if you say {followup_question}."
+                ),
+            )
+        )
+        session.commit()
+
+        response = client.post(
+            f"/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+            json={"question": followup_question},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["assistant_message"]["content"] == (
+            f"Your current goal is {current_goal.name}."
+        )
+        assert captured["tier"] == "smart"
+        assert stale_goal_name not in {
+            goal["name"] for goal in captured["context"]["goals"]
+        }
+        assert response.json()["assistant_message"]["metrics"][
+            "goal_count"
+        ] == 1
     finally:
         app.dependency_overrides.clear()
         session.close()

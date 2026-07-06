@@ -118,3 +118,45 @@ def test_auth_endpoints_create_verified_account_and_support_password_reset(
     finally:
         app.dependency_overrides.clear()
         test_session.close()
+
+
+def test_authenticated_user_can_delete_account():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    test_session = sessionmaker(bind=engine)()
+
+    def override_get_db():
+        yield test_session
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    try:
+        client = TestClient(app)
+        credentials = {
+            "email": "delete-me@example.com",
+            "password": "delete-password",
+        }
+        registration = client.post(
+            "/auth/register",
+            json={**credentials, "full_name": "Delete Me"},
+        )
+        assert registration.status_code == 201
+
+        login = client.post("/auth/login", json=credentials)
+        assert login.status_code == 200
+        headers = {
+            "Authorization": f"Bearer {login.json()['access_token']}",
+        }
+
+        response = client.delete("/profile/account", headers=headers)
+        assert response.status_code == 204
+
+        deleted_login = client.post("/auth/login", json=credentials)
+        assert deleted_login.status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+        test_session.close()

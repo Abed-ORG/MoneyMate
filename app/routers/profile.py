@@ -14,6 +14,7 @@ from app.services.profile_service import (
     InvalidCurrentPasswordError,
     change_password,
     complete_onboarding,
+    delete_account,
     get_or_create_financial_profile,
     skip_onboarding,
     update_account,
@@ -96,3 +97,11 @@ def edit_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         )
+
+
+@router.delete("/account", status_code=status.HTTP_204_NO_CONTENT)
+def remove_account(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    delete_account(db, current_user)

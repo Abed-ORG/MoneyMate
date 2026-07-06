@@ -115,10 +115,29 @@
   text-align: left;
 }
 
+.savingsPositive {
+  background: linear-gradient(90deg, rgba(var(--mm-accent-rgb), 0.08), transparent);
+}
+
+.savingsNegative {
+  background: linear-gradient(90deg, rgba(255, 107, 114, 0.1), transparent);
+}
+
+.savingsPositive td:last-child {
+  color: var(--mm-accent-soft);
+  font-weight: 900;
+}
+
+.savingsNegative td:last-child {
+  color: var(--color-error);
+  font-weight: 900;
+}
+
 .comparisonGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+  margin-top: 1.1rem;
 }
 
 .comparisonGrid span {
@@ -130,7 +149,28 @@
 }
 
 .chartWrap {
+  height: 18rem;
   min-width: 0;
+}
+
+.tooltip {
+  display: grid;
+  gap: 0.28rem;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius-md);
+  background: var(--mm-surface-strong);
+  color: var(--mm-text);
+  padding: 0.72rem 0.8rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+}
+
+.tooltip strong {
+  color: var(--mm-text);
+}
+
+.tooltip span {
+  color: var(--mm-text-soft);
+  font-size: 0.82rem;
 }
 
 .tableScroll {

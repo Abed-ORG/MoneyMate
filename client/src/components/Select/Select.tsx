@@ -2,8 +2,10 @@ import {
   Children,
   isValidElement,
   type ChangeEventHandler,
+  type CSSProperties,
   type ReactElement,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -86,6 +88,7 @@ export function Select({
     String(value ?? defaultValue ?? options[0]?.value ?? ""),
   );
   const [isOpen, setIsOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const [searchTerm, setSearchTerm] = useState("");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const nativeSelectRef = useRef<HTMLSelectElement | null>(null);
@@ -102,6 +105,46 @@ export function Select({
       );
     })
     : options;
+  const updateMenuPosition = useCallback(() => {
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const viewportPadding = 8;
+    const gap = 6;
+    const maxMenuHeight = 240;
+    const minMenuHeight = 120;
+    const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
+    const spaceAbove = rect.top - gap - viewportPadding;
+    const openAbove =
+      menuPlacement === "top" ||
+      (menuPlacement === "bottom" && spaceBelow < minMenuHeight && spaceAbove > spaceBelow);
+    const availableHeight = Math.max(
+      minMenuHeight,
+      Math.min(maxMenuHeight, openAbove ? spaceAbove : spaceBelow),
+    );
+    const width = Math.min(rect.width, window.innerWidth - viewportPadding * 2);
+    const left = Math.max(
+      viewportPadding,
+      Math.min(rect.left, window.innerWidth - viewportPadding - width),
+    );
+    const top = openAbove
+      ? Math.max(viewportPadding, rect.top - gap - availableHeight)
+      : Math.min(
+        rect.bottom + gap,
+        window.innerHeight - viewportPadding - availableHeight,
+      );
+
+    setMenuStyle({
+      bottom: "auto",
+      left,
+      maxHeight: availableHeight,
+      position: "fixed",
+      right: "auto",
+      top,
+      width,
+      zIndex: 1000,
+    });
+  }, [menuPlacement]);
 
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
@@ -114,6 +157,21 @@ export function Select({
     document.addEventListener("mousedown", closeOnOutsideClick, true);
     return () => document.removeEventListener("mousedown", closeOnOutsideClick, true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMenuStyle({});
+      return undefined;
+    }
+
+    updateMenuPosition();
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [isOpen, updateMenuPosition]);
 
   const selectValue = (nextValue: string) => {
     if (value == null) {
@@ -201,6 +259,7 @@ export function Select({
           }`}
           id={listboxId}
           role="listbox"
+          style={menuStyle}
         >
           {searchable ? (
             <div className={styles.searchWrap}>

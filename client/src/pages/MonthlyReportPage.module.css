@@ -136,6 +136,7 @@
 }
 
 .chartWrap {
+  min-height: 22rem;
   min-width: 0;
 }
 

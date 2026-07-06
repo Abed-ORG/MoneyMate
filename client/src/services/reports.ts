@@ -38,6 +38,7 @@ export type AnnualReportMonth = {
 export type AnnualReport = {
   year: number;
   months: AnnualReportMonth[];
+  previousYearMonths: AnnualReportMonth[];
   totals: {
     income: number;
     expenses: number;
@@ -281,6 +282,22 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     };
   });
 
+  const previousYearMonths = Array.from({ length: 12 }, (_, index) => index + 1).map((month) => {
+    const monthlyTransactions = previousYearTransactions.filter(
+      (transaction) => withinMonth(transaction.date, month, year - 1),
+    );
+    const summary = summarizeTransactions(monthlyTransactions);
+    return {
+      month,
+      monthLabel: new Intl.DateTimeFormat("en-US", { month: "short" }).format(
+        new Date(year - 1, month - 1, 1),
+      ),
+      income: summary.income,
+      expenses: summary.expenses,
+      netSavings: roundMoney(summary.income - summary.expenses),
+    };
+  });
+
   const rawTotals = months.reduce(
     (acc, month) => {
       acc.income += month.income;
@@ -300,6 +317,7 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     return {
       year,
       months,
+      previousYearMonths,
       totals,
       previousYearComparison: null,
     };
@@ -311,6 +329,7 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
   return {
     year,
     months,
+    previousYearMonths,
     totals,
     previousYearComparison: {
       incomeChange:

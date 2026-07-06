@@ -10,6 +10,7 @@ import type { Budget } from "../types/budget";
 import type { Goal } from "../types/goal";
 import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
+import { ChatPage } from "../pages/ChatPage";
 import {
   getProfileAvatar,
   subscribeToProfileAvatar,
@@ -193,6 +194,7 @@ export function AppShell() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [budgetAlertCount, setBudgetAlertCount] = useState(0);
   const shownBudgetAlerts = useRef<Set<string>>(new Set());
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
@@ -507,11 +509,21 @@ export function AppShell() {
               }
               type="button"
             >
-              <span className={styles.themeButtonIcon}>
-                {themeMode === "dark" ? <MoonIcon /> : <SunIcon />}
+              <span
+                className={`${styles.themeButtonIcon} ${
+                  themeMode === "light" ? styles.themeButtonIconActive : ""
+                }`}
+                aria-hidden="true"
+              >
+                <SunIcon />
               </span>
-              <span className={styles.themeButtonText}>
-                {themeMode === "dark" ? "Light" : "Dark"}
+              <span
+                className={`${styles.themeButtonIcon} ${
+                  themeMode === "dark" ? styles.themeButtonIconActive : ""
+                }`}
+                aria-hidden="true"
+              >
+                <MoonIcon />
               </span>
             </button>
             <div className={styles.userArea} ref={profileMenuRef}>
@@ -572,6 +584,22 @@ export function AppShell() {
           </div>
         </main>
       </div>
+
+      {isAiChatOpen ? (
+        <section className={styles.aiChatPopup} aria-label="MoneyMate AI chat">
+          <ChatPage mode="widget" onClose={() => setIsAiChatOpen(false)} />
+        </section>
+      ) : null}
+
+      <button
+        aria-label={isAiChatOpen ? "Close MoneyMate AI chat" : "Open MoneyMate AI chat"}
+        aria-expanded={isAiChatOpen}
+        className={styles.aiChatLauncher}
+        onClick={() => setIsAiChatOpen((current) => !current)}
+        type="button"
+      >
+        <img alt="" aria-hidden="true" src="/moneymate-ai-assistant.png" />
+      </button>
 
       <Modal
         isOpen={isLogoutConfirmationOpen}
