@@ -4,7 +4,6 @@ Tests the full lifecycle: Register -> Login -> Create Transaction ->
 Create Budget -> View Reports.
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
@@ -50,19 +49,27 @@ def _cleanup():
 def _register(client, email, password, full_name="Integration User"):
     resp = client.post(
         "/auth/register",
-        json={"full_name": full_name, "email": email, "password": password},
+        json={
+            "full_name": full_name,
+            "email": email,
+            "password": password,
+        },
     )
     assert resp.status_code == 201, f"Registration failed: {resp.text}"
     return resp.json()
 
 
 def _login(client, email, password):
-    resp = client.post("/auth/login", json={"email": email, "password": password})
+    resp = client.post(
+        "/auth/login", json={"email": email, "password": password}
+    )
     assert resp.status_code == 200, f"Login failed: {resp.text}"
     return resp.json()["access_token"]
 
 
-def _setup_user(client, session, email="integration@example.com", password="password123"):
+def _setup_user(
+    client, session, email="integration@example.com", password="password123"
+):
     """Register, login, and set up profile with categories."""
     _register(client, email, password)
     token = _login(client, email, password)
@@ -87,7 +94,8 @@ def _setup_user(client, session, email="integration@example.com", password="pass
 
 
 def test_full_user_lifecycle(monkeypatch):
-    """Register → Login → Create Transaction → Create Budget → View Data."""
+    """Register -> Login -> Create Transaction ->
+    Create Budget -> View Data."""
     client, session = _make_client(monkeypatch)
     try:
         headers, user = _setup_user(client, session)
@@ -130,7 +138,9 @@ def test_full_user_lifecycle(monkeypatch):
             json={"amount": -95.00, "notes": "Updated groceries"},
         )
         assert update_resp.status_code == 200
-        assert Decimal(update_resp.json()["amount"]) == Decimal("-95.00")
+        assert (
+            Decimal(update_resp.json()["amount"]) == Decimal("-95.00")
+        )
 
         # Create budget
         budget_resp = client.post(
@@ -159,7 +169,10 @@ def test_full_user_lifecycle(monkeypatch):
         assert overview.status_code == 200
         assert len(overview.json()["budgets"]) >= 1
         budget_summary = overview.json()["budgets"][0]
-        assert Decimal(str(budget_summary["actual_spending"])) == Decimal("95.00")
+        assert (
+            Decimal(str(budget_summary["actual_spending"]))
+            == Decimal("95.00")
+        )
 
         # List budgets
         list_budgets = client.get("/budgets", headers=headers)
@@ -183,8 +196,12 @@ def test_user_isolation(monkeypatch):
     """Ensure users can't access each other's data."""
     client, session = _make_client(monkeypatch)
     try:
-        headers1, user1 = _setup_user(client, session, email="iso1@example.com")
-        headers2, user2 = _setup_user(client, session, email="iso2@example.com")
+        headers1, user1 = _setup_user(
+            client, session, email="iso1@example.com"
+        )
+        headers2, user2 = _setup_user(
+            client, session, email="iso2@example.com"
+        )
 
         # Create transaction for user1
         cat_resp = client.get("/transactions/categories", headers=headers1)
@@ -205,7 +222,9 @@ def test_user_isolation(monkeypatch):
 
         # User2 should not see it in their list
         user2_list = client.get("/transactions", headers=headers2)
-        assert all(item["id"] != tx_id for item in user2_list.json()["items"])
+        assert all(
+            item["id"] != tx_id for item in user2_list.json()["items"]
+        )
 
         # User2 cannot update or delete user1's transaction
         user2_update = client.patch(
@@ -215,7 +234,9 @@ def test_user_isolation(monkeypatch):
         )
         assert user2_update.status_code == 404
 
-        user2_delete = client.delete(f"/transactions/{tx_id}", headers=headers2)
+        user2_delete = client.delete(
+            f"/transactions/{tx_id}", headers=headers2
+        )
         assert user2_delete.status_code == 404
 
     finally:
@@ -265,7 +286,13 @@ def test_refresh_token_workflow(monkeypatch):
 
 def _get_refresh_token(client, session, headers):
     """Helper to get a fresh refresh token for the current user."""
-    resp = client.post("/auth/login", json={"email": "integration@example.com", "password": "password123"})
+    resp = client.post(
+        "/auth/login",
+        json={
+            "email": "integration@example.com",
+            "password": "password123",
+        },
+    )
     assert resp.status_code == 200
     return resp.json()["refresh_token"]
 
@@ -286,9 +313,13 @@ def test_multiple_transactions_and_budgets(monkeypatch):
 
         tx_ids = []
         for tx_data in transactions:
-            cat_resp = client.get("/transactions/categories", headers=headers)
+            cat_resp = client.get(
+                "/transactions/categories", headers=headers
+            )
             categories = cat_resp.json()
-            food_cat = next(c for c in categories if c["name"] == "Food & Dining")
+            food_cat = next(
+                c for c in categories if c["name"] == "Food & Dining"
+            )
 
             resp = client.post(
                 "/transactions",
@@ -299,28 +330,48 @@ def test_multiple_transactions_and_budgets(monkeypatch):
             tx_ids.append(resp.json()["id"])
 
         # Verify pagination
-        page1 = client.get("/transactions?page=1&page_size=2", headers=headers)
+        page1 = client.get(
+            "/transactions?page=1&page_size=2", headers=headers
+        )
         assert len(page1.json()["items"]) == 2
-        page2 = client.get("/transactions?page=2&page_size=2", headers=headers)
+        page2 = client.get(
+            "/transactions?page=2&page_size=2", headers=headers
+        )
         assert len(page2.json()["items"]) == 2
 
         # Create budgets for two months
         cat_resp = client.get("/budgets/categories", headers=headers).json()
-        food_id = next(item["id"] for item in cat_resp if item["name"] == "Food & Dining")
-        shopping_id = next(item["id"] for item in cat_resp if item["name"] == "Shopping")
+        food_id = next(
+            item["id"] for item in cat_resp if item["name"] == "Food & Dining"
+        )
+        shopping_id = next(
+            item["id"] for item in cat_resp if item["name"] == "Shopping"
+        )
 
         client.post(
             "/budgets",
             headers=headers,
-            json={"category_id": food_id, "amount": 150, "month": 6, "year": 2026},
+            json={
+                "category_id": food_id,
+                "amount": 150,
+                "month": 6,
+                "year": 2026,
+            },
         )
         client.post(
             "/budgets",
             headers=headers,
-            json={"category_id": shopping_id, "amount": 300, "month": 6, "year": 2026},
+            json={
+                "category_id": shopping_id,
+                "amount": 300,
+                "month": 6,
+                "year": 2026,
+            },
         )
 
-        overview = client.get("/budgets/overview?month=6&year=2026", headers=headers)
+        overview = client.get(
+            "/budgets/overview?month=6&year=2026", headers=headers
+        )
         assert overview.status_code == 200
         assert len(overview.json()["budgets"]) == 2
 
