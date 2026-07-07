@@ -1407,26 +1407,19 @@ export function TransactionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((transaction) => {
-                    if (editingId === transaction.id) {
-                      return renderInlineEditRow(transaction);
-                    }
-
-                    return (
-                      <tr key={transaction.id} className={styles.clickableRow}>
-                        <td>
-                          <input
-                            checked={selectedTransactionIds.includes(transaction.id)}
-                            disabled={isEditing}
-                            onChange={() => toggleTransactionSelection(transaction.id)}
-                            type="checkbox"
-                          />
-                        </td>
-                        <td>{formatDate(transaction.date)}</td>
-                        <td className={styles.vendorCell}>
-                          <span>{transaction.vendor || "Unknown"}</span>
-                        </td>
-                        <td>
+                  {transactions.map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td>
+                        <input
+                          checked={selectedTransactionIds.includes(transaction.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggleTransactionSelection(transaction.id)}
+                          type="checkbox"
+                        />
+                      </td>
+                      <td>{formatDate(transaction.date)}</td>
+                      <td>{transaction.vendor || "Unknown vendor"}</td>
+                      <td>
                           <span className={styles.categoryCell}>
                             {categoryByName.get(transaction.category)?.is_default === false ? (
                               <span
@@ -1438,47 +1431,42 @@ export function TransactionsPage() {
                                 <CategoryIcon category={transaction.category} />
                               </span>
                             )}
-                            {transaction.category}
+                            <span className={styles.categoryLabel}>{transaction.category || "Uncategorized"}</span>
                           </span>
-                        </td>
-                        <td className={styles.notesCell} title={transaction.notes || undefined}>
-                          <span>{transaction.notes || "—"}</span>
-                        </td>
-                        <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
-                          {toMoney(transaction.amount)}
-                        </td>
-                        <td>
-                          {isEditing ? (
-                            <span className={styles.readonlyAction} title="Finish editing first">—</span>
-                          ) : (
-                            <div
-                              className={styles.rowActions}
-                              ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
-                            >
-                              <button
-                                className={styles.dotsButton}
-                                type="button"
-                                aria-expanded={actionMenuId === transaction.id}
-                                aria-label="Open transaction actions"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  openActionMenu(transaction, event);
-                                }}
-                              >
-                                <svg aria-hidden="true" viewBox="0 0 24 24">
-                                  <circle cx="12" cy="5" r="1.8" />
-                                  <circle cx="12" cy="12" r="1.8" />
-                                  <circle cx="12" cy="19" r="1.8" />
-                                </svg>
-                              </button>
-                              {actionMenuId === transaction.id ? (
-                                <div className={styles.actionMenu} style={actionMenuPosition}>
-                                  <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
-                                  <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
-                                  <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
-                                  <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
-                                </div>
-                              ) : null}
+                      </td>
+                      <td className={styles.notesCell} title={transaction.notes || undefined}>
+                        <span>{transaction.notes || "-"}</span>
+                      </td>
+                      <td className={Number(transaction.amount) < 0 ? styles.expense : styles.income}>
+                        {toMoney(transaction.amount)}
+                      </td>
+                      <td>
+                        <div
+                          className={styles.rowActions}
+                          ref={actionMenuId === transaction.id ? actionMenuRef : undefined}
+                        >
+                          <button
+                            className={styles.dotsButton}
+                            type="button"
+                            aria-expanded={actionMenuId === transaction.id}
+                            aria-label="Open transaction actions"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openActionMenu(transaction);
+                            }}
+                          >
+                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                              <circle cx="12" cy="5" r="1.8" />
+                              <circle cx="12" cy="12" r="1.8" />
+                              <circle cx="12" cy="19" r="1.8" />
+                            </svg>
+                          </button>
+                          {actionMenuId === transaction.id ? (
+                            <div className={styles.actionMenu}>
+                              <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
+                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
+                              <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
+                              <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
                             </div>
                           )}
                         </td>
