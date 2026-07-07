@@ -1,13 +1,14 @@
 .button {
   display: inline-flex;
-  min-height: 2.4rem;
+  min-height: var(--mm-button-min-height);
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid transparent;
   border-radius: var(--mm-radius-sm);
   padding: 0.58rem 0.9rem;
-  font-weight: 800;
+  font-family: var(--mm-font-family);
+  font-weight: var(--mm-button-font-weight);
   line-height: 1;
   cursor: pointer;
   transition:
@@ -35,15 +36,15 @@
 
 .primary {
   border-color: rgba(var(--mm-accent-rgb), 0.48);
-  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
-  color: var(--mm-bg-deep);
+  background: var(--mm-accent);
+  color: var(--mm-accent-contrast);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 1.8rem rgba(9, 31, 25, 0.18);
 }
 
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
+  background: var(--mm-accent-deep);
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 2rem rgba(9, 31, 25, 0.22);

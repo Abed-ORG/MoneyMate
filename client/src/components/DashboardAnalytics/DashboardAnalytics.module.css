@@ -245,12 +245,13 @@
 .categoryIcon,
 .categoryColor {
   display: grid;
-  width: 2rem;
-  height: 2rem;
+  width: 1.35rem;
+  height: 1.35rem;
   place-items: center;
-  border: 1px solid var(--mm-border-strong);
-  border-radius: 999px;
-  background: rgba(var(--mm-accent-rgb), 0.12);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mm-accent);
 }
 
 .categoryIcon svg,
@@ -483,7 +484,7 @@
   color: var(--mm-text-soft);
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
+  font-weight: 600;
   padding: 0.48rem 0.85rem;
   transition:
     background 160ms ease,
@@ -497,7 +498,7 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: var(--mm-bg-deep) !important;
+  color: var(--mm-accent-contrast) !important;
   box-shadow: var(--mm-shadow-glow);
 }
 
@@ -514,7 +515,7 @@
 }
 
 .tooltip strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .tooltip span {

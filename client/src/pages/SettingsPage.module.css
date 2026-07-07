@@ -49,7 +49,7 @@
   position: absolute;
   inset: auto 5% -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--mm-accent-soft), transparent);
+  background: linear-gradient(90deg, transparent, var(--mm-accent), transparent);
   box-shadow:
     0 0 0.45rem rgba(var(--mm-accent-rgb), 0.28),
     0 0 1rem rgba(var(--mm-accent-rgb), 0.12);
@@ -101,13 +101,13 @@
 }
 
 .cardBrand strong span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .contactless {
   width: 2.2rem;
   fill: none;
-  stroke: rgba(248, 255, 249, 0.86);
+  stroke: var(--mm-text-soft);
   stroke-linecap: round;
   stroke-width: 2.8;
 }
@@ -141,6 +141,7 @@
 }
 
 .cardAvatar {
+  position: relative;
   display: grid;
   width: 3.6rem;
   height: 3.6rem;
@@ -151,7 +152,7 @@
   background:
     radial-gradient(circle at 35% 30%, rgba(var(--mm-accent-rgb), 0.12), transparent 65%),
     rgba(6, 22, 19, 0.86);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     inset 0 0 1rem rgba(var(--mm-accent-rgb), 0.045),
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.1);
@@ -166,12 +167,14 @@
 }
 
 .cardAvatar svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: block;
   width: 2.05rem;
   height: 2.05rem;
   fill: none;
-  justify-self: center;
-  align-self: center;
+  transform: translate(-50%, -54%);
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -186,10 +189,10 @@
   width: 1.5rem;
   height: 1.5rem;
   place-items: center;
-  border: 1px solid var(--mm-accent-soft);
+  border: 1px solid var(--mm-border-strong);
   border-radius: 50%;
   background: #061411;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -412,7 +415,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.16);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.045);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.025);
 }
 
@@ -452,6 +455,32 @@
   color: var(--mm-text-muted);
   font-size: 0.8rem;
   line-height: 1.5;
+}
+
+.photoRemoveButton {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.55rem;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-control-background);
+  color: var(--color-error);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.65rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.photoRemoveButton:hover {
+  border-color: rgba(255, 107, 114, 0.42);
+  background: var(--mm-control-hover-background);
+  transform: translateY(-1px);
 }
 
 .fieldGroup {
@@ -498,6 +527,45 @@
   display: flex;
   flex: 0 0 auto;
   gap: 0.45rem;
+}
+
+.categoryIconButton {
+  display: inline-grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-control-background);
+  color: var(--mm-accent);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.categoryIconButton:hover {
+  border-color: var(--mm-border-strong);
+  background: var(--mm-control-hover-background);
+  transform: translateY(-1px);
+}
+
+.categoryIconButton svg {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.categoryIconButtonDanger {
+  color: var(--color-error);
 }
 
 .customCategoryRow strong {
@@ -570,12 +638,10 @@
   height: 1.35rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(var(--mm-accent-rgb), 0.14);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.18), transparent 54%),
-    var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mm-accent);
 }
 
 .categoryIcon svg {
@@ -584,7 +650,7 @@
 }
 
 .category:has(input:checked) .categoryCheck {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   background: var(--mm-accent);
   color: var(--mm-bg-deep);
   box-shadow: 0 0 0.5rem rgba(var(--mm-accent-rgb), 0.18);

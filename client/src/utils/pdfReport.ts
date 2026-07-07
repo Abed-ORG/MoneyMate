@@ -260,7 +260,7 @@ function drawHeader(
     font: "bold",
   });
   page.text(config.eyebrow, margin + 62, 59, 9, {
-    color: "#7fe1d4",
+    color: "#49C5B6",
     font: "bold",
   });
   page.text(config.title, margin, 92, 19, {

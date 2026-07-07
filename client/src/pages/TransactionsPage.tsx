@@ -13,6 +13,7 @@ import { useToast } from "../contexts/ToastContext";
 import { transactionCategories } from "../constants/categories";
 import { getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
+import { formatDisplayDate, formatDisplayDateTime } from "../utils/dateFormat";
 import type {
   Category,
   Transaction,
@@ -133,13 +134,7 @@ function exportDateWindow(preset: ExportPreset, dateFrom: string, dateTo: string
 }
 
 function formatDate(value: string, includeTime = false) {
-  const date = new Date(value);
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    ...(includeTime ? { hour: "numeric", minute: "2-digit" } : {}),
-  }).format(date);
+  return includeTime ? formatDisplayDateTime(value) : formatDisplayDate(value);
 }
 
 function transactionToForm(transaction: Transaction): FormState {
@@ -1431,6 +1426,7 @@ export function TransactionsPage() {
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
+                    editingId === transaction.id && editValues ? renderInlineEditRow(transaction) : (
                     <tr key={transaction.id}>
                       <td>
                         <input
@@ -1487,7 +1483,7 @@ export function TransactionsPage() {
                           {actionMenuId === transaction.id ? (
                             <div className={styles.actionMenu} style={actionMenuPosition}>
                               <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
-                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
+                              <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Edit history</button>
                               <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
                               <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
                             </div>
@@ -1495,7 +1491,8 @@ export function TransactionsPage() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )
+                  ))}
                 </tbody>
               </table>
             </div>

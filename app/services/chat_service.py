@@ -132,6 +132,12 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def normalize_text(value: str) -> str:
     return " ".join(value.split())
 
@@ -149,7 +155,7 @@ def message_to_schema(message: ChatMessage) -> ChatMessageRead:
         conversation_id=message.conversation_id,
         role=message.role,
         content=message.content,
-        created_at=message.created_at,
+        created_at=as_utc(message.created_at),
         sources=message.sources or [],
         metrics=message.metrics or {},
         status=message.status,
@@ -183,9 +189,13 @@ def conversation_to_schema(
     return ChatConversationRead(
         id=conversation.id,
         title=conversation.title,
-        created_at=conversation.created_at,
-        updated_at=conversation.updated_at,
-        last_message_at=conversation.last_message_at,
+        created_at=as_utc(conversation.created_at),
+        updated_at=as_utc(conversation.updated_at),
+        last_message_at=(
+            as_utc(conversation.last_message_at)
+            if conversation.last_message_at is not None
+            else None
+        ),
         last_message_preview=conversation_preview(db, conversation.id),
         message_count=count,
     )

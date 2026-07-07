@@ -44,7 +44,7 @@
 }
 
 .selectTrigger:focus-visible {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   box-shadow:
     0 0 0 2px rgba(var(--mm-accent-rgb), 0.08),
     0 0 0.4rem rgba(var(--mm-accent-rgb), 0.08);
@@ -66,7 +66,7 @@
   height: 1rem;
   flex: 0 0 auto;
   fill: none;
-  stroke: var(--mm-accent-soft);
+  stroke: var(--mm-accent);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
@@ -148,6 +148,7 @@
   background: transparent;
   color: var(--mm-text-soft);
   cursor: pointer;
+  font-weight: 400;
   padding: 0.45rem 0.58rem;
   text-align: left;
 }
@@ -161,7 +162,7 @@
 .selectOption:hover:not(:disabled),
 .selectOptionActive {
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .selectOption:disabled {

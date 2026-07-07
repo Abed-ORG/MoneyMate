@@ -13,6 +13,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getApiErrorMessage } from "../services/api";
 import { chatApi, ChatProviderError } from "../services/chat";
 import type { ChatConversation, ChatMessage } from "../types/chat";
+import { formatDisplayDateTime } from "../utils/dateFormat";
 import styles from "./ChatPage.module.css";
 
 const maxQuestionLength = 1200;
@@ -44,12 +45,7 @@ const suggestions = [
 ];
 
 function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatDisplayDateTime(value);
 }
 
 function uniqueMessages(messages: ChatMessage[]) {

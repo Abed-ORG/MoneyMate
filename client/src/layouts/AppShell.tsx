@@ -10,6 +10,7 @@ import type { Budget } from "../types/budget";
 import type { Goal } from "../types/goal";
 import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
+import { formatDisplayDate } from "../utils/dateFormat";
 import { ChatPage } from "../pages/ChatPage";
 import {
   getProfileAvatar,
@@ -43,8 +44,8 @@ function getInitialTheme(): ThemeMode {
 function AnonymousUserIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <circle cx="12" cy="8.25" r="3.75" />
-      <path d="M4.75 20c.9-4.25 3.32-6.38 7.25-6.38S18.35 15.75 19.25 20" />
+      <circle cx="12" cy="7.75" r="3.75" />
+      <path d="M4.75 19.25c.9-4.15 3.32-6.22 7.25-6.22s6.35 2.07 7.25 6.22" />
     </svg>
   );
 }
@@ -161,15 +162,7 @@ function formatSearchDate(value?: string | number | null) {
   if (!value) {
     return "No date";
   }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  return formatDisplayDate(value);
 }
 
 function transactionResult(transaction: Transaction): SearchResult {

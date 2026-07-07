@@ -3,7 +3,6 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   Legend,
   Line,
@@ -743,11 +742,6 @@ export function IncomeExpenseChart({ data, isLoading, error }: AnalyticsProps) {
               data={chartData}
               margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
             >
-              <CartesianGrid
-                stroke="rgba(127, 225, 212, 0.22)"
-                strokeDasharray="4 4"
-                vertical={false}
-              />
               <XAxis
                 axisLine={false}
                 dataKey="month_label"
@@ -765,19 +759,21 @@ export function IncomeExpenseChart({ data, isLoading, error }: AnalyticsProps) {
               <Tooltip
                 content={<FlowTooltip currency={data.currency} />}
                 contentStyle={tooltipStyle}
-                cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                cursor={{ fill: "var(--mm-chart-cursor)" }}
                 wrapperStyle={{ outline: "none" }}
               />
               <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
               <Bar
                 dataKey="incomeValue"
                 fill="#22c55e"
+                minPointSize={4}
                 name="Income"
                 radius={[6, 6, 0, 0]}
               />
               <Bar
                 dataKey="expenseValue"
                 fill="#ff6b72"
+                minPointSize={4}
                 name="Expenses"
                 radius={[6, 6, 0, 0]}
               />
@@ -862,11 +858,6 @@ export function SpendingTrendChart({ data, isLoading, error }: AnalyticsProps) {
               data={chartData}
               margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
             >
-              <CartesianGrid
-                stroke="rgba(127, 225, 212, 0.22)"
-                strokeDasharray="4 4"
-                vertical={false}
-              />
               <XAxis
                 axisLine={false}
                 dataKey="label"
@@ -899,7 +890,7 @@ export function SpendingTrendChart({ data, isLoading, error }: AnalyticsProps) {
                 dataKey="movingAverageValue"
                 dot={false}
                 name="Moving average"
-                stroke="#7fe1d4"
+                stroke="var(--mm-accent)"
                 strokeDasharray="5 5"
                 strokeWidth={2.5}
                 type="monotone"

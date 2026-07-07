@@ -16,7 +16,7 @@
 }
 
 .input:focus {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   background: var(--mm-input-focus-background);
   box-shadow:
     0 0 0 2px rgba(var(--mm-accent-rgb), 0.08),

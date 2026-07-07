@@ -21,7 +21,7 @@
 }
 
 .kicker {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -121,7 +121,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 900;
   box-shadow: 0 0 0.65rem rgba(var(--mm-accent-rgb), 0.08);
 }
@@ -129,8 +129,8 @@
 .iconBox {
   width: 2rem;
   height: 2rem;
-  border-color: rgba(248, 255, 249, 0.22);
-  background: rgba(248, 255, 249, 0.06);
+  border-color: var(--mm-border);
+  background: var(--mm-control-background);
   color: var(--mm-text);
   cursor: pointer;
   box-shadow: none;
@@ -270,7 +270,7 @@
 
 .importCard em,
 .dropZone em {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-style: normal;
   font-weight: 800;
 }
@@ -363,18 +363,13 @@
   display: inline-grid;
   flex-shrink: 0;
   place-items: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border: 1px solid var(--mm-border);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
-    var(--mm-control-background);
-  color: var(--mm-accent-soft);
-  box-shadow:
-    0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
-    inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
-    0 0 0.8rem rgba(var(--mm-accent-rgb), 0.07);
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mm-accent);
+  box-shadow: none;
 }
 
 .bulkActions {
@@ -419,7 +414,7 @@
 
 .table th,
 .table td {
-  border-bottom: 1px solid rgba(248, 255, 249, 0.08);
+  border-bottom: 1px solid var(--mm-border);
   padding: 0.7rem 0.75rem;
   color: var(--mm-text-soft);
   text-align: center;
@@ -523,7 +518,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.22);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.055);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   padding: 0.18rem 0.45rem;
   font-size: 0.76rem;
   font-weight: 800;
@@ -548,7 +543,7 @@
   flex-shrink: 0;
   width: 2rem;
   height: 2rem;
-  border: 1px solid rgba(248, 255, 249, 0.14);
+  border: 1px solid var(--mm-border);
   border-radius: 50%;
 }
 
@@ -586,7 +581,7 @@
   border: 1px solid var(--mm-border);
   border-radius: 999px;
   background: var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -645,7 +640,7 @@
 
 .actionMenu button:hover {
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transform: none;
 }
 
@@ -674,7 +669,7 @@
 }
 
 .aiSuggestion strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .aiSuggestion small {
@@ -683,7 +678,7 @@
 
 .rowActions button:hover,
 .detailsHeader button:hover {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   box-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.11);
   transform: translateY(-1px);
 }
@@ -766,7 +761,7 @@
 }
 
 .pageIndicator strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .rowsControl {
@@ -911,7 +906,7 @@
 }
 
 .aiPanel strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 1.1rem;
 }
 
@@ -986,7 +981,7 @@
 
 .typeButton.activeType {
   background: rgba(var(--mm-accent-rgb), 0.15);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0.15rem 0.5rem rgba(var(--mm-accent-rgb), 0.1);
 }
 
@@ -1015,7 +1010,7 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
   background: var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -1070,7 +1065,7 @@
 }
 
 .dropZone:hover {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   background: rgba(var(--mm-accent-rgb), 0.08);
   box-shadow: 0 0 0.9rem rgba(var(--mm-accent-rgb), 0.1);
   transform: translateY(-1px);
@@ -1078,8 +1073,8 @@
 
 .dropZoneDisabled,
 .dropZoneDisabled:hover {
-  border-color: rgba(248, 255, 249, 0.16);
-  background: rgba(248, 255, 249, 0.04);
+  border-color: var(--mm-border);
+  background: var(--mm-progress-track);
   box-shadow: none;
   cursor: wait;
   opacity: 0.7;
@@ -1093,7 +1088,7 @@
 .dropIcon {
   width: 2.65rem;
   height: 2.65rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .dropIcon svg {
@@ -1259,11 +1254,11 @@
 .saveInlineButton,
 .cancelInlineButton {
   display: inline-grid;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2rem;
+  height: 2rem;
   place-items: center;
   border: 1px solid var(--mm-border);
-  border-radius: 999px;
+  border-radius: var(--mm-radius-sm);
   background: var(--mm-control-background);
   cursor: pointer;
   padding: 0;
@@ -1367,7 +1362,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 50%;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.08);
 }
 

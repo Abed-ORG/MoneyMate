@@ -18,7 +18,11 @@ export function getProfileAvatar(userId?: number | null) {
 
 export function saveProfileAvatar(userId: number, dataUrl: string) {
   try {
-    localStorage.setItem(getProfileAvatarKey(userId), dataUrl);
+    if (dataUrl) {
+      localStorage.setItem(getProfileAvatarKey(userId), dataUrl);
+    } else {
+      localStorage.removeItem(getProfileAvatarKey(userId));
+    }
   } catch {
     // Storage can fail (quota exceeded, disabled, private mode); still broadcast update.
   }
