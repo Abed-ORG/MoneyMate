@@ -22,7 +22,10 @@ type SearchResult = {
   id: string;
   type: "transaction" | "budget" | "goal";
   title: string;
-  meta: string;
+  date: string;
+  amount: string;
+  detail?: string;
+  meta?: string;
   path: string;
 };
 
@@ -37,13 +40,13 @@ function getInitialTheme(): ThemeMode {
   return savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
 }
 
-function getInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+function AnonymousUserIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="8.25" r="3.75" />
+      <path d="M4.75 20c.9-4.25 3.32-6.38 7.25-6.38S18.35 15.75 19.25 20" />
+    </svg>
+  );
 }
 
 function NavigationIcon({ path }: { path: string }) {
@@ -154,11 +157,29 @@ function formatSearchMoney(value: string | number) {
   }).format(amount);
 }
 
+function formatSearchDate(value?: string | number | null) {
+  if (!value) {
+    return "No date";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 function transactionResult(transaction: Transaction): SearchResult {
   return {
     id: `transaction-${transaction.id}`,
     type: "transaction",
     title: transaction.vendor || transaction.category || "Transaction",
+    date: formatSearchDate(transaction.date),
+    amount: formatSearchMoney(transaction.amount),
+    detail: transaction.category,
     meta: `${transaction.category} · ${formatSearchMoney(transaction.amount)}`,
     path: "/transactions",
   };
@@ -169,6 +190,8 @@ function budgetResult(budget: Budget): SearchResult {
     id: `budget-${budget.id}`,
     type: "budget",
     title: budget.category_name,
+    date: formatSearchDate(`${budget.year}-${String(budget.month).padStart(2, "0")}-01`),
+    amount: formatSearchMoney(budget.amount),
     meta: `Budget · ${formatSearchMoney(budget.amount)}`,
     path: "/budgets",
   };
@@ -179,6 +202,9 @@ function goalResult(goal: Goal): SearchResult {
     id: `goal-${goal.id}`,
     type: "goal",
     title: goal.name,
+    date: goal.deadline ? formatSearchDate(goal.deadline) : "Flexible",
+    amount: `${formatSearchMoney(goal.current_amount)} saved`,
+    detail: goal.linked_account ?? undefined,
     meta: `Goal · ${formatSearchMoney(goal.current_amount)} saved`,
     path: "/goals",
   };
@@ -205,7 +231,6 @@ export function AppShell() {
   const toast = useToast();
   const pageTitle = getPageTitle(location.pathname);
   const displayName = user?.full_name || "MoneyMate user";
-  const initials = getInitials(displayName) || "MM";
   const [profileAvatar, setProfileAvatar] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
 
@@ -488,9 +513,15 @@ export function AppShell() {
                       onClick={() => openSearchResult(result)}
                       type="button"
                     >
-                      <span>{result.type}</span>
-                      <strong>{result.title}</strong>
-                      <small>{result.meta}</small>
+                      <div className={styles.searchResultMain}>
+                        <strong>{result.title}</strong>
+                        <small>
+                          <span>{result.date}</span>
+                          <span>{result.amount}</span>
+                          {result.detail ? <span>{result.detail}</span> : null}
+                        </small>
+                      </div>
+                      <span className={styles.searchResultType}>{result.type}</span>
                     </button>
                   ))
                 ) : (
@@ -538,7 +569,7 @@ export function AppShell() {
                   {profileAvatar ? (
                     <img src={profileAvatar} alt={`${displayName} profile`} />
                   ) : (
-                    initials
+                    <AnonymousUserIcon />
                   )}
                 </span>
                 <div>

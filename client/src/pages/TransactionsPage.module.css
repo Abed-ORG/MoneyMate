@@ -343,8 +343,8 @@
 
 .categoryLabel {
   color: var(--mm-text-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -411,7 +411,7 @@
 
 .table {
   width: 100%;
-  min-width: 56rem;
+  min-width: 64rem;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
@@ -435,7 +435,7 @@
 }
 
 .table th:nth-child(1) {
-  width: 4.5rem;
+  width: 3.75rem;
   text-align: center;
 }
 
@@ -444,11 +444,11 @@
 }
 
 .table th:nth-child(2) {
-  width: calc((100% - 9rem) / 5);
+  width: 9rem;
 }
 
 .table th:nth-child(3) {
-  width: auto;
+  width: 17%;
   text-align: left;
 }
 
@@ -457,7 +457,7 @@
 }
 
 .table th:nth-child(4) {
-  width: 7rem;
+  width: 13rem;
   text-align: left;
 }
 
@@ -466,11 +466,11 @@
 }
 
 .table th:nth-child(5) {
-  width: calc((100% - 9rem) / 5);
+  width: 22%;
 }
 
 .table th:nth-child(6) {
-  width: calc((100% - 9rem) / 5);
+  width: 9rem;
   text-align: center;
 }
 
@@ -479,7 +479,7 @@
 }
 
 .table th:nth-child(7) {
-  width: 4.5rem;
+  width: 3.75rem;
   text-align: center;
 }
 
@@ -1076,6 +1076,16 @@
   transform: translateY(-1px);
 }
 
+.dropZoneDisabled,
+.dropZoneDisabled:hover {
+  border-color: rgba(248, 255, 249, 0.16);
+  background: rgba(248, 255, 249, 0.04);
+  box-shadow: none;
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
 .dropZone small {
   color: var(--mm-text-muted);
 }
@@ -1134,6 +1144,15 @@
 .importErrors p {
   margin: 0.25rem 0;
   color: #ffb4b8;
+}
+
+.importStatus {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  color: var(--mm-text-muted);
+  font-size: 0.9rem;
 }
 
 .importModal {
@@ -1439,7 +1458,7 @@
   }
 
   .table {
-    min-width: 54rem;
+    min-width: 64rem;
   }
 
   .table th,

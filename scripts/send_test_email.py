@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.services.email_service import (
+from app.services.email_service import (  # noqa: E402
     EmailConfigurationError,
     EmailDeliveryError,
     send_test_email,
@@ -13,7 +13,9 @@ from app.services.email_service import (
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Send a MoneyMate email test using the current .env settings."
+        description=(
+            "Send a MoneyMate email test using the current .env settings."
+        )
     )
     parser.add_argument(
         "recipient",

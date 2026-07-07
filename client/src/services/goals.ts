@@ -27,14 +27,21 @@ function saveLocalGoals(goals: Goal[]) {
   window.localStorage.setItem(LOCAL_GOALS_KEY, JSON.stringify(goals));
 }
 
-function toGoal(goal: Goal): Goal {
-  return goal;
+type ApiGoal = Goal & {
+  target_date?: string | null;
+};
+
+function toGoal(goal: ApiGoal): Goal {
+  return {
+    ...goal,
+    deadline: goal.deadline ?? goal.target_date ?? null,
+  };
 }
 
 export const goalsApi = {
   list: async () => {
     try {
-      const response = await api.get<{ items: Goal[] }>("/goals");
+      const response = await api.get<{ items: ApiGoal[] }>("/goals");
       return response.items.map(toGoal);
     } catch {
       return readLocalGoals();
@@ -42,7 +49,7 @@ export const goalsApi = {
   },
   create: async (payload: GoalPayload) => {
     try {
-      return await api.post<Goal>("/goals", payload);
+      return toGoal(await api.post<ApiGoal>("/goals", payload));
     } catch {
       const goal: Goal = {
         id: Date.now(),
@@ -67,7 +74,7 @@ export const goalsApi = {
   },
   update: async (id: number, payload: GoalUpdatePayload) => {
     try {
-      return await api.patch<Goal>(`/goals/${id}`, payload);
+      return toGoal(await api.patch<ApiGoal>(`/goals/${id}`, payload));
     } catch {
       const all = readLocalGoals();
       const updated: Goal[] = all.map((goal) =>
@@ -94,7 +101,7 @@ export const goalsApi = {
   },
   contribute: async (id: number, payload: GoalContributionPayload) => {
     try {
-      return await api.post<Goal>(`/goals/${id}/contributions`, payload);
+      return toGoal(await api.post<ApiGoal>(`/goals/${id}/contributions`, payload));
     } catch {
       const all = readLocalGoals();
       const updated = all.map((goal) =>

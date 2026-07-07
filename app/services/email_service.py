@@ -272,7 +272,10 @@ def send_test_email(recipient: str) -> None:
     html = _email_html(
         "there",
         "MoneyMate email test",
-        "This message confirms that MoneyMate can send email with the current configuration.",
+        (
+            "This message confirms that MoneyMate can send email with the "
+            "current configuration."
+        ),
         "Open MoneyMate",
         os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/"),
         "No action is required.",
