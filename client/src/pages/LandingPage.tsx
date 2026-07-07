@@ -344,6 +344,21 @@ export function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  // Warm-up the backend on first load to reduce cold-start delay.
+  useEffect(() => {
+    const baseUrl = (
+      import.meta.env.VITE_API_BASE_URL ??
+      import.meta.env.VITE_API_URL ??
+      (import.meta.env.DEV ? "http://127.0.0.1:8000" : "")
+    ).replace(/\/$/, "");
+
+    const url = baseUrl ? `${baseUrl}/` : "/";
+
+    fetch(url, { method: "GET" }).catch(() => {
+      // Silently ignore – this is just a warm-up.
+    });
+  }, []);
+
   const scrollToSection = (
     event: MouseEvent<HTMLAnchorElement>,
     sectionId: string,
@@ -615,9 +630,9 @@ export function LandingPage() {
         </div>
         <div className={styles.contactCopy}>
           <p className={styles.sectionLabel}>Contact</p>
-          <h2>Need a hand? Let&apos;s talk.</h2>
+          <h2>Need a hand? Let's talk.</h2>
           <p>
-            If you have any questions, don&apos;t hesitate. Email us at{" "}
+            If you have any questions, don't hesitate. Email us at{" "}
             <a
               className={styles.contactButton}
               href="mailto:moneymate.app.mail@gmail.com"
