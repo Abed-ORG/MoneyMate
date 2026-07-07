@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -18,6 +20,7 @@ from app.services.insights_ai_service import (
     detect_recurring_transactions,
     generate_monthly_summary,
 )
+from app.services.income_service import base_income_for_period
 from app.models.transaction import Transaction
 from app.models.category import Category
 
@@ -88,4 +91,8 @@ def monthly_summary(
 ):
     """Generate a monthly financial health summary using AI."""
     txs = _transactions_as_dicts(db, current_user.id)
-    return generate_monthly_summary(txs)
+    today = date.today()
+    base_monthly_income = float(
+        base_income_for_period(db, current_user.id, today, today)
+    )
+    return generate_monthly_summary(txs, base_monthly_income)

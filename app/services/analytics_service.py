@@ -26,6 +26,10 @@ from app.schemas.analytics import (
     SpendingTrendPoint,
     TrendAggregation,
 )
+from app.services.income_service import (
+    base_income_for_period,
+    income_by_month,
+)
 from app.services.transaction_service import ensure_default_categories
 
 
@@ -120,10 +124,17 @@ def calculate_percentage_change(
 
 
 def calculate_totals(rows: list[TransactionAnalyticsRow]) -> AnalyticsTotals:
+    return calculate_totals_with_base(rows, Decimal("0"))
+
+
+def calculate_totals_with_base(
+    rows: list[TransactionAnalyticsRow],
+    base_income: Decimal,
+) -> AnalyticsTotals:
     income = sum(
         (row.amount for row in rows if row.amount > 0),
         Decimal("0"),
-    )
+    ) + base_income
     expenses = sum(
         (abs(row.amount) for row in rows if row.amount < 0),
         Decimal("0"),
@@ -356,6 +367,7 @@ def monthly_income_expenses(
     rows: list[TransactionAnalyticsRow],
     end_date_value: date,
     months: int,
+    monthly_income_by_month: dict[date, Decimal] | None = None,
 ) -> list[MonthlyIncomeExpense]:
     months = max(1, min(months, 36))
     end_month = date(end_date_value.year, end_date_value.month, 1)
@@ -364,7 +376,10 @@ def monthly_income_expenses(
     month_dates = [add_months(start_month, offset) for offset in range(months)]
     for current in month_dates:
         buckets[month_key(current)] = {
-            "income": Decimal("0"),
+            "income": (monthly_income_by_month or {}).get(
+                current,
+                Decimal("0"),
+            ),
             "expenses": Decimal("0"),
         }
 
@@ -499,9 +514,28 @@ def build_dashboard_analytics(
         category_ids,
         account_ids,
     )
-
-    current_totals = calculate_totals(current_rows)
-    previous_totals = calculate_totals(previous_rows)
+    current_totals = calculate_totals_with_base(
+        current_rows,
+        base_income_for_period(
+            db,
+            user_id,
+            start_date_value,
+            end_date_value,
+        ),
+    )
+    previous_totals = calculate_totals_with_base(
+        previous_rows,
+        base_income_for_period(db, user_id, previous_start, previous_end),
+    )
+    series_months = max(1, min(months, 36))
+    series_end_month = date(end_date_value.year, end_date_value.month, 1)
+    series_start_month = add_months(series_end_month, -(series_months - 1))
+    monthly_income_by_month = income_by_month(
+        db,
+        user_id,
+        series_start_month,
+        series_end_month,
+    )
 
     return DashboardAnalyticsResponse(
         currency=get_currency(db, user_id),
@@ -534,6 +568,7 @@ def build_dashboard_analytics(
             current_rows,
             end_date_value,
             months,
+            monthly_income_by_month,
         ),
         spending_trend=trend_points(
             current_rows,

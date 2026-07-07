@@ -11,7 +11,7 @@ import {
 } from "../components";
 import { useToast } from "../contexts/ToastContext";
 import { transactionCategories } from "../constants/categories";
-import { getApiErrorMessage } from "../services/api";
+import { api, getApiErrorMessage } from "../services/api";
 import { transactionsApi } from "../services/transactions";
 import { formatDisplayDate, formatDisplayDateTime } from "../utils/dateFormat";
 import type {
@@ -407,6 +407,7 @@ export function TransactionsPage() {
   const [editValues, setEditValues] = useState<EditValues | null>(null);
   const [editErrors, setEditErrors] = useState<Partial<Record<keyof EditValues, string>>>({});
   const [savingEditId, setSavingEditId] = useState<string | null>(null);
+  const [summaryBaselineIncome, setSummaryBaselineIncome] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -464,6 +465,7 @@ export function TransactionsPage() {
   const income = transactions
     .filter((transaction) => Number(transaction.amount) > 0)
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+  const totalIncome = income + summaryBaselineIncome;
   const selectedCount = selectedTransactionIds.length;
   const allVisibleSelected =
     transactions.length > 0 &&
@@ -503,6 +505,43 @@ export function TransactionsPage() {
   useEffect(() => {
     void transactionsApi.categories().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadBaselineIncome = async () => {
+      if (!filters.dateFrom || !filters.dateTo) {
+        setSummaryBaselineIncome(0);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({
+          date_from: filters.dateFrom,
+          date_to: filters.dateTo,
+        });
+        const response = await api.get<{
+          monthly_income_by_month: Record<string, number | string>;
+        }>(`/profile/monthly-income-history?${params.toString()}`);
+        const baseline = Object.values(response.monthly_income_by_month).reduce<number>(
+          (sum, value) => sum + (Number(value) || 0),
+          0,
+        );
+        if (!isCancelled) {
+          setSummaryBaselineIncome(baseline);
+        }
+      } catch {
+        if (!isCancelled) {
+          setSummaryBaselineIncome(0);
+        }
+      }
+    };
+
+    void loadBaselineIncome();
+    return () => {
+      isCancelled = true;
+    };
+  }, [filters.dateFrom, filters.dateTo]);
 
   useEffect(() => {
     if (!actionMenuId) {
@@ -1288,7 +1327,7 @@ export function TransactionsPage() {
           <span>Transactions</span>
           <strong className={styles.expense}>{toMoney(expenses)}</strong>
           <span>Total Expenses</span>
-          <strong className={styles.income}>{toMoney(income)}</strong>
+          <strong className={styles.income}>{toMoney(totalIncome)}</strong>
           <span>Total Income</span>
         </section>
       </Modal>

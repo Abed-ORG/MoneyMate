@@ -29,6 +29,10 @@ from app.schemas.financial_profile import (
     FinancialProfileUpdate,
 )
 from app.schemas.user import PasswordChange, UserUpdate
+from app.services.income_service import (
+    record_monthly_income,
+    to_decimal_income,
+)
 
 
 class InvalidCurrentPasswordError(Exception):
@@ -74,6 +78,11 @@ def complete_onboarding(
         values["savings_goals"] = serialize_goals(payload.savings_goals)
     for field, value in values.items():
         setattr(profile, field, value)
+    record_monthly_income(
+        db,
+        user_id,
+        to_decimal_income(payload.monthly_income),
+    )
     profile.onboarding_completed = True
     profile.onboarding_skipped = False
     db.commit()
@@ -100,6 +109,12 @@ def update_financial_profile(
         values["savings_goals"] = serialize_goals(payload.savings_goals)
     for field, value in values.items():
         setattr(profile, field, value)
+    if "monthly_income" in values:
+        record_monthly_income(
+            db,
+            user_id,
+            to_decimal_income(values["monthly_income"]),
+        )
     db.commit()
     db.refresh(profile)
     return profile

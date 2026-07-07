@@ -456,12 +456,13 @@ def detect_anomalies(
 
 def _fallback_monthly_summary(
     transactions: list[dict],
+    base_monthly_income: float = 0,
 ) -> MonthlySummaryResponse:
     total_income = sum(
         float(tx.get("amount", 0))
         for tx in transactions
         if float(tx.get("amount", 0)) > 0
-    )
+    ) + base_monthly_income
     total_expenses = sum(
         abs(float(tx.get("amount", 0)))
         for tx in transactions
@@ -469,7 +470,7 @@ def _fallback_monthly_summary(
     )
     net = total_income - total_expenses
 
-    if not transactions:
+    if not transactions and base_monthly_income <= 0:
         return MonthlySummaryResponse(
             summary=(
                 "No transaction data available "
@@ -503,10 +504,11 @@ def _fallback_monthly_summary(
 
 def generate_monthly_summary(
     transactions: list[dict],
+    base_monthly_income: float = 0,
 ) -> MonthlySummaryResponse:
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return _fallback_monthly_summary(transactions)
+        return _fallback_monthly_summary(transactions, base_monthly_income)
 
     tx_summary = "\n".join(
         f"- {tx.get('vendor', 'unknown')}: "
@@ -519,7 +521,7 @@ def generate_monthly_summary(
         float(tx.get("amount", 0))
         for tx in transactions
         if float(tx.get("amount", 0)) > 0
-    )
+    ) + base_monthly_income
     total_expenses = sum(
         abs(float(tx.get("amount", 0)))
         for tx in transactions
@@ -536,6 +538,7 @@ def generate_monthly_summary(
         "Period summary: Income "
         f"${total_income:.2f}, "
         f"Expenses ${total_expenses:.2f}\n\n"
+        f"Saved monthly income baseline: ${base_monthly_income:.2f}\n\n"
         f"Transactions:\n{tx_summary}\n\n"
         "Return strict JSON with keys:\n"
         "- summary: string (2-4 sentences covering "

@@ -73,3 +73,7 @@ class FinancialProfile(BaseModel):
     savings_goals: List[SavingsGoal]
     onboarding_completed: bool
     onboarding_skipped: bool
+
+
+class MonthlyIncomeHistoryResponse(BaseModel):
+    monthly_income_by_month: dict[str, Decimal]
