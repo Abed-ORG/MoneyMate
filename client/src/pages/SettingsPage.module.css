@@ -166,9 +166,12 @@
 }
 
 .cardAvatar svg {
+  display: block;
   width: 2.05rem;
   height: 2.05rem;
   fill: none;
+  justify-self: center;
+  align-self: center;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;

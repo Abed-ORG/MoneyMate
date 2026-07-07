@@ -462,9 +462,12 @@
 }
 
 .avatar svg {
+  display: block;
   width: 1.35rem;
   height: 1.35rem;
   fill: none;
+  justify-self: center;
+  align-self: center;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
