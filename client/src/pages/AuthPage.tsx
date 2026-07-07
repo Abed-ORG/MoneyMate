@@ -33,6 +33,9 @@ type PasswordFieldProps = {
   placeholder: string;
   visible: boolean;
   disabled?: boolean;
+  error?: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onToggle: () => void;
 };
 
@@ -59,6 +62,9 @@ function PasswordField({
   placeholder,
   visible,
   disabled,
+  error,
+  value,
+  onChange,
   onToggle,
 }: PasswordFieldProps) {
   return (
@@ -70,9 +76,11 @@ function PasswordField({
           disabled={disabled}
           id={id}
           name={name}
+          onChange={onChange}
           placeholder={placeholder}
           required
           type={visible ? "text" : "password"}
+          value={value}
         />
         <button
           aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
@@ -84,6 +92,7 @@ function PasswordField({
           <EyeIcon visible={visible} />
         </button>
       </span>
+      {error ? <p className={styles.fieldError}>{error}</p> : null}
     </label>
   );
 }
@@ -98,6 +107,19 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   const [formError, setFormError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [verifyPassword, setVerifyPassword] = useState("");
+  const [registerErrors, setRegisterErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    verifyPassword?: string;
+  }>({});
+  const [rememberMe, setRememberMe] = useState(false);
   const [submittingMode, setSubmittingMode] = useState<AuthMode | null>(null);
   const navigationTimer = useRef<number>();
   const navigate = useNavigate();
@@ -148,11 +170,28 @@ export function AuthPage({ initialMode }: AuthPageProps) {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-    const redirectTo =
-      redirectState?.from?.pathname ?? "/dashboard";
+    const email = loginEmail.trim();
+    const password = loginPassword;
+    const errors: { email?: string; password?: string } = {};
+
+    if (!email) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (!password) {
+      errors.password = "Password is required.";
+    } else if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters.";
+    }
+
+    setLoginErrors(errors);
+    if (Object.keys(errors).length) {
+      return;
+    }
+
+    const redirectTo = redirectState?.from?.pathname ?? "/dashboard";
 
     setFormError("");
     setAuthNotice("");
@@ -173,18 +212,45 @@ export function AuthPage({ initialMode }: AuthPageProps) {
 
   const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-    const verifyPassword = String(formData.get("verifyPassword") ?? "");
+    const email = registerEmail.trim();
+    const password = registerPassword;
+    const verifyPasswordValue = verifyPassword;
+    const errors: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      password?: string;
+      verifyPassword?: string;
+    } = {};
 
-    if (password !== verifyPassword) {
-      setFormError("Passwords do not match.");
-      return;
+    if (!firstName.trim()) {
+      errors.firstName = "First name is required.";
     }
 
-    if (password.length < 8) {
-      setFormError("Password must contain at least 8 characters.");
+    if (!lastName.trim()) {
+      errors.lastName = "Last name is required.";
+    }
+
+    if (!email) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (!password) {
+      errors.password = "Password is required.";
+    } else if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters.";
+    }
+
+    if (!verifyPasswordValue) {
+      errors.verifyPassword = "Please confirm your password.";
+    } else if (password !== verifyPasswordValue) {
+      errors.verifyPassword = "Passwords do not match.";
+    }
+
+    setRegisterErrors(errors);
+    if (Object.keys(errors).length) {
       return;
     }
 
@@ -206,6 +272,35 @@ export function AuthPage({ initialMode }: AuthPageProps) {
       setSubmittingMode(null);
     }
   };
+
+  const passwordStrength = (() => {
+    const pw = registerPassword;
+    if (pw.length === 0) {
+      return { label: "", width: 0, tone: "neutral" as const };
+    }
+
+    let score = 0;
+
+    // Length scoring
+    if (pw.length >= 8) score += 1;
+    if (pw.length >= 12) score += 1;
+
+    // Character variety scoring
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
+    if (/\d/.test(pw)) score += 1;
+    if (/[^a-zA-Z0-9]/.test(pw)) score += 1;
+
+    if (score <= 1) {
+      return { label: "Weak", width: 25, tone: "danger" as const };
+    }
+    if (score === 2) {
+      return { label: "Weak", width: 33, tone: "danger" as const };
+    }
+    if (score === 3) {
+      return { label: "Medium", width: 66, tone: "warning" as const };
+    }
+    return { label: "Strong", width: 100, tone: "success" as const };
+  })();
 
   const handleNameChange =
     (setter: (value: string) => void) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -247,21 +342,41 @@ export function AuthPage({ initialMode }: AuthPageProps) {
                 placeholder="Enter your email address"
                 required
                 type="email"
-                onChange={(event) => setLoginEmail(event.target.value)}
+                onChange={(event) => {
+                  setLoginEmail(event.target.value);
+                  setLoginErrors((current) => ({ ...current, email: undefined }));
+                }}
                 value={loginEmail}
               />
+              {loginErrors.email ? <p className={styles.fieldError}>{loginErrors.email}</p> : null}
             </label>
 
             <PasswordField
               autoComplete="current-password"
               disabled={!isLogin}
+              error={loginErrors.password}
               id="login-password"
               label="Password"
               name="password"
+              onChange={(event) => {
+                setLoginPassword(event.target.value);
+                setLoginErrors((current) => ({ ...current, password: undefined }));
+              }}
               onToggle={() => setLoginPasswordVisible((current) => !current)}
               placeholder="Enter your password"
+              value={loginPassword}
               visible={loginPasswordVisible}
             />
+
+            <label className={styles.rememberRow} htmlFor="remember-me">
+              <input
+                checked={rememberMe}
+                id="remember-me"
+                onChange={(event) => setRememberMe(event.target.checked)}
+                type="checkbox"
+              />
+              <span>Remember me</span>
+            </label>
 
             <Link className={styles.forgotLink} to="/forgot-password">
               Forgot password?
@@ -274,7 +389,16 @@ export function AuthPage({ initialMode }: AuthPageProps) {
               disabled={!isLogin || submittingMode === "login"}
               type="submit"
             >
-              {submittingMode === "login" ? "Logging in..." : "Log In"}
+              <span className={styles.buttonContent}>
+                {submittingMode === "login" ? (
+                  <>
+                    <span className={styles.buttonSpinner} aria-hidden="true" />
+                    <span>Logging in...</span>
+                  </>
+                ) : (
+                  "Log In"
+                )}
+              </span>
             </button>
 
             <p className={styles.switchText}>
@@ -329,31 +453,57 @@ export function AuthPage({ initialMode }: AuthPageProps) {
                 disabled={isLogin}
                 id="register-email"
                 name="email"
+                onChange={(event) => {
+                  setRegisterEmail(event.target.value);
+                  setRegisterErrors((current) => ({ ...current, email: undefined }));
+                }}
                 placeholder="Enter your email address"
                 required
                 type="email"
+                value={registerEmail}
               />
+              {registerErrors.email ? <p className={styles.fieldError}>{registerErrors.email}</p> : null}
             </label>
 
             <PasswordField
               autoComplete="new-password"
               disabled={isLogin}
+              error={registerErrors.password}
               id="register-password"
               label="Password"
               name="password"
+              onChange={(event) => {
+                setRegisterPassword(event.target.value);
+                setRegisterErrors((current) => ({ ...current, password: undefined }));
+              }}
               onToggle={() => setRegisterPasswordVisible((current) => !current)}
               placeholder="Create a strong password"
+              value={registerPassword}
               visible={registerPasswordVisible}
             />
+            {registerPassword ? (
+              <div className={styles.passwordStrength}>
+                <div className={styles.passwordStrengthBar}>
+                  <span className={`${styles.passwordStrengthFill} ${styles[passwordStrength.tone]}`} style={{ width: `${passwordStrength.width}%` }} />
+                </div>
+                <span className={styles.passwordStrengthLabel}>{passwordStrength.label || "Add 8+ characters"}</span>
+              </div>
+            ) : null}
 
             <PasswordField
               autoComplete="new-password"
               disabled={isLogin}
+              error={registerErrors.verifyPassword}
               id="verify-password"
               label="Verify Password"
               name="verifyPassword"
+              onChange={(event) => {
+                setVerifyPassword(event.target.value);
+                setRegisterErrors((current) => ({ ...current, verifyPassword: undefined }));
+              }}
               onToggle={() => setVerifyPasswordVisible((current) => !current)}
               placeholder="Re-enter your password"
+              value={verifyPassword}
               visible={verifyPasswordVisible}
             />
 
@@ -364,7 +514,16 @@ export function AuthPage({ initialMode }: AuthPageProps) {
               disabled={isLogin || submittingMode === "register"}
               type="submit"
             >
-              {submittingMode === "register" ? "Creating account..." : "Create Account"}
+              <span className={styles.buttonContent}>
+                {submittingMode === "register" ? (
+                  <>
+                    <span className={styles.buttonSpinner} aria-hidden="true" />
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </span>
             </button>
 
             <p className={styles.switchText}>

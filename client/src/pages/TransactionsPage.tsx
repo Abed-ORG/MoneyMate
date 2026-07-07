@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, type MouseEvent as ReactMouseEvent, useRef, useState } from "react";
 import {
   Button,
   CategoryIcon,
@@ -28,6 +28,7 @@ type FormState = {
   category: string;
   vendor: string;
   notes: string;
+  type: "expense" | "income";
 };
 
 type CsvRow = Record<string, string>;
@@ -67,6 +68,7 @@ const emptyForm: FormState = {
   category: "",
   vendor: "",
   notes: "",
+  type: "expense",
 };
 
 const defaultFilters: TransactionListParams = {
@@ -142,10 +144,11 @@ function formatDate(value: string, includeTime = false) {
 function transactionToForm(transaction: Transaction): FormState {
   return {
     date: transaction.date.slice(0, 10),
-    amount: String(transaction.amount),
+    amount: String(Math.abs(Number(transaction.amount))),
     category: transaction.category,
     vendor: transaction.vendor,
     notes: transaction.notes.slice(0, noteMaxLength),
+    type: Number(transaction.amount) >= 0 ? "income" : "expense",
   };
 }
 
@@ -277,14 +280,23 @@ function validateForm(form: FormState) {
 }
 
 function toPayload(form: FormState): TransactionPayload {
+  const amount = Number(form.amount);
   return {
     date: new Date(`${form.date}T12:00:00`).toISOString(),
-    amount: Number(form.amount),
+    amount: form.type === "expense" ? -Math.abs(amount) : Math.abs(amount),
     category: form.category.trim(),
     vendor: form.vendor.trim(),
     notes: form.notes.trim().slice(0, noteMaxLength),
   };
 }
+
+type EditValues = {
+  date: string;
+  vendor: string;
+  category: string;
+  notes: string;
+  amount: string;
+};
 
 function AddIcon() {
   return (
@@ -348,6 +360,22 @@ function SparklesIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function TransactionsPage() {
   const toast = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -366,6 +394,7 @@ export function TransactionsPage() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState<CSSProperties>({});
   const [historyTransaction, setHistoryTransaction] = useState<Transaction | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -377,6 +406,10 @@ export function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [exportState, setExportState] = useState<ExportState>(defaultExportState);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<EditValues | null>(null);
+  const [editErrors, setEditErrors] = useState<Partial<Record<keyof EditValues, string>>>({});
+  const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -485,9 +518,16 @@ export function TransactionsPage() {
       }
       setActionMenuId(null);
     };
+    const closeOnViewportChange = () => setActionMenuId(null);
 
     document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+    window.addEventListener("resize", closeOnViewportChange);
+    window.addEventListener("scroll", closeOnViewportChange, true);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      window.removeEventListener("resize", closeOnViewportChange);
+      window.removeEventListener("scroll", closeOnViewportChange, true);
+    };
   }, [actionMenuId]);
 
   useEffect(() => {
@@ -626,16 +666,97 @@ export function TransactionsPage() {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!selected) return;
+  const startEditing = useCallback((transaction: Transaction) => {
+    setActionMenuId(null);
+    setEditingId(transaction.id);
+    setEditValues({
+      date: transaction.date.slice(0, 10),
+      vendor: transaction.vendor,
+      category: transaction.category,
+      notes: transaction.notes,
+      amount: String(Math.abs(Number(transaction.amount))),
+    });
+    setEditErrors({});
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingId(null);
+    setEditValues(null);
+    setEditErrors({});
+  }, []);
+
+  const saveEditing = useCallback(async (transaction: Transaction) => {
+    if (!editValues) return;
+
+    const errors: Partial<Record<keyof EditValues, string>> = {};
+    if (!editValues.date) {
+      errors.date = "Date is required.";
+    } else if (Number.isNaN(new Date(editValues.date).getTime())) {
+      errors.date = "Enter a valid date.";
+    }
+    if (!editValues.vendor.trim()) {
+      errors.vendor = "Vendor is required.";
+    }
+    if (!editValues.category) {
+      errors.category = "Category is required.";
+    }
+    const amountNum = Number(editValues.amount);
+    if (!editValues.amount) {
+      errors.amount = "Amount is required.";
+    } else if (Number.isNaN(amountNum) || amountNum <= 0) {
+      errors.amount = "Amount must be a positive number.";
+    }
+
+    setEditErrors(errors);
+    if (Object.keys(errors).length) return;
+
+    const signedAmount = Number(transaction.amount) < 0 ? -amountNum : amountNum;
+
+    setSavingEditId(transaction.id);
     try {
-      await transactionsApi.delete(selected.id);
-      toast.success("Transaction deleted", "The transaction was removed.");
+      const updated = await transactionsApi.update(transaction.id, {
+        date: editValues.date,
+        amount: Number.isFinite(signedAmount) ? signedAmount : Number(transaction.amount),
+        category: editValues.category,
+        vendor: editValues.vendor.trim(),
+        notes: editValues.notes.trim().slice(0, noteMaxLength),
+      });
+      setTransactions((current) =>
+        current.map((item) => (item.id === transaction.id ? updated : item)),
+      );
+      toast.showToast({
+        title: "Transaction updated",
+        message: "Your changes were saved.",
+        variant: "success",
+      });
+      cancelEditing();
+    } catch (err) {
+      toast.error("Could not save changes", getApiErrorMessage(err));
+    } finally {
+      setSavingEditId(null);
+    }
+  }, [editValues, cancelEditing]);
+
+  const confirmDelete = async () => {
+    const idsToDelete = selectedTransactionIds.length ? selectedTransactionIds : (selected ? [selected.id] : []);
+    if (!idsToDelete.length) return;
+
+    try {
+      await Promise.all(idsToDelete.map((id) => transactionsApi.delete(id)));
+      toast.showToast({
+        title: idsToDelete.length > 1 ? "Transactions deleted" : "Transaction deleted",
+        message: idsToDelete.length > 1
+          ? `${idsToDelete.length} transactions were removed.`
+          : "The transaction was removed.",
+        variant: "success",
+      });
       setSelectedId(null);
+      setSelectedTransactionIds([]);
       setIsDeleteOpen(false);
+      cancelEditing();
       await loadTransactions();
     } catch (err) {
-      toast.error("Could not delete transaction", getApiErrorMessage(err));
+      toast.error("Could not delete", getApiErrorMessage(err));
     }
   };
 
@@ -782,14 +903,30 @@ export function TransactionsPage() {
     }
   };
 
-  const openActionMenu = (transaction: Transaction) => {
+  const openActionMenu = (
+    transaction: Transaction,
+    event: ReactMouseEvent<HTMLButtonElement>,
+  ) => {
     setSelectedId(transaction.id);
-    setActionMenuId((current) => (current === transaction.id ? null : transaction.id));
+
+    if (actionMenuId === transaction.id) {
+      setActionMenuId(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 208;
+    const menuHeight = 220;
+    setActionMenuPosition({
+      top: Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - menuHeight)),
+      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+    });
+    setActionMenuId(transaction.id);
   };
 
   const openEditFromMenu = (transaction: Transaction) => {
     setActionMenuId(null);
-    openEdit(transaction);
+    startEditing(transaction);
   };
 
   const openHistoryFromMenu = (transaction: Transaction) => {
@@ -799,7 +936,7 @@ export function TransactionsPage() {
 
   const openDeleteFromMenu = (transaction: Transaction) => {
     setActionMenuId(null);
-    setSelectedId(transaction.id);
+    setSelectedTransactionIds([transaction.id]);
     setIsDeleteOpen(true);
   };
 
@@ -851,10 +988,16 @@ export function TransactionsPage() {
           onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
         />
       </FormField>
+      <FormField label="Type">
+        <div className={styles.typeToggle}>
+          <button className={`${styles.typeButton} ${form.type === "expense" ? styles.activeType : ""}`} onClick={() => setForm((current) => ({ ...current, type: "expense" }))} type="button">Expense</button>
+          <button className={`${styles.typeButton} ${form.type === "income" ? styles.activeType : ""}`} onClick={() => setForm((current) => ({ ...current, type: "income" }))} type="button">Income</button>
+        </div>
+      </FormField>
       <FormField label="Amount" error={formErrors.amount}>
         <Input
           inputMode="decimal"
-          placeholder="-24.50 or 1200"
+          placeholder="24.50"
           value={form.amount}
           error={formErrors.amount}
           onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
@@ -906,6 +1049,111 @@ export function TransactionsPage() {
       </div>
     </form>
   );
+
+  const renderInlineEditRow = (transaction: Transaction) => {
+    if (!editValues) return null;
+
+    return (
+      <tr key={transaction.id} className={styles.editingRow}>
+        <td>
+          <input
+            checked={selectedTransactionIds.includes(transaction.id)}
+            onChange={() => toggleTransactionSelection(transaction.id)}
+            type="checkbox"
+          />
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.date ? styles.inlineInputError : ""}`}
+              type="date"
+              value={editValues.date}
+              onChange={(event) => setEditValues((current) => current ? { ...current, date: event.target.value } : current)}
+            />
+            {editErrors.date ? <span className={styles.inlineError}>{editErrors.date}</span> : null}
+          </div>
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.vendor ? styles.inlineInputError : ""}`}
+              value={editValues.vendor}
+              onChange={(event) => setEditValues((current) => current ? { ...current, vendor: event.target.value } : current)}
+              placeholder="Vendor name"
+            />
+            {editErrors.vendor ? <span className={styles.inlineError}>{editErrors.vendor}</span> : null}
+          </div>
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <Select
+              aria-label="Edit transaction category"
+              className={styles.inlineSelect}
+              error={editErrors.category}
+              menuPlacement="top"
+              options={formCategoryOptions}
+              searchable
+              searchPlaceholder="Search categories..."
+              value={editValues.category}
+              onValueChange={(value) => setEditValues((current) => current ? { ...current, category: value } : current)}
+            />
+            {editErrors.category ? <span className={styles.inlineError}>{editErrors.category}</span> : null}
+          </div>
+        </td>
+        <td>
+          <input
+            className={styles.inlineInput}
+            value={editValues.notes}
+            onChange={(event) => setEditValues((current) => current ? { ...current, notes: event.target.value } : current)}
+            placeholder="Optional note"
+            maxLength={noteMaxLength}
+          />
+        </td>
+        <td>
+          <div className={styles.inlineField}>
+            <input
+              className={`${styles.inlineInput} ${editErrors.amount ? styles.inlineInputError : ""}`}
+              value={editValues.amount}
+              inputMode="decimal"
+              onChange={(event) => setEditValues((current) => current ? { ...current, amount: event.target.value } : current)}
+              placeholder="0.00"
+            />
+            {editErrors.amount ? <span className={styles.inlineError}>{editErrors.amount}</span> : null}
+          </div>
+        </td>
+        <td>
+          <div className={styles.inlineActions}>
+            <button
+              className={styles.saveInlineButton}
+              disabled={savingEditId === transaction.id}
+              onClick={() => void saveEditing(transaction)}
+              type="button"
+              aria-label="Save changes"
+              title="Save changes"
+            >
+              {savingEditId === transaction.id ? (
+                <span className={styles.inlineSpinner} aria-hidden="true" />
+              ) : (
+                <CheckIcon />
+              )}
+            </button>
+            <button
+              className={styles.cancelInlineButton}
+              disabled={savingEditId === transaction.id}
+              onClick={cancelEditing}
+              type="button"
+              aria-label="Cancel editing"
+              title="Cancel editing"
+            >
+              <XIcon />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  const isEditing = editingId !== null;
 
   return (
     <section className={styles.page}>
@@ -1097,7 +1345,13 @@ export function TransactionsPage() {
               </span>
               <div className={styles.tableActionButtons}>
                 <Button
-                  disabled={!selectedCount}
+                  disabled={!selectedCount || isEditing}
+                  onClick={() => setIsDeleteOpen(true)}
+                >
+                  Delete Selected
+                </Button>
+                <Button
+                  disabled={!selectedCount || isEditing}
                   onClick={() => void recategorizeSelected()}
                 >
                   Re-categorize Selected
@@ -1113,7 +1367,19 @@ export function TransactionsPage() {
           ) : null}
           {error ? <div className={styles.stateError}>{error}</div> : null}
           {!isLoading && !error && transactions.length === 0 ? (
-            <div className={styles.state}>No transactions match your filters.</div>
+            <div className={styles.emptyStateCard}>
+              <div className={styles.emptyStateIcon}><SpreadsheetIcon /></div>
+              <h3>No transactions yet</h3>
+              <p>Start by adding a transaction or uploading a file to build your money story.</p>
+              <div className={styles.emptyStateActions}>
+                <Button onClick={() => {
+                  setForm(emptyForm);
+                  setFormErrors({});
+                  setIsAddOpen(true);
+                }}>Add Transaction</Button>
+                <Button variant="secondary" onClick={openImportModal}>Upload File</Button>
+              </div>
+            </div>
           ) : null}
 
           {!isLoading && !error && transactions.length > 0 ? (
@@ -1126,6 +1392,7 @@ export function TransactionsPage() {
                         <input
                           aria-label="Select all transactions on this page"
                           checked={allVisibleSelected}
+                          disabled={isEditing}
                           onChange={toggleVisibleTransactionSelection}
                           type="checkbox"
                         />
@@ -1201,11 +1468,11 @@ export function TransactionsPage() {
                               <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
                               <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
                             </div>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1277,11 +1544,17 @@ export function TransactionsPage() {
       >
         {renderModalForm("edit")}
       </Modal>
-      <Modal isOpen={isDeleteOpen} title="Delete Transaction" onClose={() => setIsDeleteOpen(false)}>
-        <p className={styles.confirmText}>Are you sure you want to delete this transaction?</p>
+      <Modal isOpen={isDeleteOpen} title={selectedTransactionIds.length > 1 ? "Delete Transactions" : "Delete Transaction"} onClose={() => setIsDeleteOpen(false)}>
+        <p className={styles.confirmText}>
+          {selectedTransactionIds.length > 1
+            ? `Are you sure you want to delete ${selectedTransactionIds.length} transactions?`
+            : "Are you sure you want to delete this transaction?"}
+        </p>
         <div className={styles.modalActions}>
           <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-          <Button variant="danger" onClick={() => void confirmDelete()}>Delete Transaction</Button>
+          <Button variant="danger" onClick={() => void confirmDelete()}>
+            {selectedTransactionIds.length > 1 ? `Delete ${selectedTransactionIds.length} Transactions` : "Delete Transaction"}
+          </Button>
         </div>
       </Modal>
       <Modal
@@ -1396,4 +1669,3 @@ export function TransactionsPage() {
     </section>
   );
 }
-

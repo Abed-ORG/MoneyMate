@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../layouts/AppShell";
 import { BudgetsPage } from "../pages/BudgetsPage";
-import { ChatPage } from "../pages/ChatPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { GoalsPage } from "../pages/GoalsPage";
 import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
@@ -47,7 +46,7 @@ export function AppRoutes() {
         <Route path="/reports" element={<Navigate replace to="/reports/monthly" />} />
         <Route path="/reports/monthly" element={<MonthlyReportPage />} />
         <Route path="/reports/annual" element={<AnnualReportPage />} />
-        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/chat" element={<Navigate replace to="/dashboard" />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

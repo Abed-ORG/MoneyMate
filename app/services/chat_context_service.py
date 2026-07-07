@@ -27,6 +27,7 @@ MONTH_LOOKUP = {
 MONTH_LOOKUP.update(
     {name[:3].casefold(): index for name, index in MONTH_LOOKUP.items()}
 )
+MAX_CONTEXT_TRANSACTIONS = 100
 
 
 def quantize_money(value: Decimal) -> Decimal:
@@ -160,6 +161,8 @@ def requested_period(
         return today - timedelta(days=6), today
     if "last 30" in text or "past 30" in text:
         return today - timedelta(days=29), today
+    if today.day == 1:
+        return month_bounds(today, previous=True)
     start, _ = month_bounds(today)
     return start, today
 
@@ -196,8 +199,27 @@ def transactions_for_period(
             Transaction.occurred_at >= start_of_day(start_date),
             Transaction.occurred_at <= end_of_day(end_date),
         )
+        .order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
         .all()
     )
+
+
+def transaction_to_context_row(transaction: Transaction) -> dict[str, Any]:
+    amount = Decimal(str(transaction.amount))
+    return {
+        "date": (
+            transaction.occurred_at.date().isoformat()
+            if transaction.occurred_at
+            else None
+        ),
+        "vendor": transaction.vendor or transaction.description or "Unknown",
+        "category": (
+            transaction.category.name if transaction.category else "Other"
+        ),
+        "amount": to_json_money(amount),
+        "transaction_type": "income" if amount > 0 else "expense",
+        "notes": transaction.notes or "",
+    }
 
 
 def summarize_transactions(
@@ -251,6 +273,10 @@ def summarize_transactions(
         )
     categories.sort(key=lambda item: item["total"], reverse=True)
     largest_expenses.sort(key=lambda item: item["amount"], reverse=True)
+    transaction_rows = [
+        transaction_to_context_row(transaction)
+        for transaction in transactions[:MAX_CONTEXT_TRANSACTIONS]
+    ]
     return {
         "transaction_count": len(transactions),
         "income": to_json_money(income),
@@ -258,6 +284,8 @@ def summarize_transactions(
         "net_amount": to_json_money(income - expenses),
         "category_totals": categories[:12],
         "largest_expenses": largest_expenses[:5],
+        "transactions": transaction_rows,
+        "transactions_truncated": len(transactions) > len(transaction_rows),
     }
 
 

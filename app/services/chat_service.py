@@ -95,6 +95,8 @@ AFFIRMATIVE_REPLIES = {
 FINANCE_TOKEN_SIMILARITY = 0.92
 SIMPLE_HISTORY_LIMIT = 4
 SIMPLE_HISTORY_CONTENT_LIMIT = 260
+MAX_FOLLOWUP_WORD_COUNT = 8
+MAX_FOLLOWUP_CHAR_COUNT = 120
 
 
 class ChatNotFoundError(Exception):
@@ -413,6 +415,39 @@ def is_affirmative_reply(question: str) -> bool:
     return normalize_social_text(question) in AFFIRMATIVE_REPLIES
 
 
+def has_affirmative_reply_signal(question: str) -> bool:
+    words = normalize_social_text(question).split()
+    return any(
+        " ".join(words[:length]) in AFFIRMATIVE_REPLIES
+        for length in range(1, len(words) + 1)
+    )
+
+
+def meaningful_tokens(value: str) -> set[str]:
+    return {
+        word
+        for word in normalize_social_text(value).replace("'", "").split()
+        if len(word) >= 4
+    }
+
+
+def is_contextual_followup_reply(
+    question: str,
+    previous_assistant: str,
+) -> bool:
+    text = normalize_social_text(question)
+    if not text or len(text) > MAX_FOLLOWUP_CHAR_COUNT:
+        return False
+    words = text.split()
+    if len(words) > MAX_FOLLOWUP_WORD_COUNT:
+        return False
+    if has_affirmative_reply_signal(question):
+        return True
+    return bool(
+        meaningful_tokens(question) & meaningful_tokens(previous_assistant)
+    )
+
+
 def last_assistant_message(history: list[dict[str, str]]) -> str:
     for message in reversed(history):
         if message["role"] == "assistant":
@@ -424,28 +459,16 @@ def resolve_followup_question(
     question: str,
     history: list[dict[str, str]],
 ) -> str:
-    if not is_affirmative_reply(question):
-        return question
-
     previous_assistant = last_assistant_message(history).casefold()
-    if "would you like" not in previous_assistant:
+    if not is_finance_question(previous_assistant):
         return question
-    if not any(
-        word in previous_assistant
-        for word in [
-            "spending",
-            "budget",
-            "savings",
-            "goal",
-            "net position",
-            "finances",
-            "period",
-        ]
-    ):
+    if not is_contextual_followup_reply(question, previous_assistant):
         return question
     return (
-        "Tell me more about my spending, budgets, savings goals, and net "
-        "position for the available period."
+        "Continue the previous MoneyMate finance topic using the current "
+        "structured financial data.\n"
+        f"Previous assistant message: {previous_assistant}\n"
+        f"User follow-up: {question}"
     )
 
 
