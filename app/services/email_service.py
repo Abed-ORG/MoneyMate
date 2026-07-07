@@ -1,12 +1,11 @@
 import logging
 import os
 import smtplib
+import ssl
 from email.message import EmailMessage
 from html import escape
+from typing import Protocol
 from urllib.parse import quote
-
-from app.auth.utils import PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
-from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +18,11 @@ class EmailDeliveryError(Exception):
     pass
 
 
+class SupportsEmailUser(Protocol):
+    email: str
+    full_name: str
+
+
 def get_required_setting(*names: str) -> str:
     for name in names:
         value = os.getenv(name, "").strip()
@@ -28,6 +32,17 @@ def get_required_setting(*names: str) -> str:
     raise EmailConfigurationError(
         f"{joined_names} must be configured before emails can be sent."
     )
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name, "").strip().lower()
+    if not value:
+        return default
+    return value in {"1", "true", "yes", "on"}
+
+
+def _password_reset_expire_minutes() -> int:
+    return int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRE_MINUTES") or "30")
 
 
 def _frontend_url(path: str, token: str) -> str:
@@ -90,23 +105,19 @@ def _send_with_smtp(
     smtp_username = get_required_setting("SMTP_USERNAME", "EMAIL_USER")
     smtp_password = get_required_setting("SMTP_PASSWORD", "EMAIL_PASSWORD")
     from_email = (
-        os.getenv("SMTP_FROM_EMAIL")
-        or os.getenv("EMAIL_FROM_ADDRESS")
+        os.getenv("EMAIL_FROM_ADDRESS")
         or smtp_username
     ).strip()
     from_name = (
-        os.getenv("SMTP_FROM_NAME")
-        or os.getenv("EMAIL_FROM_NAME")
+        os.getenv("EMAIL_FROM_NAME")
         or "MoneyMate"
     ).strip()
     smtp_port = int(
         os.getenv("SMTP_PORT") or os.getenv("EMAIL_PORT") or "587"
     )
-    use_tls = os.getenv("SMTP_USE_TLS", "true").lower() in {
-        "1",
-        "true",
-        "yes",
-    }
+    use_ssl = _env_flag("SMTP_USE_SSL")
+    use_tls = _env_flag("SMTP_USE_TLS", default=not use_ssl)
+    timeout_seconds = int(os.getenv("SMTP_TIMEOUT_SECONDS") or "20")
 
     message = EmailMessage()
     message["Subject"] = subject
@@ -116,17 +127,26 @@ def _send_with_smtp(
     message.add_alternative(html, subtype="html")
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+        smtp_client = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+        with smtp_client(
+            smtp_host,
+            smtp_port,
+            timeout=timeout_seconds,
+        ) as server:
+            server.ehlo()
             if use_tls:
-                server.starttls()
+                server.starttls(context=ssl.create_default_context())
+                server.ehlo()
             server.login(smtp_username, smtp_password)
             server.send_message(message)
     except (OSError, smtplib.SMTPException) as exc:
         logger.exception(
-            "SMTP send failed: host=%s port=%s user=%s",
+            "SMTP send failed: host=%s port=%s user=%s tls=%s ssl=%s",
             smtp_host,
             smtp_port,
             smtp_username,
+            use_tls,
+            use_ssl,
         )
         raise EmailDeliveryError(
             "MoneyMate could not send the email. Please try again."
@@ -213,9 +233,9 @@ def _email_html(
     )
 
 
-def send_password_reset_email(user: User, token: str) -> None:
+def send_password_reset_email(user: SupportsEmailUser, token: str) -> None:
     reset_url = _frontend_url("/reset-password", token)
-    duration = _format_duration(PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
+    duration = _format_duration(_password_reset_expire_minutes())
     text = (
         f"Hello {user.full_name},\n\n"
         "A password reset was requested for your MoneyMate account. "
@@ -238,6 +258,28 @@ def send_password_reset_email(user: User, token: str) -> None:
     _send_email(
         user.email,
         "Reset your MoneyMate password",
+        text,
+        html,
+    )
+
+
+def send_test_email(recipient: str) -> None:
+    text = (
+        "This is a MoneyMate email configuration test.\n\n"
+        "If you received this message, the configured email provider is "
+        "working."
+    )
+    html = _email_html(
+        "there",
+        "MoneyMate email test",
+        "This message confirms that MoneyMate can send email with the current configuration.",
+        "Open MoneyMate",
+        os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/"),
+        "No action is required.",
+    )
+    _send_email(
+        recipient,
+        "MoneyMate email test",
         text,
         html,
     )

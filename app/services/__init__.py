@@ -1,3 +1,3 @@
-from . import item_service
+"""Service package exports."""
 
-__all__ = ["item_service"]
+__all__ = []
