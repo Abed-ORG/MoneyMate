@@ -165,6 +165,16 @@
   object-fit: cover;
 }
 
+.cardAvatar svg {
+  width: 2.05rem;
+  height: 2.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
 .avatarEdit {
   position: absolute;
   right: -0.2rem;

@@ -35,7 +35,12 @@ def _goal_to_read(goal: Goal) -> Goal:
 
 
 def list_goals(db: Session, user_id: int):
-    goals = db.query(Goal).filter(Goal.user_id == user_id).all()
+    goals = (
+        db.query(Goal)
+        .filter(Goal.user_id == user_id)
+        .order_by(Goal.id.desc())
+        .all()
+    )
     for goal in goals:
         _goal_to_read(goal)
     return goals

@@ -230,6 +230,7 @@ export function GoalsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isContributeOpen, setIsContributeOpen] = useState(false);
+  const [historyGoal, setHistoryGoal] = useState<Goal | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [celebratingGoalId, setCelebratingGoalId] = useState<number | null>(null);
 
@@ -402,6 +403,12 @@ export function GoalsPage() {
     setIsContributeOpen(true);
   }
 
+  function openHistoryFromMenu(goal: Goal) {
+    setActionMenuId(null);
+    setSelectedId(goal.id);
+    setHistoryGoal(goal);
+  }
+
   function openDeleteFromMenu(goal: Goal) {
     setActionMenuId(null);
     setSelectedId(goal.id);
@@ -463,7 +470,6 @@ export function GoalsPage() {
   );
 
   const renderGoalCard = (goal: Goal) => {
-    const category = getGoalCategoryInfo(goal.name);
     const daysRemaining = getDaysRemaining(goal);
     const percent = Math.min(goal.saved_percentage, 100);
     const projectionLabel = getProjectionLabel(goal);
@@ -474,10 +480,6 @@ export function GoalsPage() {
 
         <div className={styles.goalCardHeader}>
           <div className={styles.goalCardLeft}>
-            <div className={styles.categoryBadge}>
-              <span className={styles.categoryIcon}>{category.icon}</span>
-              <span>{category.label}</span>
-            </div>
             <h3>{goal.name}</h3>
           </div>
           <div className={styles.goalActions}>
@@ -511,6 +513,7 @@ export function GoalsPage() {
               {actionMenuId === goal.id ? (
                 <div className={styles.actionMenu}>
                   <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
+                  <button type="button" onClick={() => openHistoryFromMenu(goal)}>Show Contribution history</button>
                   <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
                 </div>
               ) : null}
@@ -568,22 +571,6 @@ export function GoalsPage() {
           })}
         </div>
 
-        {goal.contributions.length > 0 ? (
-          <details className={styles.historyDetails}>
-            <summary className={styles.historySummary}>
-              Contribution history ({goal.contributions.length})
-            </summary>
-            <div className={styles.historyList}>
-              {[...goal.contributions].reverse().map((entry) => (
-                <div key={entry.id} className={styles.historyItem}>
-                  <strong>{money(entry.amount)}</strong>
-                  <span>{new Date(entry.contributed_at).toLocaleDateString()}</span>
-                  {entry.note ? <p>{entry.note}</p> : null}
-                </div>
-              ))}
-            </div>
-          </details>
-        ) : null}
       </Card>
     );
   };
@@ -665,6 +652,26 @@ export function GoalsPage() {
         <div className={styles.modalActions}>
           <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
           <Button variant="danger" onClick={() => void confirmDelete()}>Delete goal</Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(historyGoal)}
+        title="Contribution history"
+        onClose={() => setHistoryGoal(null)}
+      >
+        <div className={styles.historyList}>
+          {historyGoal?.contributions.length ? (
+            [...historyGoal.contributions].reverse().map((entry) => (
+              <div key={entry.id} className={styles.historyItem}>
+                <strong>{money(entry.amount)}</strong>
+                <span>{new Date(entry.contributed_at).toLocaleDateString()}</span>
+                {entry.note ? <p>{entry.note}</p> : null}
+              </div>
+            ))
+          ) : (
+            <p className={styles.emptyHistory}>No contribution history available.</p>
+          )}
         </div>
       </Modal>
     </section>

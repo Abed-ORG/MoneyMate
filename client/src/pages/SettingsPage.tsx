@@ -174,13 +174,13 @@ function SectionIcon({ name }: { name: SectionIconName }) {
   );
 }
 
-function getInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+function AnonymousUserIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="8.25" r="3.75" />
+      <path d="M4.75 20c.9-4.25 3.32-6.38 7.25-6.38S18.35 15.75 19.25 20" />
+    </svg>
+  );
 }
 
 function fileToDataUrl(file: File) {
@@ -394,11 +394,6 @@ export function SettingsPage() {
       toast.error("Profile not saved", "Enter a valid monthly income.");
       return;
     }
-    if (selectedCategories.length === 0) {
-      setActiveSection("categories");
-      toast.error("Profile not saved", "Choose at least one spending category.");
-      return;
-    }
     setIsSaving(true);
     try {
       await api.put<AuthUser>("/profile/account", {
@@ -574,7 +569,6 @@ export function SettingsPage() {
 
   const displayName = fullName.trim() || user?.full_name || "MoneyMate user";
   const displayEmail = email.trim() || user?.email || "No email available";
-  const initials = getInitials(displayName) || "MM";
   const activeSectionDetails = settingsSections.find(
     (section) => section.id === activeSection,
   );
@@ -611,7 +605,7 @@ export function SettingsPage() {
                   {avatarPreview ? (
                     <img src={avatarPreview} alt={`${displayName} profile preview`} />
                   ) : (
-                    <span>{initials}</span>
+                    <AnonymousUserIcon />
                   )}
                 </div>
                 <button

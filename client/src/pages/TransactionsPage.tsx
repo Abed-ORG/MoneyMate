@@ -53,6 +53,7 @@ type ExportState = {
 
 const noteMaxLength = 160;
 const templateHeaders = ["date", "amount", "category", "vendor", "notes"];
+const requiredImportFields = ["date", "amount", "category"] as const;
 const exportColumns: Array<{ value: ExportColumn; label: string }> = [
   { value: "date", label: "Date" },
   { value: "vendor", label: "Vendor" },
@@ -390,6 +391,7 @@ export function TransactionsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -618,6 +620,7 @@ export function TransactionsPage() {
   };
 
   const closeImportModal = () => {
+    if (isImporting) return;
     resetImportState();
     setIsImportOpen(false);
   };
@@ -805,6 +808,7 @@ export function TransactionsPage() {
   };
 
   const handleFile = async (file: File | null) => {
+    if (isImporting) return;
     if (!file) return;
     const lowerName = file.name.toLowerCase();
     const isSupported =
@@ -840,7 +844,22 @@ export function TransactionsPage() {
   };
 
   const importCsv = async () => {
+    if (isImporting) return;
     const errors: TransactionImportError[] = [];
+    const missingMappings = requiredImportFields.filter((field) => !mapping[field]);
+    if (missingMappings.length) {
+      setCsvErrors(
+        missingMappings.map((field) => ({
+          row: 0,
+          message: `Map the ${field} column before uploading.`,
+        })),
+      );
+      return;
+    }
+    if (mapping.amount === mapping.category) {
+      setCsvErrors([{ row: 0, message: "Map Amount and Category to different columns." }]);
+      return;
+    }
     const transactions = csvRows
       .map((row, index) => {
         const rowNumber = index + 2;
@@ -854,7 +873,8 @@ export function TransactionsPage() {
           return null;
         }
 
-        const amount = Number(amountValue);
+        const normalizedAmount = amountValue.replace(/[$,\s]/g, "");
+        const amount = Number(normalizedAmount);
         const date = new Date(`${dateValue.trim()}T12:00:00`);
 
         if (!dateValue.trim() || Number.isNaN(date.getTime())) {
@@ -886,6 +906,7 @@ export function TransactionsPage() {
     }
 
     try {
+      setIsImporting(true);
       const response = await transactionsApi.bulk(transactions);
       setCsvErrors(response.errors);
       toast.showToast({
@@ -900,6 +921,8 @@ export function TransactionsPage() {
       }
     } catch (err) {
       toast.error("Upload failed", getApiErrorMessage(err));
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -1462,7 +1485,7 @@ export function TransactionsPage() {
                             </svg>
                           </button>
                           {actionMenuId === transaction.id ? (
-                            <div className={styles.actionMenu}>
+                            <div className={styles.actionMenu} style={actionMenuPosition}>
                               <button type="button" onClick={() => openEditFromMenu(transaction)}>Edit</button>
                               <button type="button" onClick={() => openHistoryFromMenu(transaction)}>Show edit history</button>
                               <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
@@ -1597,17 +1620,21 @@ export function TransactionsPage() {
       >
         <div className={styles.importFlow}>
           <div className={styles.importTemplateAction}>
-            <Button variant="secondary" onClick={downloadExcelTemplate}>
+            <Button variant="secondary" disabled={isImporting} onClick={downloadExcelTemplate}>
               <SpreadsheetIcon />
               Download Excel Template
             </Button>
           </div>
           <button
-            className={styles.dropZone}
+            className={`${styles.dropZone} ${isImporting ? styles.dropZoneDisabled : ""}`}
+            disabled={isImporting}
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!isImporting) fileInputRef.current?.click();
+            }}
             onDrop={(event) => {
               event.preventDefault();
+              if (isImporting) return;
               void handleFile(event.dataTransfer.files[0]);
             }}
             onDragOver={(event) => event.preventDefault()}
@@ -1617,7 +1644,7 @@ export function TransactionsPage() {
             <span>or <em>click to browse</em></span>
             <small>Supports CSV and MoneyMate Excel template files up to 10MB</small>
           </button>
-          <input ref={fileInputRef} hidden type="file" accept=".csv,.xls,.html,text/csv,text/html,application/vnd.ms-excel" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
+          <input ref={fileInputRef} disabled={isImporting} hidden type="file" accept=".csv,.xls,.html,text/csv,text/html,application/vnd.ms-excel" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} />
           {csvHeaders.length ? (
             <>
               <div className={styles.mappingGrid}>
@@ -1649,9 +1676,17 @@ export function TransactionsPage() {
                 </table>
               </div>
               <div className={styles.modalActions}>
-                <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
-                <Button onClick={() => void importCsv()}>Upload Transactions</Button>
+                <Button variant="secondary" disabled={isImporting} onClick={closeImportModal}>Cancel</Button>
+                <Button disabled={isImporting} onClick={() => void importCsv()}>
+                  {isImporting ? "Uploading..." : "Upload Transactions"}
+                </Button>
               </div>
+              {isImporting ? (
+                <div className={styles.importStatus} role="status" aria-live="polite">
+                  <LoadingSpinner label="Uploading transactions" />
+                  <span>Uploading {csvRows.length} row{csvRows.length === 1 ? "" : "s"}...</span>
+                </div>
+              ) : null}
             </>
           ) : null}
           {csvErrors.length ? (
@@ -1661,7 +1696,7 @@ export function TransactionsPage() {
           ) : null}
           {!csvHeaders.length ? (
             <div className={styles.modalActions}>
-              <Button variant="secondary" onClick={closeImportModal}>Cancel</Button>
+              <Button variant="secondary" disabled={isImporting} onClick={closeImportModal}>Cancel</Button>
             </div>
           ) : null}
         </div>
