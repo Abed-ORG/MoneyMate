@@ -39,6 +39,8 @@ type PasswordFieldProps = {
   onToggle: () => void;
 };
 
+const REMEMBERED_EMAIL_KEY = "moneymate_remembered_email";
+
 function EyeIcon({ visible }: { visible: boolean }) {
   return visible ? (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -127,6 +129,15 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   const { isLoading, login, register } = useAuth();
   const redirectState = location.state as RedirectState | null;
 
+  // On mount, restore remembered email if it exists.
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    if (rememberedEmail) {
+      setLoginEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
   useEffect(() => {
     setMode(initialMode);
   }, [initialMode]);
@@ -198,6 +209,14 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     setSubmittingMode("login");
     try {
       const profile = await login({ email, password });
+
+      // Persist or clear remembered email based on checkbox state.
+      if (rememberMe) {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+      } else {
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
+
       const destination =
         !profile.onboarding_completed && !profile.onboarding_skipped
           ? "/onboarding"
@@ -402,7 +421,7 @@ export function AuthPage({ initialMode }: AuthPageProps) {
             </button>
 
             <p className={styles.switchText}>
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <a href="/register" onClick={(event) => switchMode("register", event)}>
                 Sign up
               </a>
