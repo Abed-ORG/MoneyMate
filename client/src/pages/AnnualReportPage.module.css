@@ -53,7 +53,7 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: var(--mm-bg-deep) !important;
+  color: var(--mm-on-accent) !important;
   box-shadow: var(--mm-shadow-glow);
 }
 
@@ -90,7 +90,7 @@
 }
 
 .positive {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .negative {
@@ -124,7 +124,7 @@
 }
 
 .savingsPositive td:last-child {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 900;
 }
 

@@ -1,5 +1,5 @@
 .kicker {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -184,7 +184,7 @@
   background:
     radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
     rgba(5, 15, 13, 0.9);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
     inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
@@ -218,7 +218,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -232,7 +232,7 @@
 .dotsButton:hover {
   border: 0;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: none;
   transform: translateY(-1px);
 }
@@ -275,7 +275,7 @@
 
 .actionMenu button:hover {
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .actionMenu .dangerAction {
@@ -301,7 +301,7 @@
 }
 
 .green span {
-  background: linear-gradient(90deg, #49c5b6, var(--mm-accent));
+  background: linear-gradient(90deg, var(--mm-accent), var(--mm-accent-deep));
 }
 
 .yellow span {
@@ -343,7 +343,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.28);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   padding: 0.35rem 0.6rem;
@@ -367,7 +367,7 @@
 }
 
 .improvement {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .no_change {
@@ -375,7 +375,7 @@
 }
 
 .positive {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .negative {
@@ -550,7 +550,7 @@
 }
 
 .verticalBarTrack.green span {
-  background: linear-gradient(180deg, var(--mm-accent), #49c5b6);
+  background: linear-gradient(180deg, var(--mm-accent), var(--mm-accent-deep));
 }
 
 .verticalBarTrack.yellow span {
@@ -703,7 +703,7 @@
 }
 
 .tooltip strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .tooltip span {

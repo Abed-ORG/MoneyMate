@@ -35,15 +35,15 @@
 
 .primary {
   border-color: rgba(var(--mm-accent-rgb), 0.48);
-  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
-  color: var(--mm-bg-deep);
+  background: linear-gradient(135deg, var(--mm-accent), var(--mm-accent-deep));
+  color: var(--mm-on-accent);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 1.8rem rgba(9, 31, 25, 0.18);
 }
 
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
+  background: linear-gradient(135deg, var(--mm-accent), var(--mm-accent));
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.16),
     0 0 2rem rgba(9, 31, 25, 0.22);

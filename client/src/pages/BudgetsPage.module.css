@@ -57,7 +57,7 @@
 }
 
 .kicker {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -119,7 +119,7 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: var(--mm-bg-deep) !important;
+  color: var(--mm-on-accent) !important;
   box-shadow: var(--mm-shadow-glow);
 }
 
@@ -177,7 +177,7 @@
   place-items: center;
   border-radius: 999px;
   background: var(--mm-accent);
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
   font-size: 0.75rem;
   font-weight: 900;
 }
@@ -303,7 +303,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 0.28rem;
   background: rgba(var(--mm-bg-rgb), 0.36);
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
 }
 
 .filterRow:has(input:checked) .filterCheck {
@@ -357,7 +357,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .filterCategoryIcon svg {

@@ -21,7 +21,7 @@
 }
 
 .kicker {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -66,7 +66,7 @@
   place-items: center;
   border-radius: 999px;
   background: var(--mm-accent);
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
   font-size: 0.75rem;
   font-weight: 900;
 }
@@ -121,7 +121,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 900;
   box-shadow: 0 0 0.65rem rgba(var(--mm-accent-rgb), 0.08);
 }
@@ -270,7 +270,7 @@
 
 .importCard em,
 .dropZone em {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-style: normal;
   font-weight: 800;
 }
@@ -364,7 +364,7 @@
   background:
     radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.22), transparent 54%),
     var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     0 0.25rem 0.7rem rgba(0, 0, 0, 0.24),
     inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.08),
@@ -512,7 +512,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.22);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.055);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   padding: 0.18rem 0.45rem;
   font-size: 0.76rem;
   font-weight: 800;
@@ -576,7 +576,7 @@
   border: 1px solid var(--mm-border);
   border-radius: 999px;
   background: var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -635,7 +635,7 @@
 
 .actionMenu button:hover {
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transform: none;
 }
 
@@ -664,7 +664,7 @@
 }
 
 .aiSuggestion strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .aiSuggestion small {
@@ -673,7 +673,7 @@
 
 .rowActions button:hover,
 .detailsHeader button:hover {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   box-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.11);
   transform: translateY(-1px);
 }
@@ -756,7 +756,7 @@
 }
 
 .pageIndicator strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .rowsControl {
@@ -901,7 +901,7 @@
 }
 
 .aiPanel strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 1.1rem;
 }
 
@@ -976,7 +976,7 @@
 
 .typeButton.activeType {
   background: rgba(var(--mm-accent-rgb), 0.15);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0.15rem 0.5rem rgba(var(--mm-accent-rgb), 0.1);
 }
 
@@ -1005,7 +1005,7 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
   background: var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -1060,7 +1060,7 @@
 }
 
 .dropZone:hover {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   background: rgba(var(--mm-accent-rgb), 0.08);
   box-shadow: 0 0 0.9rem rgba(var(--mm-accent-rgb), 0.1);
   transform: translateY(-1px);
@@ -1073,7 +1073,7 @@
 .dropIcon {
   width: 2.65rem;
   height: 2.65rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .dropIcon svg {
@@ -1338,7 +1338,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 50%;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0 1.5rem rgba(var(--mm-accent-rgb), 0.08);
 }
 

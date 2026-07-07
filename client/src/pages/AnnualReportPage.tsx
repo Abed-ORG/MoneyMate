@@ -257,7 +257,7 @@ export function AnnualReportPage() {
             <div className={styles.chartWrap}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
+                  <CartesianGrid stroke="rgba(var(--mm-accent-rgb), 0.22)" strokeDasharray="4 4" vertical={false} />
                   <XAxis axisLine={false} dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                   <YAxis
                     axisLine={false}
@@ -268,7 +268,7 @@ export function AnnualReportPage() {
                   />
                   <Tooltip
                     content={<IncomeExpenseTooltip />}
-                    cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                    cursor={{ fill: "rgba(var(--mm-accent-rgb), 0.055)" }}
                     contentStyle={tooltipStyle}
                     wrapperStyle={{ outline: "none" }}
                   />
@@ -315,7 +315,7 @@ export function AnnualReportPage() {
               <div className={styles.chartWrap}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={yearOverYearLineData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
+                    <CartesianGrid stroke="rgba(var(--mm-accent-rgb), 0.22)" strokeDasharray="4 4" vertical={false} />
                     <XAxis axisLine={false} dataKey="monthLabel" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                     <YAxis
                       axisLine={false}
@@ -326,7 +326,7 @@ export function AnnualReportPage() {
                     />
                     <Tooltip
                       content={<YearComparisonTooltip year={year} />}
-                      cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                      cursor={{ fill: "rgba(var(--mm-accent-rgb), 0.055)" }}
                       contentStyle={tooltipStyle}
                       wrapperStyle={{ outline: "none" }}
                     />

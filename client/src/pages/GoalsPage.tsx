@@ -186,7 +186,7 @@ type ConfettiParticle = {
 function Confetti({ active }: { active: boolean }) {
   const particles = useMemo<ConfettiParticle[]>(() => {
     if (!active) return [];
-    const colors = ["#49c5b6", "#66d582", "#f2b84b", "#ff6b72", "#7c6df0", "#4a9eff"];
+    const colors = ["#49C5B6", "#178F82", "#EEF6F5", "#D2E7E3", "#262B34", "#121519"];
     return Array.from({ length: 30 }, (_, index) => ({
       id: index,
       x: Math.random() * 100,

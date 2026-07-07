@@ -163,29 +163,29 @@ function GrowthSculpture() {
     >
       <defs>
         <radialGradient id="growthGlow" cx="50%" cy="44%" r="56%">
-          <stop offset="0%" stopColor="#b8fff1" stopOpacity="0.62" />
-          <stop offset="38%" stopColor="#49c5b6" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#050d0d" stopOpacity="0" />
+          <stop offset="0%" stopColor="#EEF6F5" stopOpacity="0.5" />
+          <stop offset="38%" stopColor="var(--mm-accent)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#121519" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="growthFace" x1="22%" y1="9%" x2="83%" y2="92%">
-          <stop offset="0%" stopColor="#9ff7e2" />
-          <stop offset="26%" stopColor="#4ad6c3" />
-          <stop offset="60%" stopColor="#00a99d" />
-          <stop offset="100%" stopColor="#00695f" />
+          <stop offset="0%" stopColor="#EEF6F5" />
+          <stop offset="26%" stopColor="#49C5B6" />
+          <stop offset="60%" stopColor="#178F82" />
+          <stop offset="100%" stopColor="#0F7F74" />
         </linearGradient>
         <linearGradient id="growthDark" x1="8%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#00a895" />
-          <stop offset="58%" stopColor="#007f75" />
-          <stop offset="100%" stopColor="#004c45" />
+          <stop offset="0%" stopColor="#169E90" />
+          <stop offset="58%" stopColor="#0F7F74" />
+          <stop offset="100%" stopColor="#121519" />
         </linearGradient>
         <linearGradient id="growthHighlight" x1="8%" y1="0%" x2="86%" y2="88%">
-          <stop offset="0%" stopColor="#d8fff2" stopOpacity="0.92" />
-          <stop offset="48%" stopColor="#8ff5dd" stopOpacity="0.34" />
-          <stop offset="100%" stopColor="#003f3a" stopOpacity="0.2" />
+          <stop offset="0%" stopColor="#EEF6F5" stopOpacity="0.82" />
+          <stop offset="48%" stopColor="#49C5B6" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#121519" stopOpacity="0.2" />
         </linearGradient>
         <filter id="growthShadow" x="-20%" y="-20%" width="150%" height="150%">
-          <feDropShadow dx="18" dy="22" stdDeviation="18" floodColor="#00100e" floodOpacity="0.72" />
-          <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="#49c5b6" floodOpacity="0.22" />
+          <feDropShadow dx="18" dy="22" stdDeviation="18" floodColor="#121519" floodOpacity="0.72" />
+          <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="var(--mm-accent)" floodOpacity="0.22" />
         </filter>
       </defs>
 
@@ -212,7 +212,7 @@ function GrowthSculpture() {
               width={item.width}
               height={item.height}
               rx={item.rx}
-              fill="#00443f"
+              fill="#121519"
               opacity="0.55"
             />
             <rect
@@ -222,19 +222,19 @@ function GrowthSculpture() {
               height={item.height}
               rx={item.rx}
               fill="url(#growthFace)"
-              stroke="#5df5db"
+              stroke="#49C5B6"
               strokeWidth="6"
             />
             <path
               d={`M${item.x + 20} ${item.y + 22}h${item.width * 0.44}`}
-              stroke="#d9fff2"
+              stroke="#EEF6F5"
               strokeOpacity="0.72"
               strokeWidth="6"
               strokeLinecap="round"
             />
             <path
               d={`M${item.x + item.width - 18} ${item.y + 36}v${item.height - 72}`}
-              stroke="#003a35"
+              stroke="#121519"
               strokeOpacity="0.46"
               strokeWidth="8"
               strokeLinecap="round"
@@ -248,7 +248,7 @@ function GrowthSculpture() {
           className={styles.growthArrowFace}
           d="M108 650C244 590 365 482 468 346C520 278 579 205 642 138L589 88L850 42L790 276L728 204C672 266 612 340 548 424C435 574 302 676 143 730C119 738 95 728 86 707C77 685 88 660 108 650Z"
           fill="url(#growthFace)"
-          stroke="#6df4df"
+          stroke="#49C5B6"
           strokeWidth="7"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -256,26 +256,26 @@ function GrowthSculpture() {
       </g>
 
       <g className={styles.growthPie} filter="url(#growthShadow)">
-        <circle cx="704" cy="706" r="176" fill="#003c38" opacity="0.78" transform="translate(18 18)" />
-        <circle cx="704" cy="706" r="176" fill="url(#growthDark)" stroke="#75f5df" strokeWidth="8" />
+        <circle cx="704" cy="706" r="176" fill="#121519" opacity="0.78" transform="translate(18 18)" />
+        <circle cx="704" cy="706" r="176" fill="url(#growthDark)" stroke="#49C5B6" strokeWidth="8" />
         <path
           d="M704 706 817 571A176 176 0 0 1 876 743Z"
-          fill="#8df5df"
-          stroke="#75f5df"
+          fill="#49C5B6"
+          stroke="#49C5B6"
           strokeWidth="8"
           strokeLinejoin="round"
         />
         <path
           d="M704 706 869 766A176 176 0 0 1 797 855Z"
-          fill="#21c7b8"
-          stroke="#75f5df"
+          fill="#178F82"
+          stroke="#49C5B6"
           strokeWidth="8"
           strokeLinejoin="round"
         />
         <path
           d="M704 706 817 571M704 706 876 743M704 706 869 766M704 706 797 855"
           fill="none"
-          stroke="#050d0d"
+          stroke="#121519"
           strokeOpacity="0.5"
           strokeWidth="7"
           strokeLinecap="round"
@@ -283,7 +283,7 @@ function GrowthSculpture() {
         <path
           d="M585 578A172 172 0 0 1 724 536"
           fill="none"
-          stroke="#d5fff2"
+          stroke="#EEF6F5"
           strokeOpacity="0.62"
           strokeWidth="7"
           strokeLinecap="round"

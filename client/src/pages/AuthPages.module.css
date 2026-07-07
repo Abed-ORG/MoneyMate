@@ -1,7 +1,7 @@
 .authPage {
   --auth-forest: var(--mm-accent);
   --auth-forest-dark: var(--mm-bg);
-  --auth-forest-soft: var(--mm-accent-soft);
+  --auth-forest-soft: var(--mm-accent);
   height: 100dvh;
   display: grid;
   place-items: center;
@@ -63,7 +63,7 @@
 
 .backLink:hover {
   border-color: rgba(var(--mm-accent-rgb), 0.24);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     0 0.4rem 1rem rgba(0, 0, 0, 0.18),
     0 0 0.85rem rgba(var(--mm-accent-rgb), 0.09);
@@ -226,7 +226,7 @@
 }
 
 .passwordStrengthFill.success {
-  background: #49c5b6;
+  background: var(--mm-accent);
 }
 
 .passwordStrengthLabel {
@@ -382,8 +382,8 @@
   margin-top: 0.7rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.42);
   border-radius: var(--mm-radius-sm);
-  background: linear-gradient(180deg, #49c5b6, #7fe1d4);
-  color: var(--mm-bg-deep);
+  background: linear-gradient(180deg, var(--mm-accent), var(--mm-accent-deep));
+  color: var(--mm-on-accent);
   box-shadow:
     0 0 0.35rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 1.8rem rgba(8, 22, 24, 0.28);
@@ -397,7 +397,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: linear-gradient(180deg, #5fd4c7, #9cf0e5);
+  background: linear-gradient(180deg, var(--mm-accent), var(--mm-accent));
   box-shadow:
     0 0 0.5rem rgba(var(--mm-accent-rgb), 0.13),
     0 0 2rem rgba(8, 22, 24, 0.32);
@@ -416,7 +416,7 @@
 }
 
 .switchText a {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 800;
   transition:
     color 160ms ease,
@@ -426,7 +426,7 @@
 .forgotLink {
   justify-self: end;
   margin-top: -0.35rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -465,7 +465,7 @@
   justify-self: center;
   border: 0;
   background: transparent;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   font-weight: 800;
   text-decoration: underline;

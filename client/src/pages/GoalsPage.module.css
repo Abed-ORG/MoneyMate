@@ -91,7 +91,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.4);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 700;
@@ -118,7 +118,7 @@
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.74rem;
   font-weight: 700;
 }
@@ -144,7 +144,7 @@
 
 .savedAmount {
   display: block;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 1rem;
   font-weight: 800;
   margin-top: 0.25rem;
@@ -202,7 +202,7 @@
 }
 
 .projectionText {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.4;
@@ -234,7 +234,7 @@
 }
 
 .progressRingValue {
-  stroke: #49c5b6;
+  stroke: var(--mm-accent);
   stroke-linecap: round;
 }
 
@@ -242,7 +242,7 @@
   position: absolute;
   font-size: 0.82rem;
   font-weight: 800;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 /* ─── Progress track ───────────────────────────────────── */
@@ -257,7 +257,7 @@
 .progressTrack span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #49c5b6 0%, #66d582 100%);
+  background: linear-gradient(90deg, var(--mm-accent) 0%, var(--mm-accent-deep) 100%);
   border-radius: inherit;
   transition: width 400ms ease;
 }
@@ -284,13 +284,13 @@
 }
 
 .milestoneActive {
-  border-color: rgba(73, 197, 182, 0.5);
-  background: rgba(73, 197, 182, 0.12);
-  color: #49c5b6;
+  border-color: rgba(var(--mm-accent-rgb), 0.5);
+  background: rgba(var(--mm-accent-rgb), 0.12);
+  color: var(--mm-accent);
 }
 
 .milestoneCelebrated {
-  box-shadow: 0 0 0.8rem rgba(73, 197, 182, 0.25), 0 0 0 1px rgba(73, 197, 182, 0.3) inset;
+  box-shadow: 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.25), 0 0 0 1px rgba(var(--mm-accent-rgb), 0.3) inset;
 }
 
 /* ─── Contribution history (collapsible) ────────────────── */
@@ -310,7 +310,7 @@
 }
 
 .historySummary:hover {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .historyList {
@@ -328,7 +328,7 @@
 }
 
 .historyItem strong {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.85rem;
 }
 
@@ -384,7 +384,7 @@
   border: 1px solid var(--mm-border-strong);
   border-radius: 50%;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0 2rem rgba(var(--mm-accent-rgb), 0.1);
 }
 
@@ -469,7 +469,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -519,7 +519,7 @@
 
 .actionMenu button:hover {
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transform: none;
 }
 

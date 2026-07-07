@@ -36,6 +36,6 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: var(--mm-bg-deep) !important;
+  color: var(--mm-on-accent) !important;
   box-shadow: var(--mm-shadow-glow);
 }

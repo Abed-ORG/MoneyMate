@@ -50,7 +50,7 @@
 }
 
 .kicker {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -273,7 +273,7 @@
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
   background: var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   transition:
     background 160ms ease,

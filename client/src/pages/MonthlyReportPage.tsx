@@ -112,7 +112,7 @@ export function MonthlyReportPage() {
         budget_id: index,
         category_id: index,
         category_name: item.category,
-        category_color: "#49c5b6",
+        category_color: "#49C5B6",
         budgeted_amount: budgeted,
         actual_spending: spent,
         remaining_amount: item.remaining,

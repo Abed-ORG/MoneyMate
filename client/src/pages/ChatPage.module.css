@@ -191,7 +191,7 @@
 .renameConversation:hover:not(:disabled) {
   border-color: rgba(var(--mm-accent-rgb), 0.26);
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .deleteConversation:hover:not(:disabled) {
@@ -235,7 +235,7 @@
 }
 
 .renameForm input:focus {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   outline: 0;
   box-shadow: 0 0 0 3px rgba(var(--mm-accent-rgb), 0.14);
 }
@@ -256,7 +256,7 @@
 .renameForm button:hover:not(:disabled) {
   border-color: rgba(var(--mm-accent-rgb), 0.22);
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .renameForm button svg {
@@ -368,7 +368,7 @@
 .widgetIconButton[aria-expanded="true"] {
   border-color: var(--mm-border-strong);
   background: var(--mm-control-hover-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transform: translateY(-1px);
 }
 
@@ -470,7 +470,7 @@
   background:
     radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.18), transparent 48%),
     linear-gradient(135deg, rgba(var(--mm-accent-rgb), 0.92), rgba(var(--mm-accent-rgb), 0.58));
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
   cursor: pointer;
   box-shadow:
     0 0 0.85rem rgba(var(--mm-accent-rgb), 0.2),
@@ -603,7 +603,7 @@
 .messageAction:hover {
   border-color: rgba(var(--mm-accent-rgb), 0.22);
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .inlineError {
@@ -665,7 +665,7 @@
   width: 0.42rem;
   height: 0.42rem;
   border-radius: 999px;
-  background: var(--mm-accent-soft);
+  background: var(--mm-accent);
   animation: bounce 1s infinite ease-in-out;
 }
 
@@ -819,7 +819,7 @@
   resize: none;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background: #06100e;
+  background: var(--mm-input-background);
   color: var(--mm-text);
   padding: 0.72rem 0.8rem;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
@@ -839,7 +839,7 @@
 }
 
 .inputRow textarea:focus {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   box-shadow:
     inset 0 0 0 1px rgba(var(--mm-accent-rgb), 0.12),
     0 0 0 3px rgba(var(--mm-accent-rgb), 0.14);

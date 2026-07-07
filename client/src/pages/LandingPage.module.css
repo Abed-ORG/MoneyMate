@@ -1,6 +1,6 @@
 .landing {
-  --neon: #49c5b6;
-  --neon-soft: #7fe1d4;
+  --neon: var(--mm-accent);
+  --neon-soft: var(--mm-accent);
   min-height: 100vh;
   overflow: clip;
   background:
@@ -72,7 +72,7 @@
 }
 
 .brand > span > span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .navigation {
@@ -92,7 +92,7 @@
 
 .navigation a:hover,
 .loginLink:hover {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   text-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.14);
 }
 
@@ -122,9 +122,9 @@
 .primaryCta {
   min-width: 8rem;
   padding: 0.85rem 1.25rem;
-  border: 1px solid rgba(73, 197, 182, 0.15);
-  background: linear-gradient(135deg, #49c5b6, #7fe1d4);
-  color: var(--mm-bg-deep);
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.15);
+  background: linear-gradient(135deg, var(--mm-accent), var(--mm-accent-deep));
+  color: var(--mm-on-accent);
   box-shadow:
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.12),
     0 0 1.8rem rgba(8, 20, 21, 0.35);
@@ -133,7 +133,7 @@
 .signupButton:hover,
 .primaryCta:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #5fd4c7, #9cf0e5);
+  background: linear-gradient(135deg, var(--mm-accent), var(--mm-accent));
   box-shadow:
     0 0 1rem rgba(var(--mm-accent-rgb), 0.18),
     0 0 2rem rgba(8, 20, 21, 0.32);
@@ -150,9 +150,9 @@
 
 .secondaryCta:hover {
   transform: translateY(-1px);
-  border-color: rgba(73, 197, 182, 0.3);
+  border-color: rgba(var(--mm-accent-rgb), 0.3);
   background: rgba(255, 255, 255, 0.08);
-  color: #eef4f7;
+  color: var(--mm-text);
 }
 
 .hero {
@@ -175,7 +175,7 @@
 .kicker,
 .sectionLabel {
   margin: 0 0 1rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -190,7 +190,7 @@
 }
 
 .hero h1 span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   text-shadow: 0 0 0.55rem rgba(var(--mm-accent-rgb), 0.12);
 }
 
@@ -247,7 +247,7 @@
   height: 3.45rem;
   margin-left: -0.6rem;
   overflow: hidden;
-  border: 1px solid rgba(73, 197, 182, 0.4);
+  border: 1px solid rgba(var(--mm-accent-rgb), 0.4);
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(var(--mm-accent-rgb), 0.06), rgba(0, 32, 24, 0.9));
   box-shadow: 0 0 0.9rem rgba(var(--mm-accent-rgb), 0.06);
@@ -491,12 +491,12 @@
 }
 
 .aboutSection h2 span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   text-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
 .featureHeading h2 span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   text-shadow: 0 0 0.75rem rgba(var(--mm-accent-rgb), 0.07);
 }
 
@@ -577,7 +577,7 @@
   box-shadow:
     inset 0 0 1rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 1rem rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .featureIcon svg {
@@ -619,7 +619,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.16);
   border-radius: 50%;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transition:
     color 180ms ease,
     background 180ms ease,
@@ -770,7 +770,7 @@
   box-shadow:
     inset 0 0 1rem rgba(var(--mm-accent-rgb), 0.08),
     0 0 1.2rem rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   transition:
     box-shadow 220ms ease,
     transform 220ms ease;
@@ -838,7 +838,7 @@
 
 .faqItem summary::after {
   content: "+";
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 1.4rem;
   line-height: 1;
 }
@@ -1158,7 +1158,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.18);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.08);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 800;
   white-space: nowrap;
   transition:
@@ -1196,7 +1196,7 @@
 
 .footerColumn h3 {
   margin: 0 0 0.35rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -1217,7 +1217,7 @@
 
 .footerColumn a:hover,
 .footerDisabledLink:hover {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .footer .brand {

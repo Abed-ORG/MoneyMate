@@ -448,7 +448,7 @@ export function BudgetAllocationDonut({
     .map((budget) => ({
       name: budget.category_name,
       value: toNumber(budget.budgeted_amount),
-      color: budget.category_color || "#49c5b6",
+      color: budget.category_color || "var(--mm-accent)",
     }))
     .filter((item) => item.value > 0);
   const total = data.reduce((sum, item) => sum + item.value, 0);

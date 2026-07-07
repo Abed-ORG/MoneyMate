@@ -41,7 +41,7 @@
   box-shadow:
     0 0 1.4rem rgba(var(--mm-accent-rgb), 0.055),
     0 1.2rem 2.8rem rgba(0, 0, 0, 0.28),
-    inset 0 0 2.6rem rgba(73, 197, 182, 0.1);
+    inset 0 0 2.6rem rgba(var(--mm-accent-rgb), 0.1);
   isolation: isolate;
 }
 
@@ -49,7 +49,7 @@
   position: absolute;
   inset: auto 5% -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--mm-accent-soft), transparent);
+  background: linear-gradient(90deg, transparent, var(--mm-accent), transparent);
   box-shadow:
     0 0 0.45rem rgba(var(--mm-accent-rgb), 0.28),
     0 0 1rem rgba(var(--mm-accent-rgb), 0.12);
@@ -101,7 +101,7 @@
 }
 
 .cardBrand strong span {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .contactless {
@@ -151,7 +151,7 @@
   background:
     radial-gradient(circle at 35% 30%, rgba(var(--mm-accent-rgb), 0.12), transparent 65%),
     rgba(6, 22, 19, 0.86);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     inset 0 0 1rem rgba(var(--mm-accent-rgb), 0.045),
     0 0 0.8rem rgba(var(--mm-accent-rgb), 0.1);
@@ -173,10 +173,10 @@
   width: 1.5rem;
   height: 1.5rem;
   place-items: center;
-  border: 1px solid var(--mm-accent-soft);
+  border: 1px solid var(--mm-accent);
   border-radius: 50%;
   background: #061411;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   line-height: 0;
   padding: 0;
@@ -189,7 +189,7 @@
 
 .avatarEdit:hover {
   background: var(--mm-accent);
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
   transform: translateY(-1px);
 }
 
@@ -399,7 +399,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.16);
   border-radius: var(--mm-radius-sm);
   background: rgba(var(--mm-accent-rgb), 0.045);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: inset 0 0 0.8rem rgba(var(--mm-accent-rgb), 0.025);
 }
 
@@ -562,7 +562,7 @@
   background:
     radial-gradient(circle at 35% 25%, rgba(var(--mm-accent-rgb), 0.18), transparent 54%),
     var(--mm-control-background);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .categoryIcon svg {
@@ -571,9 +571,9 @@
 }
 
 .category:has(input:checked) .categoryCheck {
-  border-color: var(--mm-accent-soft);
+  border-color: var(--mm-accent);
   background: var(--mm-accent);
-  color: var(--mm-bg-deep);
+  color: var(--mm-on-accent);
   box-shadow: 0 0 0.5rem rgba(var(--mm-accent-rgb), 0.18);
 }
 

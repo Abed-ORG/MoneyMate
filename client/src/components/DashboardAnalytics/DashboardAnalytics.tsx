@@ -744,7 +744,7 @@ export function IncomeExpenseChart({ data, isLoading, error }: AnalyticsProps) {
               margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
             >
               <CartesianGrid
-                stroke="rgba(127, 225, 212, 0.22)"
+                stroke="rgba(var(--mm-accent-rgb), 0.22)"
                 strokeDasharray="4 4"
                 vertical={false}
               />
@@ -765,7 +765,7 @@ export function IncomeExpenseChart({ data, isLoading, error }: AnalyticsProps) {
               <Tooltip
                 content={<FlowTooltip currency={data.currency} />}
                 contentStyle={tooltipStyle}
-                cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                cursor={{ fill: "rgba(var(--mm-accent-rgb), 0.055)" }}
                 wrapperStyle={{ outline: "none" }}
               />
               <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
@@ -863,7 +863,7 @@ export function SpendingTrendChart({ data, isLoading, error }: AnalyticsProps) {
               margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
             >
               <CartesianGrid
-                stroke="rgba(127, 225, 212, 0.22)"
+                stroke="rgba(var(--mm-accent-rgb), 0.22)"
                 strokeDasharray="4 4"
                 vertical={false}
               />
@@ -899,7 +899,7 @@ export function SpendingTrendChart({ data, isLoading, error }: AnalyticsProps) {
                 dataKey="movingAverageValue"
                 dot={false}
                 name="Moving average"
-                stroke="#7fe1d4"
+                stroke="var(--mm-accent)"
                 strokeDasharray="5 5"
                 strokeWidth={2.5}
                 type="monotone"

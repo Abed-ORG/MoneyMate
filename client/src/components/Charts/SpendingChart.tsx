@@ -23,7 +23,7 @@ export function SpendingChart() {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={spendingData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
           <CartesianGrid
-            stroke="rgba(73, 197, 182, 0.22)"
+            stroke="rgba(var(--mm-accent-rgb), 0.22)"
             strokeDasharray="4 4"
             vertical={false}
           />
@@ -47,7 +47,7 @@ export function SpendingChart() {
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.32)",
               color: "var(--mm-text)",
             }}
-            cursor={{ fill: "rgba(73, 197, 182, 0.055)" }}
+            cursor={{ fill: "rgba(var(--mm-accent-rgb), 0.055)" }}
             labelStyle={{ color: "var(--mm-accent)", fontWeight: 800 }}
             formatter={(value, name) => {
               const amount = typeof value === "number" ? value : Number(value ?? 0);
@@ -58,8 +58,8 @@ export function SpendingChart() {
               ];
             }}
           />
-          <Bar dataKey="budget" fill="#17635c" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="spent" fill="#49c5b6" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="budget" fill="var(--mm-accent-deep)" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="spent" fill="var(--mm-accent)" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
