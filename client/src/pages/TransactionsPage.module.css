@@ -335,10 +335,18 @@
 }
 
 .categoryCell {
-  display: inline-grid;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
-  place-items: center;
   min-width: 0;
+}
+
+.categoryLabel {
+  color: var(--mm-text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selectAllLabel {
@@ -354,6 +362,7 @@
 
 .categoryIcon {
   display: inline-grid;
+  flex-shrink: 0;
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
@@ -432,15 +441,20 @@
 
 .table th:nth-child(3) {
   width: auto;
+  text-align: left;
+}
+
+.table td:nth-child(3) {
+  text-align: left;
 }
 
 .table th:nth-child(4) {
   width: 7rem;
-  text-align: center;
+  text-align: left;
 }
 
 .table td:nth-child(4) {
-  text-align: center;
+  text-align: left;
 }
 
 .table th:nth-child(5) {
@@ -511,6 +525,7 @@
 
 .customCategoryDot {
   display: inline-grid;
+  flex-shrink: 0;
   width: 2rem;
   height: 2rem;
   border: 1px solid rgba(248, 255, 249, 0.14);

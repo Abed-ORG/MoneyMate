@@ -1153,19 +1153,19 @@ export function TransactionsPage() {
                       <td>{formatDate(transaction.date)}</td>
                       <td>{transaction.vendor || "Unknown vendor"}</td>
                       <td>
-                        <span className={styles.categoryCell}>
-                          {categoryByName.get(transaction.category)?.is_default === false ? (
-                            <span
-                              className={styles.customCategoryDot}
-                              style={categoryIconStyle(transaction.category)}
-                            />
-                          ) : (
-                            <span className={styles.categoryIcon}>
-                              <CategoryIcon category={transaction.category} />
-                            </span>
-                          )}
-                          <span className={styles.visuallyHidden}>{transaction.category || "Uncategorized"}</span>
-                        </span>
+                          <span className={styles.categoryCell}>
+                            {categoryByName.get(transaction.category)?.is_default === false ? (
+                              <span
+                                className={styles.customCategoryDot}
+                                style={categoryIconStyle(transaction.category)}
+                              />
+                            ) : (
+                              <span className={styles.categoryIcon}>
+                                <CategoryIcon category={transaction.category} />
+                              </span>
+                            )}
+                            <span className={styles.categoryLabel}>{transaction.category || "Uncategorized"}</span>
+                          </span>
                       </td>
                       <td className={styles.notesCell} title={transaction.notes || undefined}>
                         <span>{transaction.notes || "-"}</span>
