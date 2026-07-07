@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { clearApiCache } from "../services/api";
 import { api } from "../services/api";
 import {
   clearAuthSession,
@@ -139,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post<void>("/auth/logout", { refresh_token: refreshToken });
     } finally {
       clearAuthSession();
+      clearApiCache();
       setUser(null);
       setProfile(null);
     }

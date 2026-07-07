@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { memo, type FormEvent, useEffect, useMemo, useState } from "react";
 import { Button, Card, FormField, Input, Modal, Select } from "../components";
 import {
   DashboardFilters,
@@ -119,6 +119,109 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
   return debounced;
 }
+
+const InsightSection = memo(function InsightSection({
+  spendingStatus,
+  recurringStatus,
+  anomaliesStatus,
+  monthlyStatus,
+}: {
+  spendingStatus: Status<SpendingInsightResponse>;
+  recurringStatus: Status<RecurringDetectionResponse>;
+  anomaliesStatus: Status<AnomalyDetectionResponse>;
+  monthlyStatus: Status<MonthlySummaryResponse>;
+}) {
+  return (
+    <Card className={styles.insightCard}>
+      <div>
+        <p className={styles.kicker}>AI insights</p>
+        <h3>Financial signals</h3>
+      </div>
+
+      {spendingStatus.state === "loading" && (
+        <div role="status" aria-label="Loading spending insights">
+          <MoneyMateLoader className={styles.insightLoader} />
+        </div>
+      )}
+      {spendingStatus.state === "error" && (
+        <p className={styles.statusError}>
+          {spendingStatus.error} Add a few transactions or try again shortly.
+        </p>
+      )}
+      {spendingStatus.state === "success" && <p>{spendingStatus.data.summary}</p>}
+
+      <div className={styles.insightList}>
+        <div>
+          <strong>Recurring charges</strong>
+          {recurringStatus.state === "loading" && (
+            <span className={styles.statusLoading}>Checking...</span>
+          )}
+          {recurringStatus.state === "error" && (
+            <span className={styles.statusError}>{recurringStatus.error}</span>
+          )}
+          {recurringStatus.state === "success" && (
+            <span>
+              {recurringStatus.data.recurring?.length
+                ? `${recurringStatus.data.recurring.length} subscription(s) detected`
+                : "No recurring pattern yet"}
+            </span>
+          )}
+        </div>
+        <div>
+          <strong>Anomalies</strong>
+          {anomaliesStatus.state === "loading" && (
+            <span className={styles.statusLoading}>Checking...</span>
+          )}
+          {anomaliesStatus.state === "error" && (
+            <span className={styles.statusError}>{anomaliesStatus.error}</span>
+          )}
+          {anomaliesStatus.state === "success" && (
+            <span>
+              {anomaliesStatus.data.anomalies?.length
+                ? `${anomaliesStatus.data.anomalies.length} unusual transaction(s)`
+                : "Nothing unusual flagged"}
+            </span>
+          )}
+        </div>
+        <div>
+          <strong>Top category</strong>
+          {spendingStatus.state === "loading" && (
+            <span className={styles.statusLoading}>Checking...</span>
+          )}
+          {spendingStatus.state === "error" && (
+            <span className={styles.statusError}>Not available yet</span>
+          )}
+          {spendingStatus.state === "success" && (
+            <span>{spendingStatus.data.top_category}</span>
+          )}
+        </div>
+      </div>
+
+      {monthlyStatus.state === "loading" && (
+        <div className={styles.monthlySummary}>
+          <strong>Monthly summary</strong>
+          <div role="status" aria-label="Loading monthly summary">
+            <MoneyMateLoader className={styles.insightLoader} />
+          </div>
+        </div>
+      )}
+      {monthlyStatus.state === "error" && (
+        <div className={styles.monthlySummary}>
+          <strong>Monthly summary</strong>
+          <p className={styles.statusError}>
+            {monthlyStatus.error} Your charts above are still based on saved data.
+          </p>
+        </div>
+      )}
+      {monthlyStatus.state === "success" && (
+        <div className={styles.monthlySummary}>
+          <strong>Monthly summary</strong>
+          <p>{monthlyStatus.data.summary}</p>
+        </div>
+      )}
+    </Card>
+  );
+});
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -438,94 +541,12 @@ export function DashboardPage() {
         />
       </div>
 
-      <Card className={styles.insightCard}>
-        <div>
-          <p className={styles.kicker}>AI insights</p>
-          <h3>Financial signals</h3>
-        </div>
-
-        {spendingStatus.state === "loading" && (
-          <div role="status" aria-label="Loading spending insights">
-            <MoneyMateLoader className={styles.insightLoader} />
-          </div>
-        )}
-        {spendingStatus.state === "error" && (
-          <p className={styles.statusError}>
-            {spendingStatus.error} Add a few transactions or try again shortly.
-          </p>
-        )}
-        {spendingStatus.state === "success" && <p>{spendingStatus.data.summary}</p>}
-
-        <div className={styles.insightList}>
-          <div>
-            <strong>Recurring charges</strong>
-            {recurringStatus.state === "loading" && (
-              <span className={styles.statusLoading}>Checking...</span>
-            )}
-            {recurringStatus.state === "error" && (
-              <span className={styles.statusError}>{recurringStatus.error}</span>
-            )}
-            {recurringStatus.state === "success" && (
-              <span>
-                {recurringStatus.data.recurring?.length
-                  ? `${recurringStatus.data.recurring.length} subscription(s) detected`
-                  : "No recurring pattern yet"}
-              </span>
-            )}
-          </div>
-          <div>
-            <strong>Anomalies</strong>
-            {anomaliesStatus.state === "loading" && (
-              <span className={styles.statusLoading}>Checking...</span>
-            )}
-            {anomaliesStatus.state === "error" && (
-              <span className={styles.statusError}>{anomaliesStatus.error}</span>
-            )}
-            {anomaliesStatus.state === "success" && (
-              <span>
-                {anomaliesStatus.data.anomalies?.length
-                  ? `${anomaliesStatus.data.anomalies.length} unusual transaction(s)`
-                  : "Nothing unusual flagged"}
-              </span>
-            )}
-          </div>
-          <div>
-            <strong>Top category</strong>
-            {spendingStatus.state === "loading" && (
-              <span className={styles.statusLoading}>Checking...</span>
-            )}
-            {spendingStatus.state === "error" && (
-              <span className={styles.statusError}>Not available yet</span>
-            )}
-            {spendingStatus.state === "success" && (
-              <span>{spendingStatus.data.top_category}</span>
-            )}
-          </div>
-        </div>
-
-        {monthlyStatus.state === "loading" && (
-          <div className={styles.monthlySummary}>
-            <strong>Monthly summary</strong>
-            <div role="status" aria-label="Loading monthly summary">
-              <MoneyMateLoader className={styles.insightLoader} />
-            </div>
-          </div>
-        )}
-        {monthlyStatus.state === "error" && (
-          <div className={styles.monthlySummary}>
-            <strong>Monthly summary</strong>
-            <p className={styles.statusError}>
-              {monthlyStatus.error} Your charts above are still based on saved data.
-            </p>
-          </div>
-        )}
-        {monthlyStatus.state === "success" && (
-          <div className={styles.monthlySummary}>
-            <strong>Monthly summary</strong>
-            <p>{monthlyStatus.data.summary}</p>
-          </div>
-        )}
-      </Card>
+      <InsightSection
+        spendingStatus={spendingStatus}
+        recurringStatus={recurringStatus}
+        anomaliesStatus={anomaliesStatus}
+        monthlyStatus={monthlyStatus}
+      />
 
       <Modal
         bodyClassName={styles.quickAddModalBody}

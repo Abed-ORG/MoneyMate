@@ -747,7 +747,7 @@ export function SettingsPage() {
                         options={currencyOptions}
                         searchable
                         searchPlaceholder="Search currency..."
-                        onChange={(event) => setCurrency(event.target.value)}
+                        onValueChange={(value) => setCurrency(value)}
                         value={currency}
                       />
                     </FormField>

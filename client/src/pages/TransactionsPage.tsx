@@ -461,12 +461,18 @@ export function TransactionsPage() {
     ],
     [categoryNames],
   );
-  const expenses = transactions
-    .filter((transaction) => Number(transaction.amount) < 0)
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-  const income = transactions
-    .filter((transaction) => Number(transaction.amount) > 0)
-    .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+  const expenses = useMemo(
+    () => transactions
+      .filter((transaction) => Number(transaction.amount) < 0)
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+    [transactions]
+  );
+  const income = useMemo(
+    () => transactions
+      .filter((transaction) => Number(transaction.amount) > 0)
+      .reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+    [transactions]
+  );
   const selectedCount = selectedTransactionIds.length;
   const allVisibleSelected =
     transactions.length > 0 &&
@@ -1157,6 +1163,7 @@ export function TransactionsPage() {
 
   return (
     <section className={styles.page}>
+      <TransactionStats transactions={transactions} />
       <div className={styles.actionBar}>
         <Button variant="secondary" onClick={openImportModal}>
           <CloudUploadIcon />

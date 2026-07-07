@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from decimal import Decimal
 import os
 
 from fastapi import FastAPI
@@ -32,7 +33,11 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="MoneyMate API", lifespan=lifespan)
+app = FastAPI(
+    title="MoneyMate API",
+    lifespan=lifespan,
+    json_encoders={Decimal: lambda value: float(value)},
+)
 
 # CORS
 
