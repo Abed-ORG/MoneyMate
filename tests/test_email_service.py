@@ -2,7 +2,7 @@ import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
 
-from app.services import email_service
+from app.services import email_service  # noqa: E402
 
 
 class DummySMTP:
