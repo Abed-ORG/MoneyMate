@@ -77,6 +77,7 @@ For the current authentication, password recovery, and shared PostgreSQL setup, 
 5. Set up environment variables:
    - Copy `.env.example` to `.env` in the backend root
    - Fill in your PostgreSQL or Neon `DATABASE_URL`, JWT secret, and email settings
+   - For the free email setup, use a Gmail account with a Google app password and set `EMAIL_PROVIDER=smtp`
    - For Render deployment, set `CORS_ALLOW_ORIGINS` to the Vercel frontend URL and
      `FRONTEND_URL` to the same public site URL
    - Copy `client/.env.example` to `client/.env` and set `VITE_API_URL` to your
@@ -101,6 +102,11 @@ For the current authentication, password recovery, and shared PostgreSQL setup, 
 
    The frontend talks to `http://127.0.0.1:8000` by default if
    `VITE_API_URL` is not set.
+
+8. Optional email smoke test:
+   ```bash
+   python scripts/send_test_email.py your-own-recipient@example.com
+   ```
 
 ## Deployment Notes
 

@@ -18,10 +18,20 @@ FRONTEND_URL=http://localhost:5173
 CORS_ALLOW_ORIGINS=http://localhost:5173
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=30
 
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=re_replace_with_your_resend_api_key
-EMAIL_FROM_ADDRESS=onboarding@resend.dev
+EMAIL_PROVIDER=smtp
+EMAIL_FROM_ADDRESS=your_app_email@gmail.com
 EMAIL_FROM_NAME=MoneyMate
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_app_email@gmail.com
+SMTP_PASSWORD=replace_with_your_google_app_password
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+SMTP_TIMEOUT_SECONDS=20
+
+# Optional only if the team prefers Resend instead of Gmail.
+RESEND_API_KEY=re_replace_with_your_resend_api_key
 ```
 
 `DATABASE_URL`, `SECRET_KEY`, and email credentials are private. Teammates may
@@ -29,14 +39,31 @@ use the same shared development `DATABASE_URL`, but each person should receive
 it through a private team password manager or another approved private channel.
 Do not send it in Git or commit it.
 
-Signup does not require email verification. Newly registered users are created
-as verified and can log in immediately. Email credentials are still used for
-password reset links.
+Signup currently does not require email verification. Newly registered users
+are created as verified and can log in immediately. Email credentials are used
+for password reset links and any future transactional emails.
 
 The team must use the same `SECRET_KEY` only when backend instances need to
 accept one another's JWTs. Separate development and production secrets.
 
-## 2. Resend setup (recommended)
+## 2. Gmail setup (recommended free option)
+
+1. Enable two-step verification on the Gmail account you want MoneyMate to use.
+2. In Google Account security, create an app password for MoneyMate.
+3. Do not use the normal Gmail password in `.env`.
+4. Set `EMAIL_PROVIDER=smtp` and keep the SMTP values shown above.
+5. Use the same Gmail address for `SMTP_USERNAME` and `EMAIL_FROM_ADDRESS`.
+6. Install backend dependencies with `pip install -r requirements.txt`.
+7. Send a real test email before relying on forgot-password:
+
+```powershell
+python scripts/send_test_email.py your-own-recipient@example.com
+```
+
+If that succeeds, the forgot-password flow should be able to send through the
+same Gmail account.
+
+## 3. Resend setup (optional alternative)
 
 1. Sign in to Resend with the team email account.
 2. Open **API Keys**, create a sending-access key, and copy it immediately.
@@ -48,26 +75,6 @@ accept one another's JWTs. Separate development and production secrets.
    `EMAIL_FROM_ADDRESS` with an address on that domain.
 6. Install backend dependencies with `pip install -r requirements.txt`.
 
-## 3. Gmail app-password alternative
-
-Use this only if the team chooses SMTP instead of Resend.
-
-1. Enable two-step verification on the dedicated Gmail account.
-2. In Google Account security, create an app password for MoneyMate.
-3. Do not use the normal Gmail password.
-4. In the root `.env`, set:
-
-```env
-EMAIL_PROVIDER=smtp
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your_app_email@gmail.com
-SMTP_PASSWORD=replace_with_your_google_app_password
-SMTP_FROM_EMAIL=your_app_email@gmail.com
-SMTP_FROM_NAME=MoneyMate
-SMTP_USE_TLS=true
-```
-
 The backend reads these values at send time. Test with a team-owned recipient
 first, then remove test accounts and links from shared screenshots.
 
@@ -77,7 +84,7 @@ Create `C:\Users\HP\Downloads\MoneyMate\client\.env` by copying
 `client\.env.example`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
 ```
 
 This URL is not a secret. It can differ by teammate if someone runs the API on
@@ -128,6 +135,12 @@ In a second terminal:
 cd client
 npm install
 npm run dev
+```
+
+Optional email smoke test:
+
+```powershell
+python scripts/send_test_email.py your-own-recipient@example.com
 ```
 
 ## 7. Manual test checklist
