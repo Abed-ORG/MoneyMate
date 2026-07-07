@@ -1452,7 +1452,7 @@ export function TransactionsPage() {
                             aria-label="Open transaction actions"
                             onClick={(event) => {
                               event.stopPropagation();
-                              openActionMenu(transaction);
+                              openActionMenu(transaction, event);
                             }}
                           >
                             <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -1468,11 +1468,11 @@ export function TransactionsPage() {
                               <button type="button" onClick={() => void openAiReviewFromMenu(transaction)}>Recategorize with AI</button>
                               <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(transaction)}>Delete</button>
                             </div>
-                          )}
+                          ) : null}
+                          </div>
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))}
                 </tbody>
               </table>
             </div>
