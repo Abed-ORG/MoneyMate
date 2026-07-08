@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.models  # noqa: F401
+import app.services.analytics_service as analytics_service
 from app.auth.services import create_user
 from app.db import Base
 from app.dependencies import get_db
@@ -23,6 +24,7 @@ from app.services.analytics_service import (
     previous_equivalent_period,
     trend_points,
 )
+from app.services.income_service import record_monthly_income
 
 
 def make_client():
@@ -173,6 +175,12 @@ def test_moving_average_and_daily_weekly_gap_filling():
 
 
 def test_dashboard_analytics_endpoint_filters_and_aggregates(monkeypatch):
+    class FrozenDate(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 1, 31)
+
+    monkeypatch.setattr(analytics_service, "date", FrozenDate)
     client, session = make_client()
     try:
         user, headers = create_account(
@@ -264,8 +272,8 @@ def test_dashboard_analytics_endpoint_filters_and_aggregates(monkeypatch):
         assert spending[0]["color"] == "#22c55e"
 
         months = data["monthly_income_expenses"]
-        assert [item["month"] for item in months] == ["2025-12", "2026-01"]
-        assert Decimal(str(months[1]["expenses"])) == Decimal("250.00")
+        assert [item["month"] for item in months] == ["2026-01"]
+        assert Decimal(str(months[0]["expenses"])) == Decimal("250.00")
 
         trend = data["spending_trend"]
         assert len(trend) == 31
@@ -312,6 +320,116 @@ def test_dashboard_analytics_endpoint_filters_and_aggregates(monkeypatch):
         assert Decimal(str(account_expenses)) == (
             Decimal("50.00")
         )
+    finally:
+        app.dependency_overrides.clear()
+        session.close()
+
+
+def test_dashboard_income_expense_chart_uses_current_year_unfiltered_months(
+    monkeypatch,
+):
+    class FrozenDate(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 3, 15)
+
+    monkeypatch.setattr(analytics_service, "date", FrozenDate)
+    client, session = make_client()
+    try:
+        user, headers = create_account(
+            session,
+            client,
+            "analytics-monthly@example.com",
+        )
+        other_user, _ = create_account(
+            session,
+            client,
+            "other-analytics-monthly@example.com",
+        )
+        cash = add_account(session, user.id, "Cash")
+        card = add_account(session, user.id, "Card")
+        other_cash = add_account(session, other_user.id, "Other Cash")
+        food = add_category(session, user.id, "Food", "#22c55e")
+        travel = add_category(session, user.id, "Travel", "#38bdf8")
+        income = add_category(session, user.id, "Income", "#49c5b6")
+
+        record_monthly_income(
+            session,
+            user.id,
+            Decimal("1000.00"),
+            date(2026, 1, 1),
+        )
+        add_transaction(
+            session,
+            cash,
+            "100.00",
+            datetime(2026, 1, 5, tzinfo=timezone.utc),
+            income,
+        )
+        add_transaction(
+            session,
+            cash,
+            "-30.00",
+            datetime(2026, 1, 20, tzinfo=timezone.utc),
+            food,
+        )
+        add_transaction(
+            session,
+            cash,
+            "200.00",
+            datetime(2026, 2, 7, tzinfo=timezone.utc),
+            income,
+        )
+        add_transaction(
+            session,
+            cash,
+            "-40.00",
+            datetime(2026, 2, 21, tzinfo=timezone.utc),
+            travel,
+        )
+        add_transaction(
+            session,
+            cash,
+            "999.00",
+            datetime(2026, 4, 1, tzinfo=timezone.utc),
+            income,
+        )
+        add_transaction(
+            session,
+            other_cash,
+            "777.00",
+            datetime(2026, 2, 1, tzinfo=timezone.utc),
+            None,
+        )
+        session.commit()
+
+        response = client.get(
+            "/analytics/dashboard?start_date=2026-01-15&"
+            f"end_date=2026-01-15&category_ids={food.id}&"
+            f"account_ids={card.id}&months=12",
+            headers=headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        months = data["monthly_income_expenses"]
+        assert [item["month"] for item in months] == [
+            "2026-01",
+            "2026-02",
+            "2026-03",
+        ]
+        assert Decimal(str(months[0]["income"])) == Decimal("1100.00")
+        assert Decimal(str(months[0]["expenses"])) == Decimal("30.00")
+        assert Decimal(str(months[1]["income"])) == Decimal("1200.00")
+        assert Decimal(str(months[1]["expenses"])) == Decimal("40.00")
+        assert Decimal(str(months[2]["income"])) == Decimal("1000.00")
+        assert Decimal(str(data["summary"]["current"]["total_income"])) == (
+            Decimal("1000.00")
+        )
+        assert Decimal(str(data["summary"]["current"]["total_expenses"])) == (
+            Decimal("0.00")
+        )
+        assert data["spending_by_category"] == []
     finally:
         app.dependency_overrides.clear()
         session.close()
