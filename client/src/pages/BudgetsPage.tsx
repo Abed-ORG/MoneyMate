@@ -93,6 +93,10 @@ export function BudgetsPage() {
     statuses: [],
     categoryIds: [],
   });
+  const [draftBudgetFilters, setDraftBudgetFilters] = useState<BudgetFilters>({
+    statuses: [],
+    categoryIds: [],
+  });
   const shownAlerts = useRef<Set<string>>(new Set());
 
   const currency = overview?.currency ?? profile?.currency ?? "USD";
@@ -116,6 +120,8 @@ export function BudgetsPage() {
     });
   }, [budgetFilters, overview?.budgets]);
   const activeBudgetFilterCount = budgetFilters.statuses.length + budgetFilters.categoryIds.length;
+  const draftBudgetFilterCount =
+    draftBudgetFilters.statuses.length + draftBudgetFilters.categoryIds.length;
 
   const loadBudgetData = useCallback(async () => {
     setIsLoading(true);
@@ -285,10 +291,16 @@ export function BudgetsPage() {
     setMonth(nextMonth);
     setYear(nextYear);
     setBudgetFilters({ statuses: [], categoryIds: [] });
+    setDraftBudgetFilters({ statuses: [], categoryIds: [] });
+  };
+
+  const openFiltersModal = () => {
+    setDraftBudgetFilters(budgetFilters);
+    setIsFiltersOpen(true);
   };
 
   const toggleStatusFilter = (status: BudgetStatus) => {
-    setBudgetFilters((current) => ({
+    setDraftBudgetFilters((current) => ({
       ...current,
       statuses: current.statuses.includes(status)
         ? current.statuses.filter((item) => item !== status)
@@ -297,7 +309,7 @@ export function BudgetsPage() {
   };
 
   const toggleCategoryFilter = (categoryId: number) => {
-    setBudgetFilters((current) => ({
+    setDraftBudgetFilters((current) => ({
       ...current,
       categoryIds: current.categoryIds.includes(categoryId)
         ? current.categoryIds.filter((item) => item !== categoryId)
@@ -306,7 +318,13 @@ export function BudgetsPage() {
   };
 
   const resetBudgetFilters = () => {
+    setDraftBudgetFilters({ statuses: [], categoryIds: [] });
     setBudgetFilters({ statuses: [], categoryIds: [] });
+  };
+
+  const applyBudgetFilters = () => {
+    setBudgetFilters(draftBudgetFilters);
+    setIsFiltersOpen(false);
   };
 
   const hasBudgets = Boolean(overview?.budgets.length);
@@ -389,7 +407,7 @@ export function BudgetsPage() {
                       </span>
                       <Button
                         className={activeBudgetFilterCount ? styles.filterButtonActive : ""}
-                        onClick={() => setIsFiltersOpen(true)}
+                        onClick={openFiltersModal}
                         variant="secondary"
                       >
                         <FilterIcon />
@@ -455,7 +473,7 @@ export function BudgetsPage() {
           <legend>Level</legend>
           <div className={styles.filterChecklist}>
             {budgetStatusOptions.map((option) => {
-              const isSelected = budgetFilters.statuses.includes(option.value);
+              const isSelected = draftBudgetFilters.statuses.includes(option.value);
               return (
                 <label className={styles.filterRow} key={option.value}>
                   <input
@@ -478,7 +496,7 @@ export function BudgetsPage() {
           <legend>Category</legend>
           <div className={styles.filterChecklist}>
             {budgetCategoryOptions.map((category) => {
-              const isSelected = budgetFilters.categoryIds.includes(category.id);
+              const isSelected = draftBudgetFilters.categoryIds.includes(category.id);
               return (
                 <label className={styles.filterRow} key={category.id}>
                   <input
@@ -501,13 +519,13 @@ export function BudgetsPage() {
 
         <div className={styles.filterActions}>
           <Button
-            disabled={!activeBudgetFilterCount}
+            disabled={!draftBudgetFilterCount}
             onClick={resetBudgetFilters}
             variant="secondary"
           >
-            Reset Filters
+            Reset
           </Button>
-          <Button onClick={() => setIsFiltersOpen(false)}>Apply</Button>
+          <Button onClick={applyBudgetFilters}>Apply</Button>
         </div>
       </Modal>
     </section>

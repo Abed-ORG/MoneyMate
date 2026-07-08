@@ -95,8 +95,17 @@ export const goalsApi = {
     try {
       await api.delete<void>(`/goals/${id}`);
       saveLocalGoals(readLocalGoals().filter((goal) => goal.id !== id));
-    } catch {
-      saveLocalGoals(readLocalGoals().filter((goal) => goal.id !== id));
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        (error.status === 0 || error.status === 404)
+      ) {
+        saveLocalGoals(readLocalGoals().filter((goal) => goal.id !== id));
+        return;
+      }
+      throw error;
     }
   },
   contribute: async (id: number, payload: GoalContributionPayload) => {
