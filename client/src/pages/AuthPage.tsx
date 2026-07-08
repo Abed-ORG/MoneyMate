@@ -9,6 +9,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getApiErrorMessage } from "../services/api";
 import { consumeAuthNotice } from "../utils/auth";
+import {
+  clearRememberedCredentials,
+  isRememberMeEnabled,
+  loadRememberedCredentials,
+  saveRememberedCredentials,
+} from "../utils/rememberMe";
 import styles from "./AuthPages.module.css";
 
 type AuthMode = "login" | "register";
@@ -39,7 +45,6 @@ type PasswordFieldProps = {
   onToggle: () => void;
 };
 
-const REMEMBERED_EMAIL_KEY = "moneymate_remembered_email";
 
 function EyeIcon({ visible }: { visible: boolean }) {
   return visible ? (
@@ -129,11 +134,12 @@ export function AuthPage({ initialMode }: AuthPageProps) {
   const { isLoading, login, register } = useAuth();
   const redirectState = location.state as RedirectState | null;
 
-  // On mount, restore remembered email if it exists.
+  // On mount, restore remembered credentials if they exist.
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
-    if (rememberedEmail) {
-      setLoginEmail(rememberedEmail);
+    const credentials = loadRememberedCredentials();
+    if (credentials && isRememberMeEnabled()) {
+      setLoginEmail(credentials.email);
+      setLoginPassword(credentials.password);
       setRememberMe(true);
     }
   }, []);
@@ -210,11 +216,11 @@ export function AuthPage({ initialMode }: AuthPageProps) {
     try {
       const profile = await login({ email, password });
 
-      // Persist or clear remembered email based on checkbox state.
+      // Persist or clear remembered credentials based on checkbox state.
       if (rememberMe) {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        saveRememberedCredentials(email, password);
       } else {
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        clearRememberedCredentials();
       }
 
       const destination =
