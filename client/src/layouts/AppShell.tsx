@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button, LoadingSpinner, Modal } from "../components";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,12 +11,17 @@ import type { Goal } from "../types/goal";
 import type { Transaction } from "../types/transaction";
 import { getPageTitle, protectedNavigation } from "../utils/navigation";
 import { formatDisplayDate } from "../utils/dateFormat";
-import { ChatPage } from "../pages/ChatPage";
 import {
   getProfileAvatar,
   subscribeToProfileAvatar,
 } from "../utils/profileAvatar";
 import styles from "./AppShell.module.css";
+
+const ChatPage = lazy(() =>
+  import("../pages/ChatPage").then((module) => ({
+    default: module.ChatPage,
+  })),
+);
 
 type ThemeMode = "dark" | "light";
 type SearchResult = {
@@ -611,7 +616,9 @@ export function AppShell() {
 
       {isAiChatOpen ? (
         <section className={styles.aiChatPopup} aria-label="MoneyMate AI chat">
-          <ChatPage mode="widget" onClose={() => setIsAiChatOpen(false)} />
+          <Suspense fallback={<LoadingSpinner label="Loading chat" />}>
+            <ChatPage mode="widget" onClose={() => setIsAiChatOpen(false)} />
+          </Suspense>
         </section>
       ) : null}
 

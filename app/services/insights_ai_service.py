@@ -88,6 +88,8 @@ def _fallback_spending_insights(
                 "Add transactions to "
                 "generate spending insights."
             ),
+            top_category="",
+            top_category_spend=Decimal("0"),
             provider="heuristic",
         )
 

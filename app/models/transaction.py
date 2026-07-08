@@ -6,6 +6,7 @@ from sqlalchemy import (
     Numeric,
     DateTime,
     Boolean,
+    Index,
     JSON,
     Text,
     func,
@@ -16,6 +17,10 @@ from app.db import Base
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        Index("ix_transactions_account_occurred_at", "account_id", "occurred_at"),
+        Index("ix_transactions_category_occurred_at", "category_id", "occurred_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)

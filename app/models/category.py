@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
 from app.db import Base
 
 
 class Category(Base):
     __tablename__ = "categories"
+    __table_args__ = (
+        Index("ix_categories_user_name", "user_id", "name"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

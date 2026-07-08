@@ -1,5 +1,6 @@
 from sqlalchemy import (
     Column,
+    Index,
     Integer,
     String,
     ForeignKey,
@@ -14,6 +15,9 @@ from app.db import Base
 
 class Goal(Base):
     __tablename__ = "goals"
+    __table_args__ = (
+        Index("ix_goals_user_active", "user_id", "is_active"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

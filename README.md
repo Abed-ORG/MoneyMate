@@ -118,6 +118,13 @@ The backend reads `DATABASE_URL` directly, so the Neon connection string should 
 set in Render environment variables. The frontend reads `VITE_API_URL`, which should
 point to the Render backend service URL.
 
+## Developer Documentation
+
+- [API reference](docs/API_REFERENCE.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Architecture overview](docs/ARCHITECTURE.md)
+- [QA and testing checklist](docs/QA_AND_TESTING.md)
+
 ## Git Workflow
 
 This project uses a **two-branch model** with `main` and `develop`.
