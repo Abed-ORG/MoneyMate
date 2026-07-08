@@ -21,6 +21,7 @@ import { formatCurrency } from "../Budgets/BudgetComponents";
 import { spendingCategories } from "../../constants/categories";
 import {
   dashboardRangePreset,
+  getDefaultDashboardFilters,
   useDashboardFilters,
   type DashboardFilters as DashboardFiltersState,
 } from "../../contexts/DashboardFiltersContext";
@@ -260,10 +261,13 @@ export function DashboardFilters({
   filtersMeta,
   isLoading,
 }: DashboardFiltersProps) {
-  const { filters, setFilters, resetFilters } = useDashboardFilters();
+  const { filters, setFilters } = useDashboardFilters();
   const [dateError, setDateError] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [quickRange, setQuickRangeValue] = useState("thisMonth");
+  const [draftFilters, setDraftFilters] =
+    useState<DashboardFiltersState>(filters);
+  const [draftQuickRange, setDraftQuickRange] = useState(quickRange);
   const categories = useMemo(
     () => buildCategoryOptions(filtersMeta?.categories ?? []),
     [filtersMeta],
@@ -272,8 +276,14 @@ export function DashboardFilters({
   const allCategoryIds = categories.map((category) => category.id);
   const allCategoriesSelected =
     allCategoryIds.length > 0 &&
-    allCategoryIds.every((id) => filters.categoryIds.includes(id));
+    allCategoryIds.every((id) => draftFilters.categoryIds.includes(id));
   const activeCategoryCount = filters.categoryIds.length;
+
+  const openFiltersModal = () => {
+    setDraftFilters(filters);
+    setDraftQuickRange(quickRange);
+    setIsFilterOpen(true);
+  };
 
   const updateDates = (field: "startDate" | "endDate", value: string) => {
     const next = { ...filters, [field]: value };
@@ -319,7 +329,7 @@ export function DashboardFilters({
           <Button
             className={activeCategoryCount ? styles.filterButtonActive : ""}
             disabled={disabled}
-            onClick={() => setIsFilterOpen(true)}
+            onClick={openFiltersModal}
             variant="secondary"
           >
             <FilterIcon />
@@ -351,10 +361,10 @@ export function DashboardFilters({
             id="dashboard-date-range"
             onValueChange={(value) => {
               setDateError("");
-              setQuickRangeValue(value);
+              setDraftQuickRange(value);
               setQuickRange(
                 value as Parameters<typeof setQuickRange>[0],
-                setFilters,
+                setDraftFilters,
               );
             }}
             options={[
@@ -362,7 +372,7 @@ export function DashboardFilters({
               { value: "last30", label: "Last 30 Days" },
               { value: "thisYear", label: "This Year" },
             ]}
-            value={quickRange}
+            value={draftQuickRange}
           />
         </div>
 
@@ -372,7 +382,7 @@ export function DashboardFilters({
             <input
               checked={allCategoriesSelected}
               onChange={() => {
-                setFilters((current) => ({
+                setDraftFilters((current) => ({
                   ...current,
                   categoryIds: allCategoriesSelected ? [] : allCategoryIds,
                 }));
@@ -391,13 +401,13 @@ export function DashboardFilters({
 
           <div className={styles.categoryChecklist}>
             {categories.map((category) => {
-              const isSelected = filters.categoryIds.includes(category.id);
+              const isSelected = draftFilters.categoryIds.includes(category.id);
               return (
                 <label className={styles.categoryFilterRow} key={category.id}>
                   <input
                     checked={isSelected}
                     onChange={() =>
-                      setFilters((current) => ({
+                      setDraftFilters((current) => ({
                         ...current,
                         categoryIds: toggleId(current.categoryIds, category.id),
                       }))
@@ -438,15 +448,26 @@ export function DashboardFilters({
             disabled={disabled}
             onClick={() => {
               setDateError("");
+              setDraftQuickRange("thisMonth");
+              const defaultFilters = getDefaultDashboardFilters();
+              setDraftFilters(defaultFilters);
               setQuickRangeValue("thisMonth");
-              resetFilters();
+              setFilters(defaultFilters);
             }}
             variant="secondary"
           >
             <FiRefreshCw aria-hidden="true" />
-            Reset Filters
+            Reset
           </Button>
-          <Button onClick={() => setIsFilterOpen(false)}>Apply</Button>
+          <Button
+            onClick={() => {
+              setQuickRangeValue(draftQuickRange);
+              setFilters(draftFilters);
+              setIsFilterOpen(false);
+            }}
+          >
+            Apply
+          </Button>
         </div>
       </Modal>
     </>

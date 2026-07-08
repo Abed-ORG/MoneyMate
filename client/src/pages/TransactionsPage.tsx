@@ -382,6 +382,10 @@ export function TransactionsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [datePreset, setDatePreset] = useState("custom");
   const [searchTerm, setSearchTerm] = useState("");
+  const [draftFilters, setDraftFilters] =
+    useState<TransactionListParams>(defaultFilters);
+  const [draftDatePreset, setDraftDatePreset] = useState("custom");
+  const [draftSearchTerm, setDraftSearchTerm] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -566,20 +570,12 @@ export function TransactionsPage() {
     };
   }, [actionMenuId]);
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setFilters((current) => ({
-        ...current,
-        page: 1,
-        search: searchTerm.trim() || undefined,
-      }));
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [searchTerm]);
-
   const updateFilter = (values: Partial<TransactionListParams>) => {
     setFilters((current) => ({ ...current, ...values, page: values.page ?? 1 }));
+  };
+
+  const updateDraftFilter = (values: Partial<TransactionListParams>) => {
+    setDraftFilters((current) => ({ ...current, ...values }));
   };
 
   const toggleTransactionSelection = (id: string) => {
@@ -659,15 +655,43 @@ export function TransactionsPage() {
     setIsImportOpen(false);
   };
 
+  const openFiltersModal = () => {
+    setDraftFilters(filters);
+    setDraftDatePreset(datePreset);
+    setDraftSearchTerm(searchTerm);
+    setIsFiltersOpen(true);
+  };
+
+  const resetDraftFilters = () => {
+    setDraftDatePreset("custom");
+    setDraftSearchTerm("");
+    setDraftFilters(defaultFilters);
+    setDatePreset("custom");
+    setSearchTerm("");
+    setFilters(defaultFilters);
+  };
+
+  const applyDraftFilters = () => {
+    const nextFilters = {
+      ...draftFilters,
+      page: 1,
+      search: draftSearchTerm.trim() || undefined,
+    };
+    setSearchTerm(draftSearchTerm);
+    setDatePreset(draftDatePreset);
+    setFilters(nextFilters);
+    setIsFiltersOpen(false);
+  };
+
   const applyDatePreset = (preset: "7" | "30" | "custom") => {
-    setDatePreset(preset);
+    setDraftDatePreset(preset);
     if (preset === "custom") {
       return;
     }
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - Number(preset));
-    updateFilter({
+    updateDraftFilter({
       dateFrom: start.toISOString().slice(0, 10),
       dateTo: end.toISOString().slice(0, 10),
     });
@@ -1226,7 +1250,7 @@ export function TransactionsPage() {
         <Button
           className={activeFilterCount ? styles.filterButtonActive : ""}
           variant="secondary"
-          onClick={() => setIsFiltersOpen(true)}
+          onClick={openFiltersModal}
         >
           <FilterIcon />
           Filters
@@ -1258,21 +1282,21 @@ export function TransactionsPage() {
           <Input
             aria-label="Search transactions by vendor"
             placeholder="Search transactions..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
+            value={draftSearchTerm}
+            onChange={(event) => setDraftSearchTerm(event.target.value)}
           />
           <FormField label="Category">
             <Select
               aria-label="Filter by category"
-              value={filters.category ?? ""}
+              value={draftFilters.category ?? ""}
               options={categoryOptions}
-              onValueChange={(value) => updateFilter({ category: value || undefined })}
+              onValueChange={(value) => updateDraftFilter({ category: value || undefined })}
             />
           </FormField>
           <FormField label="Date Range">
             <Select
               aria-label="Date range preset"
-              value={datePreset}
+              value={draftDatePreset}
               options={[
                 { value: "custom", label: "Custom range" },
                 { value: "7", label: "Last 7 days" },
@@ -1282,19 +1306,19 @@ export function TransactionsPage() {
             />
           </FormField>
           <div className={styles.splitFields}>
-            <Input type="date" value={filters.dateFrom ?? ""} onChange={(event) => updateFilter({ dateFrom: event.target.value || undefined })} />
-            <Input type="date" value={filters.dateTo ?? ""} onChange={(event) => updateFilter({ dateTo: event.target.value || undefined })} />
+            <Input type="date" value={draftFilters.dateFrom ?? ""} onChange={(event) => updateDraftFilter({ dateFrom: event.target.value || undefined })} />
+            <Input type="date" value={draftFilters.dateTo ?? ""} onChange={(event) => updateDraftFilter({ dateTo: event.target.value || undefined })} />
           </div>
           <FormField label="Amount Range">
             <div className={styles.splitFields}>
-              <Input placeholder="Min" value={filters.amountMin ?? ""} onChange={(event) => updateFilter({ amountMin: event.target.value || undefined })} />
-              <Input placeholder="Max" value={filters.amountMax ?? ""} onChange={(event) => updateFilter({ amountMax: event.target.value || undefined })} />
+              <Input placeholder="Min" value={draftFilters.amountMin ?? ""} onChange={(event) => updateDraftFilter({ amountMin: event.target.value || undefined })} />
+              <Input placeholder="Max" value={draftFilters.amountMax ?? ""} onChange={(event) => updateDraftFilter({ amountMax: event.target.value || undefined })} />
             </div>
           </FormField>
           <FormField label="Sort By">
             <Select
               aria-label="Sort transactions"
-              value={`${filters.sortBy}:${filters.sortDir}`}
+              value={`${draftFilters.sortBy}:${draftFilters.sortDir}`}
               options={[
                 { value: "date:desc", label: "Newest First" },
                 { value: "date:asc", label: "Oldest First" },
@@ -1304,13 +1328,16 @@ export function TransactionsPage() {
               ]}
               onValueChange={(value) => {
                 const [sortBy, sortDir] = value.split(":") as [TransactionListParams["sortBy"], TransactionListParams["sortDir"]];
-                updateFilter({ sortBy, sortDir });
+                updateDraftFilter({ sortBy, sortDir });
               }}
             />
           </FormField>
           <div className={styles.filterActions}>
-            <Button variant="secondary" onClick={() => { setDatePreset("custom"); setSearchTerm(""); setFilters(defaultFilters); }}>
-              Reset Filters
+            <Button variant="secondary" onClick={resetDraftFilters}>
+              Reset
+            </Button>
+            <Button onClick={applyDraftFilters}>
+              Apply
             </Button>
           </div>
       </Modal>

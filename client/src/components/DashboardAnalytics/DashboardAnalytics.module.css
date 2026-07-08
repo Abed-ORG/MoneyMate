@@ -242,8 +242,7 @@
   border-radius: 999px;
 }
 
-.categoryIcon,
-.categoryColor {
+.categoryIcon {
   display: grid;
   width: 1.35rem;
   height: 1.35rem;
@@ -252,6 +251,15 @@
   border-radius: 0;
   background: transparent;
   color: var(--mm-accent);
+}
+
+.categoryColor {
+  display: grid;
+  width: 0.82rem;
+  height: 0.82rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
 }
 
 .categoryIcon svg,

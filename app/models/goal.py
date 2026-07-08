@@ -29,6 +29,7 @@ class Goal(Base):
     contributions = relationship(
         "GoalContribution",
         back_populates="goal",
+        cascade="all, delete-orphan",
         order_by="GoalContribution.contributed_at",
     )
 
