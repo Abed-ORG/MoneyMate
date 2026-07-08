@@ -15,6 +15,7 @@ from app.models.category import Category
 from app.models.financial_profile import FinancialProfile
 from app.models.goal import Goal
 from app.models.transaction import Transaction
+from app.services.income_service import base_income_for_period
 
 
 MONEY = Decimal("0.01")
@@ -224,15 +225,16 @@ def transaction_to_context_row(transaction: Transaction) -> dict[str, Any]:
 
 def summarize_transactions(
     transactions: list[Transaction],
+    base_income: Decimal = Decimal("0"),
 ) -> dict[str, Any]:
-    income = Decimal("0")
+    extra_income = Decimal("0")
     expenses = Decimal("0")
     category_totals: dict[str, Decimal] = {}
     largest_expenses: list[dict[str, Any]] = []
     for transaction in transactions:
         amount = Decimal(str(transaction.amount))
         if amount > 0:
-            income += amount
+            extra_income += amount
             continue
         expense = abs(amount)
         expenses += expense
@@ -257,6 +259,7 @@ def summarize_transactions(
             }
         )
 
+    income = base_income + extra_income
     categories = []
     for name, total in category_totals.items():
         percentage = (
@@ -279,6 +282,8 @@ def summarize_transactions(
     ]
     return {
         "transaction_count": len(transactions),
+        "base_monthly_income": to_json_money(base_income),
+        "extra_income": to_json_money(extra_income),
         "income": to_json_money(income),
         "expenses": to_json_money(expenses),
         "net_amount": to_json_money(income - expenses),
@@ -420,7 +425,11 @@ def build_financial_context(
         if include_transactions or include_budgets
         else []
     )
-    if (include_transactions or include_budgets) and not transactions:
+    if (
+        (include_transactions or include_budgets)
+        and not transactions
+        and base_income_for_period(db, user_id, start_date, end_date) <= 0
+    ):
         latest_month_start = latest_transaction_month(db, user_id)
         if latest_month_start and latest_month_start != start_date:
             start_date = latest_month_start
@@ -442,7 +451,10 @@ def build_financial_context(
                 end_date,
             )
     transaction_summary = (
-        summarize_transactions(transactions)
+        summarize_transactions(
+            transactions,
+            base_income_for_period(db, user_id, start_date, end_date),
+        )
         if include_transactions
         else None
     )
@@ -454,7 +466,15 @@ def build_financial_context(
             previous_start,
             previous_end,
         )
-        previous_summary = summarize_transactions(previous_transactions)
+        previous_summary = summarize_transactions(
+            previous_transactions,
+            base_income_for_period(
+                db,
+                user_id,
+                previous_start,
+                previous_end,
+            ),
+        )
     context: dict[str, Any] = {
         "currency": get_currency(db, user_id),
         "question_areas": sorted(areas),

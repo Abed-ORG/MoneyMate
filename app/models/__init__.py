@@ -7,6 +7,7 @@ from . import (
     goal,
     chat_history,
     financial_profile,
+    income_history,
     item,
     refresh_token,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "goal",
     "chat_history",
     "financial_profile",
+    "income_history",
     "item",
     "refresh_token",
 ]

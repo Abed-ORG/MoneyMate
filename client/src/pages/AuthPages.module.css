@@ -1,7 +1,7 @@
 .authPage {
   --auth-forest: var(--mm-accent);
   --auth-forest-dark: var(--mm-bg);
-  --auth-forest-soft: var(--mm-accent-soft);
+  --auth-forest-soft: var(--mm-accent);
   height: 100dvh;
   display: grid;
   place-items: center;
@@ -20,7 +20,7 @@
   min-height: 0;
   overflow: hidden;
   grid-template-columns: minmax(0, 2fr) 0fr minmax(0, 2fr);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
   background:
     radial-gradient(circle at 50% 14%, rgba(var(--mm-accent-rgb), 0.045), transparent 31rem),
@@ -63,7 +63,7 @@
 
 .backLink:hover {
   border-color: rgba(var(--mm-accent-rgb), 0.24);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     0 0.4rem 1rem rgba(0, 0, 0, 0.18),
     0 0 0.85rem rgba(var(--mm-accent-rgb), 0.09);
@@ -206,7 +206,7 @@
   width: 100%;
   height: 0.45rem;
   border-radius: 999px;
-  background: rgba(248, 255, 249, 0.12);
+  background: var(--mm-progress-track);
   overflow: hidden;
 }
 
@@ -382,7 +382,7 @@
   margin-top: 0.7rem;
   border: 1px solid rgba(var(--mm-accent-rgb), 0.42);
   border-radius: var(--mm-radius-sm);
-  background: linear-gradient(180deg, #49c5b6, #7fe1d4);
+  background: linear-gradient(180deg, #49c5b6, #178f82);
   color: var(--mm-bg-deep);
   box-shadow:
     0 0 0.35rem rgba(var(--mm-accent-rgb), 0.08),
@@ -416,7 +416,7 @@
 }
 
 .switchText a {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-weight: 800;
   transition:
     color 160ms ease,
@@ -426,7 +426,7 @@
 .forgotLink {
   justify-self: end;
   margin-top: -0.35rem;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -465,7 +465,7 @@
   justify-self: center;
   border: 0;
   background: transparent;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   cursor: pointer;
   font-weight: 800;
   text-decoration: underline;

@@ -1,4 +1,5 @@
 import { budgetsApi } from "./budgets";
+import { api } from "./api";
 import { transactionsApi } from "./transactions";
 import type { BudgetSummary } from "../types/budget";
 import type { Transaction, TransactionListParams } from "../types/transaction";
@@ -145,6 +146,30 @@ async function loadBudgets(month: number, year: number) {
   }
 }
 
+type MonthlyIncomeHistoryResponse = {
+  monthly_income_by_month: Record<string, number | string>;
+};
+
+async function loadMonthlyIncomeByMonth(dateFrom: string, dateTo: string) {
+  try {
+    const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+    const response = await api.get<MonthlyIncomeHistoryResponse>(
+      `/profile/monthly-income-history?${params.toString()}`,
+    );
+    return response.monthly_income_by_month;
+  } catch {
+    return {};
+  }
+}
+
+function monthlyIncomeFor(
+  incomeByMonth: Record<string, number | string>,
+  year: number,
+  month: number,
+) {
+  return roundMoney(toNumber(incomeByMonth[dateKey(year, month, 1).slice(0, 7)]));
+}
+
 function withinMonth(date: string, month: number, year: number) {
   const key = transactionDateKey(date);
   return key >= dateKey(year, month, 1) && key <= dateKey(year, month, lastDayOfMonth(month, year));
@@ -184,7 +209,7 @@ function withinDateRange(
   return true;
 }
 
-function summarizeTransactions(transactions: Transaction[]) {
+function summarizeTransactions(transactions: Transaction[], baseIncome = 0) {
   const summary = transactions.reduce(
     (acc, transaction) => {
       const amount = toNumber(transaction.amount);
@@ -198,21 +223,27 @@ function summarizeTransactions(transactions: Transaction[]) {
     { income: 0, expenses: 0 },
   );
   return {
-    income: roundMoney(summary.income),
+    income: roundMoney(baseIncome + summary.income),
+    extraIncome: roundMoney(summary.income),
+    baseIncome: roundMoney(baseIncome),
     expenses: roundMoney(summary.expenses),
   };
 }
 
 export async function getMonthlyReport(month: number, year: number): Promise<MonthlyReport> {
   const range = monthRange(month, year);
-  const [transactions, budgets] = await Promise.all([
+  const [transactions, budgets, incomeByMonth] = await Promise.all([
     loadTransactions(range),
     loadBudgets(month, year),
+    loadMonthlyIncomeByMonth(range.dateFrom, range.dateTo),
   ]);
   const monthlyTransactions = transactions.filter((transaction) =>
     withinMonth(transaction.date, month, year),
   );
-  const summary = summarizeTransactions(monthlyTransactions);
+  const summary = summarizeTransactions(
+    monthlyTransactions,
+    monthlyIncomeFor(incomeByMonth, year, month),
+  );
   const spendingByCategory = new Map<string, number>();
 
   monthlyTransactions.forEach((transaction) => {
@@ -262,15 +293,23 @@ export async function getMonthlyReport(month: number, year: number): Promise<Mon
 }
 
 export async function getAnnualReport(year: number): Promise<AnnualReport> {
-  const [transactions, previousYearTransactions] = await Promise.all([
+  const incomeRange = {
+    dateFrom: dateKey(year - 1, 1, 1),
+    dateTo: dateKey(year, 12, 31),
+  };
+  const [transactions, previousYearTransactions, incomeByMonth] = await Promise.all([
     loadTransactions(yearRange(year)),
     loadTransactions(yearRange(year - 1)),
+    loadMonthlyIncomeByMonth(incomeRange.dateFrom, incomeRange.dateTo),
   ]);
   const months = Array.from({ length: 12 }, (_, index) => index + 1).map((month) => {
     const monthlyTransactions = transactions.filter(
       (transaction) => withinMonth(transaction.date, month, year),
     );
-    const summary = summarizeTransactions(monthlyTransactions);
+    const summary = summarizeTransactions(
+      monthlyTransactions,
+      monthlyIncomeFor(incomeByMonth, year, month),
+    );
     return {
       month,
       monthLabel: new Intl.DateTimeFormat("en-US", { month: "short" }).format(
@@ -286,7 +325,10 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     const monthlyTransactions = previousYearTransactions.filter(
       (transaction) => withinMonth(transaction.date, month, year - 1),
     );
-    const summary = summarizeTransactions(monthlyTransactions);
+    const summary = summarizeTransactions(
+      monthlyTransactions,
+      monthlyIncomeFor(incomeByMonth, year - 1, month),
+    );
     return {
       month,
       monthLabel: new Intl.DateTimeFormat("en-US", { month: "short" }).format(
@@ -313,7 +355,26 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
     netSavings: roundMoney(rawTotals.netSavings),
   };
 
-  if (!previousYearTransactions.length) {
+  const previousRawTotals = previousYearMonths.reduce(
+    (acc, month) => {
+      acc.income += month.income;
+      acc.expenses += month.expenses;
+      acc.netSavings += month.netSavings;
+      return acc;
+    },
+    { income: 0, expenses: 0, netSavings: 0 },
+  );
+  const previousTotals = {
+    income: roundMoney(previousRawTotals.income),
+    expenses: roundMoney(previousRawTotals.expenses),
+    netSavings: roundMoney(previousRawTotals.netSavings),
+  };
+
+  const hasPreviousIncome = Object.entries(incomeByMonth).some(
+    ([key, value]) => key.startsWith(String(year - 1)) && toNumber(value) > 0,
+  );
+
+  if (!previousYearTransactions.length && !hasPreviousIncome) {
     return {
       year,
       months,
@@ -322,9 +383,6 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
       previousYearComparison: null,
     };
   }
-
-  const previousTotals = summarizeTransactions(previousYearTransactions);
-  const previousNet = roundMoney(previousTotals.income - previousTotals.expenses);
 
   return {
     year,
@@ -337,7 +395,7 @@ export async function getAnnualReport(year: number): Promise<AnnualReport> {
       expenseChange:
         previousTotals.expenses > 0 ? ((totals.expenses - previousTotals.expenses) / previousTotals.expenses) * 100 : 0,
       savingsChange:
-        previousNet !== 0 ? ((totals.netSavings - previousNet) / Math.abs(previousNet)) * 100 : 0,
+        previousTotals.netSavings !== 0 ? ((totals.netSavings - previousTotals.netSavings) / Math.abs(previousTotals.netSavings)) * 100 : 0,
     },
   };
 }

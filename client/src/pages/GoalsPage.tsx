@@ -3,6 +3,7 @@ import { Button, Card, FormField, Input, LoadingSpinner, Modal } from "../compon
 import { useToast } from "../contexts/ToastContext";
 import { goalsApi } from "../services/goals";
 import type { Goal, GoalPayload, GoalUpdatePayload } from "../types/goal";
+import { formatDisplayDate } from "../utils/dateFormat";
 import styles from "./GoalsPage.module.css";
 
 const emptyForm = {
@@ -513,7 +514,7 @@ export function GoalsPage() {
               {actionMenuId === goal.id ? (
                 <div className={styles.actionMenu}>
                   <button type="button" onClick={() => openEditFromMenu(goal)}>Edit</button>
-                  <button type="button" onClick={() => openHistoryFromMenu(goal)}>Show Contribution history</button>
+                  <button type="button" onClick={() => openHistoryFromMenu(goal)}>Contribution history</button>
                   <button type="button" className={styles.dangerAction} onClick={() => openDeleteFromMenu(goal)}>Delete</button>
                 </div>
               ) : null}
@@ -585,7 +586,7 @@ export function GoalsPage() {
       </div>
 
       {isLoadingGoals ? (
-        <Card>
+        <Card className={styles.state}>
           <LoadingSpinner label="Loading goals" />
         </Card>
       ) : goals.length === 0 ? (
@@ -665,7 +666,7 @@ export function GoalsPage() {
             [...historyGoal.contributions].reverse().map((entry) => (
               <div key={entry.id} className={styles.historyItem}>
                 <strong>{money(entry.amount)}</strong>
-                <span>{new Date(entry.contributed_at).toLocaleDateString()}</span>
+                <span>{formatDisplayDate(entry.contributed_at)}</span>
                 {entry.note ? <p>{entry.note}</p> : null}
               </div>
             ))

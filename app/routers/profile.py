@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.auth.services import DuplicateEmailError
@@ -8,6 +10,7 @@ from app.schemas.financial_profile import (
     FinancialProfile,
     FinancialProfilePayload,
     FinancialProfileUpdate,
+    MonthlyIncomeHistoryResponse,
 )
 from app.schemas.user import PasswordChange, User, UserUpdate
 from app.services.profile_service import (
@@ -20,6 +23,7 @@ from app.services.profile_service import (
     update_account,
     update_financial_profile,
 )
+from app.services.income_service import income_by_month_key
 
 router = APIRouter()
 
@@ -30,6 +34,31 @@ def read_profile(
     db: Session = Depends(get_db),
 ):
     return get_or_create_financial_profile(db, current_user.id)
+
+
+@router.get(
+    "/monthly-income-history",
+    response_model=MonthlyIncomeHistoryResponse,
+)
+def read_monthly_income_history(
+    date_from: date = Query(...),
+    date_to: date = Query(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if date_from > date_to:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="date_from must be before or equal to date_to.",
+        )
+    return MonthlyIncomeHistoryResponse(
+        monthly_income_by_month=income_by_month_key(
+            db,
+            current_user.id,
+            date_from,
+            date_to,
+        ),
+    )
 
 
 @router.post("/onboarding", response_model=FinancialProfile)

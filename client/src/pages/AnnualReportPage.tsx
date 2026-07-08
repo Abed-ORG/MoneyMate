@@ -1,8 +1,9 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Card, FormField, LoadingSpinner, Select } from "../components";
 import { getAnnualReport, type AnnualReport } from "../services/reports";
+import { formatDisplayDateTime } from "../utils/dateFormat";
 import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./AnnualReportPage.module.css";
 
@@ -119,7 +120,7 @@ async function downloadPdf(report: AnnualReport) {
   const blob = await buildThemedReportPdf({
     title: `Annual Report - ${report.year}`,
     eyebrow: "Personal finance report",
-    generatedAt: `Generated ${new Date().toLocaleString("en-US")}`,
+    generatedAt: `Generated ${formatDisplayDateTime(new Date())}`,
     summaryCards: [
       { label: "Total income", value: money(report.totals.income), tone: "positive" },
       { label: "Total expenses", value: money(report.totals.expenses), tone: "negative" },
@@ -257,7 +258,6 @@ export function AnnualReportPage() {
             <div className={styles.chartWrap}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
                   <XAxis axisLine={false} dataKey="name" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                   <YAxis
                     axisLine={false}
@@ -268,13 +268,13 @@ export function AnnualReportPage() {
                   />
                   <Tooltip
                     content={<IncomeExpenseTooltip />}
-                    cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                    cursor={{ fill: "var(--mm-chart-cursor)" }}
                     contentStyle={tooltipStyle}
                     wrapperStyle={{ outline: "none" }}
                   />
                   <Legend wrapperStyle={{ color: "var(--mm-text-soft)" }} />
-                  <Bar dataKey="income" fill="#22c55e" radius={[6, 6, 0, 0]} name="Income" />
-                  <Bar dataKey="expenses" fill="#ff6b72" radius={[6, 6, 0, 0]} name="Expenses" />
+                  <Bar dataKey="income" fill="#22c55e" minPointSize={4} radius={[6, 6, 0, 0]} name="Income" />
+                  <Bar dataKey="expenses" fill="#ff6b72" minPointSize={4} radius={[6, 6, 0, 0]} name="Expenses" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -315,7 +315,6 @@ export function AnnualReportPage() {
               <div className={styles.chartWrap}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={yearOverYearLineData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(127, 225, 212, 0.22)" strokeDasharray="4 4" vertical={false} />
                     <XAxis axisLine={false} dataKey="monthLabel" tick={{ fill: "var(--mm-text-muted)", fontSize: 12 }} tickLine={false} />
                     <YAxis
                       axisLine={false}
@@ -326,7 +325,7 @@ export function AnnualReportPage() {
                     />
                     <Tooltip
                       content={<YearComparisonTooltip year={year} />}
-                      cursor={{ fill: "rgba(127, 225, 212, 0.055)" }}
+                      cursor={{ fill: "var(--mm-chart-cursor)" }}
                       contentStyle={tooltipStyle}
                       wrapperStyle={{ outline: "none" }}
                     />

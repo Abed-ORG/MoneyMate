@@ -48,7 +48,7 @@
   color: var(--mm-text-soft);
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
+  font-weight: 600;
   padding: 0.48rem 0.85rem;
   text-align: center;
   text-decoration: none;
@@ -64,8 +64,12 @@
 
 .viewSwitcherActive {
   background: var(--mm-accent) !important;
-  color: var(--mm-bg-deep) !important;
+  color: var(--mm-accent-contrast) !important;
   box-shadow: var(--mm-shadow-glow);
+}
+
+.controlsBar button {
+  font-weight: 600;
 }
 
 .summaryGrid {
@@ -100,7 +104,7 @@
 }
 
 .positive {
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .negative {

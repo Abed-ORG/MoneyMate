@@ -72,7 +72,7 @@
 
 .brand strong span {
   display: inline;
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
 }
 
 .brand > div > span,
@@ -119,7 +119,7 @@
   border-color: var(--mm-border-strong);
   background:
     linear-gradient(90deg, rgba(var(--mm-accent-rgb), 0.2), rgba(var(--mm-accent-rgb), 0.08));
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.03),
     0 0 1.2rem rgba(var(--mm-accent-rgb), 0.12);
@@ -131,9 +131,9 @@
   height: 1.35rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--mm-accent-soft);
   transition:
     background 160ms ease,
     border-color 160ms ease,
@@ -164,6 +164,13 @@
   font-weight: 900;
   line-height: 1;
   padding: 0 0.28rem;
+}
+
+:root[data-theme="light"] .navBadge {
+  border-color: rgba(217, 119, 6, 0.54);
+  background: #d97706;
+  color: #fff7ed;
+  box-shadow: 0 0.25rem 0.7rem rgba(217, 119, 6, 0.22);
 }
 
 .active .navIcon,
@@ -312,7 +319,7 @@
   border: 1px solid rgba(var(--mm-accent-rgb), 0.24);
   border-radius: 999px;
   background: rgba(var(--mm-accent-rgb), 0.1);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   font-size: 0.68rem;
   font-weight: 900;
   padding: 0.18rem 0.45rem;
@@ -346,7 +353,7 @@
 
 .searchResultMain small span:not(:last-child)::after {
   margin-left: 0.45rem;
-  color: rgba(248, 255, 249, 0.3);
+  color: var(--mm-text-muted);
   content: "|";
 }
 
@@ -447,11 +454,12 @@
 }
 
 .avatar {
+  position: relative;
   width: 2.15rem;
   height: 2.15rem;
   border: 1px solid var(--mm-border-strong);
   background: rgba(var(--mm-accent-rgb), 0.12);
-  color: var(--mm-accent-soft);
+  color: var(--mm-accent);
   box-shadow: 0 0 0.7rem rgba(var(--mm-accent-rgb), 0.08);
 }
 
@@ -462,9 +470,14 @@
 }
 
 .avatar svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
   width: 1.35rem;
   height: 1.35rem;
   fill: none;
+  transform: translate(-50%, -54%);
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -499,7 +512,7 @@
   display: block;
   height: 2px;
   border-radius: 999px;
-  background: var(--mm-accent-soft);
+  background: var(--mm-accent);
 }
 
 .collapseButton span {

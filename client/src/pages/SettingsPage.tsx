@@ -177,8 +177,28 @@ function SectionIcon({ name }: { name: SectionIconName }) {
 function AnonymousUserIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <circle cx="12" cy="8.25" r="3.75" />
-      <path d="M4.75 20c.9-4.25 3.32-6.38 7.25-6.38S18.35 15.75 19.25 20" />
+      <circle cx="12" cy="7.75" r="3.75" />
+      <path d="M4.75 19.25c.9-4.15 3.32-6.22 7.25-6.22s6.35 2.07 7.25 6.22" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M5 7h14" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M8 7l1-3h6l1 3" />
+      <path d="M7 7l1 13h8l1-13" />
     </svg>
   );
 }
@@ -374,6 +394,13 @@ export function SettingsPage() {
           ? error.message
           : "The selected image could not be read.",
       );
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -716,6 +743,15 @@ export function SettingsPage() {
                         Use the camera button on your MoneyMate card. PNG, JPG, and
                         WEBP images up to 2 MB are supported.
                       </p>
+                      {avatarPreview ? (
+                        <button
+                          className={styles.photoRemoveButton}
+                          onClick={handleRemoveAvatar}
+                          type="button"
+                        >
+                          Remove profile picture
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}
@@ -795,12 +831,24 @@ export function SettingsPage() {
                             />
                             <strong>{category.name}</strong>
                             <div className={styles.customCategoryActions}>
-                              <Button type="button" variant="secondary" onClick={() => openCustomizeCategory(category)}>
-                                Edit
-                              </Button>
-                              <Button type="button" variant="danger" onClick={() => setCategoryToDelete(category)}>
-                                Delete
-                              </Button>
+                              <button
+                                aria-label={`Edit ${category.name}`}
+                                className={styles.categoryIconButton}
+                                onClick={() => openCustomizeCategory(category)}
+                                title="Edit category"
+                                type="button"
+                              >
+                                <PencilIcon />
+                              </button>
+                              <button
+                                aria-label={`Delete ${category.name}`}
+                                className={`${styles.categoryIconButton} ${styles.categoryIconButtonDanger}`}
+                                onClick={() => setCategoryToDelete(category)}
+                                title="Delete category"
+                                type="button"
+                              >
+                                <TrashIcon />
+                              </button>
                             </div>
                           </div>
                         ))}

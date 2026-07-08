@@ -4,6 +4,7 @@ import { Button, Card, FormField, LoadingSpinner, Select } from "../components";
 import { BudgetComparisonChart } from "../components/Budgets/BudgetComponents";
 import type { BudgetSummary } from "../types/budget";
 import { getMonthlyReport, type MonthlyReport } from "../services/reports";
+import { formatDisplayDateTime } from "../utils/dateFormat";
 import { buildThemedReportPdf, triggerPdfDownload } from "../utils/pdfReport";
 import styles from "./MonthlyReportPage.module.css";
 
@@ -34,7 +35,7 @@ async function downloadPdf(report: MonthlyReport) {
   const blob = await buildThemedReportPdf({
     title: `Monthly Report - ${report.monthLabel}`,
     eyebrow: "Personal finance report",
-    generatedAt: `Generated ${new Date().toLocaleString("en-US")}`,
+    generatedAt: `Generated ${formatDisplayDateTime(new Date())}`,
     summaryCards: [
       { label: "Total income", value: money(report.income), tone: "positive" },
       { label: "Total expenses", value: money(report.expenses), tone: "negative" },

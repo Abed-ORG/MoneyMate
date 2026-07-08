@@ -30,6 +30,7 @@ from app.models import (
     goal,
     chat_history,
     financial_profile,
+    income_history,
     item,
     refresh_token,
 )  # noqa: F401

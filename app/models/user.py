@@ -57,3 +57,8 @@ class User(Base):
         cascade="all, delete-orphan",
         uselist=False,
     )
+    monthly_income_history = relationship(
+        "MonthlyIncomeHistory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
