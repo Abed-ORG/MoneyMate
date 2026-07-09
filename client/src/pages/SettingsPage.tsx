@@ -76,7 +76,7 @@ const settingsSections: Array<{
   {
     id: "privacy",
     label: "Data & Privacy",
-    description: "Download a CSV copy of your financial data",
+    description: "Download an organized copy of your financial data",
     icon: "privacy",
   },
   {
@@ -215,27 +215,63 @@ function fileToDataUrl(file: File) {
   });
 }
 
-type CsvValue = string | number | boolean | null | undefined | string[];
+type ExportValue = string | number | boolean | null | undefined | string[];
+type ExportSheet = {
+  name: string;
+  headers: string[];
+  rows: ExportValue[][];
+};
 
-function csvCell(value: CsvValue) {
+function xmlCell(value: ExportValue, isHeader = false) {
   const normalized = Array.isArray(value) ? value.join("; ") : value ?? "";
-  return `"${String(normalized).replace(/"/g, '""')}"`;
+  const text = String(normalized)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const style = isHeader ? ' ss:StyleID="header"' : "";
+  return `<Cell${style}><Data ss:Type="String">${text}</Data></Cell>`;
 }
 
-function csvSection(
-  title: string,
-  headers: string[],
-  rows: CsvValue[][],
-) {
-  return [
-    csvCell(title),
-    headers.map(csvCell).join(","),
-    ...rows.map((row) => row.map(csvCell).join(",")),
-  ].join("\r\n");
+function xmlRow(cells: ExportValue[], isHeader = false) {
+  return `<Row>${cells.map((cell) => xmlCell(cell, isHeader)).join("")}</Row>`;
+}
+
+function worksheetName(name: string) {
+  return name.replace(/[\[\]:*?/\\]/g, " ").slice(0, 31);
+}
+
+function workbookXml(sheets: ExportSheet[]) {
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook
+  xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Styles>
+    <Style ss:ID="header">
+      <Font ss:Bold="1" />
+      <Interior ss:Color="#DDF8F3" ss:Pattern="Solid" />
+    </Style>
+  </Styles>
+  ${sheets
+    .map(
+      (sheet) => `
+  <Worksheet ss:Name="${worksheetName(sheet.name)}">
+    <Table>
+      ${xmlRow(sheet.headers, true)}
+      ${sheet.rows.map((row) => xmlRow(row)).join("\n      ")}
+    </Table>
+  </Worksheet>`,
+    )
+    .join("")}
+</Workbook>`;
 }
 
 async function getAllTransactions() {
-  const pageSize = 500;
+  const pageSize = 100;
   const items: Transaction[] = [];
   let page = 1;
   let total = 0;
@@ -479,7 +515,7 @@ export function SettingsPage() {
     }
   };
 
-  const buildExportCsv = async () => {
+  const buildExportWorkbook = async () => {
     const [transactions, categories, budgets, goals] = await Promise.all([
       getAllTransactions(),
       transactionsApi.categories(),
@@ -487,7 +523,7 @@ export function SettingsPage() {
       goalsApi.list(),
     ]);
 
-    const profileRows: CsvValue[][] = [
+    const profileRows: ExportValue[][] = [
       ["full_name", user?.full_name ?? fullName],
       ["email", user?.email ?? email],
       ["monthly_income", profile?.monthly_income],
@@ -543,36 +579,36 @@ export function SettingsPage() {
       ]),
     );
 
-    return [
-      csvSection("Profile", ["field", "value"], profileRows),
-      csvSection(
-        "Transactions",
-        ["id", "date", "vendor", "category", "amount", "notes", "created_at", "updated_at"],
-        transactionRows,
-      ),
-      csvSection("Categories", ["id", "name", "color", "is_default"], categoryRows),
-      csvSection("Budgets", ["id", "category", "amount", "month", "year"], budgetRows),
-      csvSection(
-        "Goals",
-        ["id", "name", "target_amount", "current_amount", "deadline", "linked_account", "is_active"],
-        goalRows,
-      ),
-      csvSection(
-        "Goal contributions",
-        ["id", "goal_id", "goal_name", "amount", "contributed_at", "note"],
-        contributionRows,
-      ),
-    ].join("\r\n\r\n");
+    return workbookXml([
+      { name: "Profile", headers: ["field", "value"], rows: profileRows },
+      {
+        name: "Transactions",
+        headers: ["id", "date", "vendor", "category", "amount", "notes", "created_at", "updated_at"],
+        rows: transactionRows,
+      },
+      { name: "Categories", headers: ["id", "name", "color", "is_default"], rows: categoryRows },
+      { name: "Budgets", headers: ["id", "category", "amount", "month", "year"], rows: budgetRows },
+      {
+        name: "Goals",
+        headers: ["id", "name", "target_amount", "current_amount", "deadline", "linked_account", "is_active"],
+        rows: goalRows,
+      },
+      {
+        name: "Goal contributions",
+        headers: ["id", "goal_id", "goal_name", "amount", "contributed_at", "note"],
+        rows: contributionRows,
+      },
+    ]);
   };
 
-  const downloadDataCsv = async () => {
+  const downloadDataWorkbook = async () => {
     if (typeof window === "undefined") return;
-    const csv = await buildExportCsv();
-    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+    const workbook = await buildExportWorkbook();
+    const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `MoneyMate_Data_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `MoneyMate_Data_Export_${new Date().toISOString().slice(0, 10)}.xls`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -860,7 +896,8 @@ export function SettingsPage() {
                 {activeSection === "privacy" ? (
                   <div className={styles.privacySection}>
                     <p>
-                      Download your MoneyMate data as a CSV file to keep a personal backup.
+                      Download your MoneyMate data as a spreadsheet, with each
+                      data section on its own sheet.
                     </p>
                     <div className={styles.privacyActions}>
                       <Button
@@ -868,8 +905,8 @@ export function SettingsPage() {
                         onClick={async () => {
                           setIsExportingData(true);
                           try {
-                            await downloadDataCsv();
-                            toast.success("Data export ready", "A CSV copy of your data is downloading.");
+                            await downloadDataWorkbook();
+                            toast.success("Data export ready", "A spreadsheet copy of your data is downloading.");
                           } catch (error) {
                             toast.error("Export failed", "Unable to prepare your data export.");
                           } finally {
