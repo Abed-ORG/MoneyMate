@@ -271,7 +271,7 @@ function workbookXml(sheets: ExportSheet[]) {
 }
 
 async function getAllTransactions() {
-  const pageSize = 500;
+  const pageSize = 100;
   const items: Transaction[] = [];
   let page = 1;
   let total = 0;
