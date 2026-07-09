@@ -4,6 +4,7 @@ from sqlalchemy import (
     ForeignKey,
     Numeric,
     DateTime,
+    Index,
     UniqueConstraint,
     func,
 )
@@ -20,6 +21,13 @@ class Budget(Base):
             "month",
             "year",
             name="uq_budgets_user_category_month_year",
+        ),
+        Index("ix_budgets_user_month_year", "user_id", "year", "month"),
+        Index(
+            "ix_budgets_category_month_year",
+            "category_id",
+            "year",
+            "month",
         ),
     )
 

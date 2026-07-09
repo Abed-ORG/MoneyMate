@@ -3,6 +3,7 @@ from sqlalchemy import (
     Integer,
     String,
     ForeignKey,
+    Index,
     Numeric,
     DateTime,
     func,
@@ -13,6 +14,9 @@ from app.db import Base
 
 class Account(Base):
     __tablename__ = "accounts"
+    __table_args__ = (
+        Index("ix_accounts_user_id", "user_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

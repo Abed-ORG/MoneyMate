@@ -1,6 +1,13 @@
 .page {
   display: grid;
   gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .controlsBar {
@@ -9,6 +16,8 @@
   justify-content: flex-end;
   gap: 0.7rem;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .controlActions {
@@ -18,6 +27,14 @@
   gap: 0.7rem;
   flex-wrap: wrap;
   margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.controlsBar > *,
+.controlActions > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .viewSwitcher {
@@ -71,6 +88,7 @@
 .chartCard,
 .tableCard,
 .state {
+  min-width: 0;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius-lg);
   background: var(--mm-card-background);
@@ -202,5 +220,19 @@
     align-items: stretch;
     flex-direction: column;
     width: 100%;
+  }
+
+  .controlsBar > *,
+  .controlActions > * {
+    width: 100%;
+  }
+
+  .viewSwitcher {
+    width: 100%;
+  }
+
+  .viewSwitcherButton {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
