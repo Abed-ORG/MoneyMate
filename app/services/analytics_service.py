@@ -363,6 +363,18 @@ def month_label(value: date) -> str:
     return f"{month_abbr[value.month]} {value.year}"
 
 
+def end_of_month(value: date) -> date:
+    return add_months(date(value.year, value.month, 1), 1) - timedelta(days=1)
+
+
+def current_year_month_range() -> tuple[date, date, int]:
+    today = date.today()
+    start_month = date(today.year, 1, 1)
+    end_month = date(today.year, today.month, 1)
+    month_count = today.month
+    return start_month, end_month, month_count
+
+
 def monthly_income_expenses(
     rows: list[TransactionAnalyticsRow],
     end_date_value: date,
@@ -527,9 +539,17 @@ def build_dashboard_analytics(
         previous_rows,
         base_income_for_period(db, user_id, previous_start, previous_end),
     )
-    series_months = max(1, min(months, 36))
-    series_end_month = date(end_date_value.year, end_date_value.month, 1)
-    series_start_month = add_months(series_end_month, -(series_months - 1))
+    series_start_month, series_end_month, series_months = (
+        current_year_month_range()
+    )
+    monthly_rows = fetch_rows(
+        db,
+        user_id,
+        series_start_month,
+        end_of_month(series_end_month),
+        [],
+        [],
+    )
     monthly_income_by_month = income_by_month(
         db,
         user_id,
@@ -565,9 +585,9 @@ def build_dashboard_analytics(
         ),
         spending_by_category=aggregate_spending_by_category(current_rows),
         monthly_income_expenses=monthly_income_expenses(
-            current_rows,
-            end_date_value,
-            months,
+            monthly_rows,
+            series_end_month,
+            series_months,
             monthly_income_by_month,
         ),
         spending_trend=trend_points(
